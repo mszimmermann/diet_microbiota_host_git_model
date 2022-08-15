@@ -267,7 +267,7 @@ for met_i = 1:length(selected_mets)
         end
     end
     % display status every 100 metabolites
-    if mod(i,100)==0
+    if mod(met_i,100)==0
         fprintf('Calculated parameters for %d metabolites\n',i);
     end
 end
@@ -459,9 +459,9 @@ figure
 h = histogram(x_data_corr_shuffled(met_filter==1),100);
 hold on
 histogram(x_data_corr(met_filter==1),100)
-
+xlim([-1 1])
 axis square
-xlabel('Pearson corelation between data and model estimate')
+xlabel('Pearson correlation between metabolomics data and model estimate')
 ylabel('Number of ions')
 title('All data together')
 orient landscape
