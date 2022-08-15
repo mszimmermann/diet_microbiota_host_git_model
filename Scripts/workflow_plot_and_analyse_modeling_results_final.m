@@ -38,7 +38,9 @@ coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:e
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % cluster only metabolites with corr>0.7
-clustidx = find(annotationTableSpatialClusters.MetaboliteFilter==1);
+% uncomment if using whole metabolite table
+%clustidx = find(annotationTableSpatialClusters.MetaboliteFilter==1);
+clustidx = 1:size(x_met_smooth,1); % for testing purposed plot all 
 clustdata = x_met_smooth(clustidx,2:end)';
 clustrows = coefvalues(2:end);
 % filter by resiprocal corr
