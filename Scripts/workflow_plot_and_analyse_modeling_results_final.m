@@ -23,7 +23,7 @@ add_global_and_file_dependencies
 annotationTableSpatialClusters = readtable([inputFolder ...
     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-modelingResults = readtable([outputFolder ...
+modelingResults = readtable([resultsFolder ...
             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
 x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
 % get correlations calculated with reverse problem
@@ -80,7 +80,7 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % clustergrams were manually selected from the clustergram window
 % they can be loaded from 'cgo_clustergrams_of_model_coefficients.mat'
-load([outputFolder 'cgo_clustergrams_of_model_coefficients.mat'])
+load([resultsFolder 'cgo_clustergrams_of_model_coefficients.mat'])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % print cluster size info
 cluster_order = [{cellfun(@(x) (str2double(x)), cgoHColhfd.ColumnLabels)},...
@@ -318,7 +318,7 @@ end
 % % calculate changing metabolites in the system
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % read metabolite data
-% metaboliteDiff = readtable([outputFolder,...
+% metaboliteDiff = readtable([resultsFolder,...
 %     'table_diff_abundance_metabolite_ions_removed2outliers.csv']);
 % 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -401,7 +401,7 @@ end
 % % ans = 0.2032
 % 
 % % check for clusters
-% hier_clust_attribution = readtable([outputFolder, 'table_hierarchical_clustering_groups.csv']);
+% hier_clust_attribution = readtable([resultsFolder, 'table_hierarchical_clustering_groups.csv']);
 % % number of bacterial products
 % nnz((hier_clust_attribution.HierarchicalClustGroup==10) | (hier_clust_attribution.HierarchicalClustGroup==11))
 % % ans = 244

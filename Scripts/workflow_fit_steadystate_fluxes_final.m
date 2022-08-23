@@ -1,8 +1,4 @@
-% addpath('C:\Users\mazimmer\Documents\Documents\MATLAB\GutModels\Analysis_final')
-% 
-% inputFolder = '.\metabolomics\ProcessedData\';
-% outputFolder = '.\ProccesedData\';
-% figureFolder = '.\Figures_final\';
+% Fit steady state fluxes to GIT metabolites
 
 % call script defining file dependenciesand global variables
 addpath(genpath('.\'));
