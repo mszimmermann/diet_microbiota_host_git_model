@@ -15,15 +15,19 @@ add_global_and_file_dependencies
 % Data requirements:
 % 'metabolites_allions_combined_formulas_with_metabolite_filters.csv'
 % 'metabolites_allions_combined_norm_intensity.csv'
+% 'hmdbPTWtables.mat'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Output: 
 % Files:
-% 'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv'
-% 'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_allions.csv'
-% 'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_allions.csv'
-% 'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv'
+% 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv'
+% 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv'
+% 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_HMDBsubclass.csv'
+% 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv'
+% 'ptwenr_HMDBsuperclass_kmeans_clustering_spatial_all_hmdbv4.csv'
 % Figures:
-% 'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated'])
+% 'fig_sup_kmeans_silhouette_evaluation.pdf'
+% 'fig2d_kmeans_profiled_6_Mouse_Diet_GI_profiles_updated_filter_100repeat.pdf'
+% 'fig2e_clustergram_spatial_clustering_hmdb_v4_SubClass';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
