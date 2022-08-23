@@ -7,6 +7,11 @@
 % call script defining file dependenciesand global variables
 addpath(genpath('.\'));
 add_global_and_file_dependencies
+% add_global_and_file_dependencies contains variable
+% testing_mode_flag (=1)
+% that determines that scripts runs only for 100 metabolites and not the
+% full dataset (lines 100-105)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Data requirements:
 % 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv'
@@ -94,7 +99,9 @@ condLabels = strcat(aa(:),'-', bb(:));
 selected_mets = find((sum(spatialClusters,2)>0) &...
                      (annotationTableSpatialClusters.MetaboliteFilter==1));
 %%%% testing mode: hundred of annotated metabolites
-selected_mets = selected_mets(1:100);
+if testing_mode_flag
+    selected_mets = selected_mets(1:100);
+end
 
 % define tissue order
 sampleTissue_unique = {'SI1', 'SI2', 'SI3', 'Cecum', 'Colon', 'Feces'};
@@ -121,6 +128,8 @@ x_rdata = zeros(size(Ra,2),length(selected_mets));
 x_rdata_shuffled = zeros(size(Ra,2),length(selected_mets));
 
 minval = 0.01;
+
+fprintf('Starting parameter estimation for %d metabolites\n',length(selected_mets));
 
 for met_i = 1:length(selected_mets)
    
@@ -446,16 +455,20 @@ fclose(fid);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation of restored and original data
-% %metabolites detected in the GIT and annotated
-% met_filter = ((annotationTableSpatialClusters.MetaboliteFilter==1) &...
-%               (sum(spatialClusters,2)>0));
 % %testing mode: all calculated
-met_filter = ones(size(x_data_corr,1),1);
+if testing_mode_flag
+    met_filter = ones(size(x_data_corr,1),1);
+else
+    % %metabolites detected in the GIT and annotated
+    met_filter = ((annotationTableSpatialClusters.MetaboliteFilter==1) &...
+               (sum(spatialClusters,2)>0));
+end
+
 % calculate differentce in corr distrbutions
 p_corr_diff = ranksum(x_data_corr_shuffled(met_filter==1),...
     x_data_corr(met_filter==1));
 figure
-% perason corr all 
+% pearson corr all 
 h = histogram(x_data_corr_shuffled(met_filter==1),100);
 hold on
 histogram(x_data_corr(met_filter==1),100)
@@ -465,7 +478,10 @@ xlabel('Pearson correlation between metabolomics data and model estimate')
 ylabel('Number of ions')
 title('All data together')
 orient landscape
-legend({'Random coefficients', 'Model coefficients'},...
+% print line for PCC=0.7
+plot([0.7, 0.7], [0, max(h.Values)], 'k--')
+
+legend({'Random coefficients', 'Model coefficients', 'PCC=0.7'},...
         'Location', 'NorthWest')
     
 % compare distributions of correlations
