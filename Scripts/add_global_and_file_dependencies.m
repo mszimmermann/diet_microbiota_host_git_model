@@ -2,6 +2,7 @@
 %
 addpath(genpath('.\'));
 
+rawdataFolder = '.\InputData\';
 inputFolder = '.\ProcessedData\metabolomics\';
 resultsFolder = '.\ProcessedData\example_output\'; 
 outputFolder = '.\ProcessedData\output\';
