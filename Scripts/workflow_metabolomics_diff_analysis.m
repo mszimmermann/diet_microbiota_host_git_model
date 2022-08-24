@@ -14,15 +14,11 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Output: 
 % Files:
-% 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv'
-% 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv'
-% 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_HMDBsubclass.csv'
-% 'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv'
-% 'ptwenr_HMDBsuperclass_kmeans_clustering_spatial_all_hmdbv4.csv'
+% 'table_diff_abundance_metabolite_ions_removed2outliers.csv'
+% or 'table_diff_abundance_metabolite_ions.csv'
 % Figures:
-% 'fig_sup_kmeans_silhouette_evaluation.pdf'
-% 'fig2d_kmeans_profiled_6_Mouse_Diet_GI_profiles_updated_filter_100repeat.pdf'
-% 'fig2e_clustergram_spatial_clustering_hmdb_v4_SubClass';
+% 'fig_sup_volcanos_combined_ann_metabolites_removed2outliers.pdf'
+% or 'fig_sup_volcanos_combined_ann_metabolites.pdf'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read metabolite data
