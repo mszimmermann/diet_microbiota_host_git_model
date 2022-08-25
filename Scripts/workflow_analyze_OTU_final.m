@@ -11,8 +11,13 @@ add_global_and_file_dependencies
 % 'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'
 % 'mouse_info.csv'
 % Output: 
+% Files:
+% 'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'
+% 'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs_with_FC.txt'
 % Figures:
-%
+% 'fig_1c_barplot_OTU_per_mouse.pdf'
+% 'fig_1d_clustergram_DC_DNA_humann2_metaphlan_selected_filterd.pdf'
+% 'barplot_DNA_otu_PHYLUM_CV_ranksum_pvalue_FDR.pdf'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
