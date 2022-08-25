@@ -7,17 +7,14 @@ add_global_and_file_dependencies
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Data requirements:
-% 'metabolites_allions_combined_formulas_with_metabolite_filters.csv'
-% 'metabolites_allions_combined_norm_intensity.csv'
-% 'hmdbPTWtables.mat'
+% 'kegg_agora_09_2020_hmdb_06_2021_table.csv'
+% 'metabolomics_data\ folder with raw ion intensities
+% 'tissue_weights.txt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Output: 
 % Files:
-% 'table_diff_abundance_metabolite_ions_removed2outliers.csv'
-% or 'table_diff_abundance_metabolite_ions.csv'
-% Figures:
-% 'fig_sup_volcanos_combined_ann_metabolites_removed2outliers.pdf'
-% or 'fig_sup_volcanos_combined_ann_metabolites.pdf'
+% 'metabolites_allions_combined_norm_intensity.csv'
+% 'metabolites_allions_combined_formulas.csv'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
