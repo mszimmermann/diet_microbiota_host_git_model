@@ -13,7 +13,9 @@ add_global_and_file_dependencies
 % 'countsMatrixGetMM_RNA_table.txt'
 % Output: 
 % Figures:
-%
+% 'fig_sup_pca_DNA_all_raw_combined_getMMnorm_log10.pdf'
+% 'fig_sup_pca_RNA__combined_getmm_norm_log10.pdf'
+% 'fig_sup_barh_metaG_metaT_reads_per_sample.pdf'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
