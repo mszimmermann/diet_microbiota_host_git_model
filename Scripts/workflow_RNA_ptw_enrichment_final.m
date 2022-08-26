@@ -844,13 +844,13 @@ end
 % plot enrichment results
 % get enrichment results
 enrichmentFileName = 'ptwenr_recalc_KEGG_';
-enrichmentTable_KEGG_DOWN_perspecies = readtable([resultsFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_per_species.csv']);
-enrichmentTable_KEGG_UP_perspecies = readtable([resultsFolder, enrichmentFileName, 'UP_updfiltered_eggnog_per_species.csv']);
-enrichmentTable_KEGG_DOWN = readtable([resultsFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_total.csv']);
-enrichmentTable_KEGG_UP = readtable([resultsFolder, enrichmentFileName, 'UP_updfiltered_eggnog_total.csv']);
+enrichmentTable_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_per_species.csv']);
+enrichmentTable_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_per_species.csv']);
+enrichmentTable_KEGG_DOWN = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_total.csv']);
+enrichmentTable_KEGG_UP = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_total.csv']);
 enrichmentFileName = 'ptwNchangingGenes_KEGG_';
-pathwayNchangingGenes_KEGG_DOWN_perspecies = readtable([resultsFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog.csv']);
-pathwayNchangingGenes_KEGG_UP_perspecies = readtable([resultsFolder, enrichmentFileName, 'UP_updfiltered_eggnog.csv']);
+pathwayNchangingGenes_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog.csv']);
+pathwayNchangingGenes_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog.csv']);
 edgeRFileNames_abbr = pathwayNchangingGenes_KEGG_DOWN_perspecies.Properties.VariableNames';
 edgeRFileNames_abbr(cellfun(@(x) contains(x, 'pathway') | contains(x, 'Total'), edgeRFileNames_abbr))=[];
 
