@@ -21,8 +21,8 @@ add_global_and_file_dependencies
 % 'countsMatrixGetMM_RNA_table.txt'
 % 'countsMatrixRAW_DNA_table.txt'
 % 'countsMatrixRAW_RNA_table.txt'
-% 'annTable_filtered.csv'
-% 'annTable_full.csv'
+% 'geneAnnTable_filtered.csv'
+% 'geneAnnTable_full.csv'
 % 'edgeR_gene_fold_changes_and_ann.csv'
 % 'gene_annotation_kegg.tsv'
 % 'gene_annotation_go.tsv'
@@ -603,6 +603,6 @@ countsMatrixRAW_RNA_table.geneFilter = annTable_FCinfo.geneFilter;
 writetable(countsMatrixRAW_RNA_table, [outputFolder 'countsMatrixRAW_RNA_table.txt']);
 
 % write annotations to file
-writetable(annTable_filtered, [outputFolder 'annTable_filtered.csv']);
-writetable(annTable, [outputFolder 'annTable_full.csv']);
+writetable(annTable_filtered, [outputFolder 'geneAnnTable_filtered.csv']);
+writetable(annTable, [outputFolder 'geneAnnTable_full.csv']);
 
