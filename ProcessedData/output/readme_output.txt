@@ -1,0 +1,1 @@
+Folder to contain output files from pipeline scripts.
