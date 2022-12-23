@@ -17,20 +17,26 @@ add_global_and_file_dependencies
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read annotation from file
-annotationTableSpatialClusters = readtable([inputFolder ...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
+% annotationTableSpatialClusters = readtable([inputFolder ...
+%     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
+annotationTableSpatialClusters = readtable([outputFolder ...
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-modelingResults = readtable([resultsFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
+% modelingResults = readtable([resultsFolder ...
+%             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
+modelingResults = readtable([outputFolder...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions_with_CVR.csv']);
 x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
 coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
 
 % load data and restored data from file
 % save model results to file - reciprocal data restoration
-modelData = readtable([resultsFolder...
-    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv']);
+% modelData = readtable([resultsFolder...
+%     'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv']);
+modelData = readtable([outputFolder...
+    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions_with_CVR.csv']);
 modelData_data = modelData(:, 9:end);
 modelData_orig = modelData_data{:, cellfun(@(x) ~(contains(x, 'Recip') |...
                                              contains(x, 'Random') ),...
@@ -64,10 +70,15 @@ git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plotting file name
-fileNameprofiles = 'fig3ade_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact.ps'; 	
-% select ions to plot by ion MZ
-targetMZ = [147.053; 74.037; 287.210]; %glutamate, propionate, l-octanoylcarnitine 
+%fileNameprofiles = 'fig3ade_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact.ps';
+fileNameprofiles = 'fig3ade_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_selectedCVR.ps';
 
+% select ions to plot by ion MZ
+targetMZ = [147.053; 74.037; 287.210;...]; %glutamate, propionate, l-octanoylcarnitine 
+            499.297; 125.015; 131.058; 226.095;...]; %taurodeoxycholate, taurine, 5-aminolevulinate, porphobilonogen
+            181.074; 468.272; 483.301; 245.163; 576.512; 430.345;... %tyrosine, 3,17-androstnediol glucuronide, taurolitocholate, isovalerylcarnitine, cohibin, 4a-carboxy-5a-cholesta-8-en-3b-ol
+            386.355; 99.068;... % 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
+            119.058]; %threonine
 % find annotated compound with this MZ
 % for which modelling results correlate >0.7 with original
 compoundsInterest = find((annotationTableSpatialClusters.MetaboliteFilter>0) &...

@@ -20,11 +20,15 @@ add_global_and_file_dependencies
 % try to cluster ions based on their GI profiles
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read annotation from file
-annotationTableSpatialClusters = readtable([inputFolder ...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
+%annotationTableSpatialClusters = readtable([inputFolder ...
+%    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
+annotationTableSpatialClusters = readtable([outputFolder ...
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR.csv']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-modelingResults = readtable([resultsFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
+% modelingResults = readtable([resultsFolder ...
+%             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
+modelingResults = readtable([outputFolder ...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions_with_CVR.csv']);
 x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
 % get correlations calculated with reverse problem
 if isnumeric(modelingResults.ReciprocalCorr(1))

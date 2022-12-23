@@ -25,60 +25,16 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % try to cluster ions based on their GI profiles
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% read annotation from file
-% annotationTableSpatialClusters = readtable([inputFolder ...
-%     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
-annotationTableSpatialClusters = readtable([outputFolder ...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR.csv']);
-% read metabolite normalized data from file
-% metaboliteData = readtable([inputFolder ...
-%     'metabolites_allions_combined_norm_intensity.csv']);
-metaboliteData = readtable([outputFolder ...
-    'metabolites_allions_combined_norm_intensity_with_CVR.csv']);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% separate data into a matrix of normalized intensities
-% and get information on diet, tissue and mouse group
-dataColumns = metaboliteData.Properties.VariableNames;
-% get columns that have mouse suffix
-dataColumns = dataColumns(cellfun(@(x) contains(x,'_M'), dataColumns));
-combinedTissues = cell(size(dataColumns));
-combinedType = cell(size(dataColumns));
-combinedDiet = cell(size(dataColumns));
-combinedMouse = cell(size(dataColumns));
-for i=1:length(dataColumns)
-    curcol = strsplit(dataColumns{i}, '_');
-    combinedTissues{i} = curcol{3};
-    combinedType{i} = curcol{2};
-    combinedDiet{i} = curcol{1};
-    combinedMouse{i} = curcol{4};
-end
-sampleType_unique = unique(combinedType);
-sampleDiet_unique = unique(combinedDiet);
-sampleTissue_unique = unique(combinedTissues);
+sampleType_unique = {'CV', 'GF'};
+sampleDiet_unique = {'Chow1', 'Chow2'};
 
-sampleTissue_order = {'SI1','SI2','SI3','Cecum','Colon','Feces','Liver','Serum'};
-% order tissues along the GIT
-if length(intersect(sampleTissue_unique, sampleTissue_order))==length(sampleTissue_unique)
-    sampleTissue_unique = sampleTissue_order;
-else
-    sprintf('Non-overlapping tissue: %s', strjoin(setdiff( sampleTissue_unique, sampleTissue_order),'; '));
-end
-
-% convert table to matrix
-combinedIntensitiesNorm = table2array(metaboliteData(:,dataColumns));
-% get clustering info
-% select columns from annotationTable with cluster info
-annColumns = annotationTableSpatialClusters.Properties.VariableNames;
-clusterColumns = annColumns(cellfun(@(x) contains(x,'spatial_clust100'), annColumns));
-
-[~, clusteridx] = intersect(annColumns, clusterColumns, 'stable');
-
-spatialClusters = table2array(annotationTableSpatialClusters(:, clusteridx));
-
-meanConditions = annColumns(cellfun(@(x) contains(x,'mean_'), annColumns));
-[~, meanidx] = intersect(annColumns, meanConditions, 'stable');
-
-meanMatrix = table2array(annotationTableSpatialClusters(:, meanidx));
+meanConditions = [cellfun(@(x) strrep(x, 'Chow', 'Chow1'), meanData_columns, 'unif', 0),...
+                  cellfun(@(x) strrep(x, 'Chow', 'Chow2'), meanData_columns, 'unif', 0)];
+              
+meanMatrix = vertcat(meanData_cell{:});
+% duplicate since we have only one diet
+meanMatrix = [meanMatrix meanMatrix];
+meanMatrix_mets = horzcat(meanMets_cell{:})';
 
 mycolors = [0 115 178;... %dark blue
             204 227 240;...%light blue
@@ -91,30 +47,9 @@ condLabels = strcat(aa(:),'-', bb(:));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % selected_mets are metabolites detected along the GI tract
-
-% define which metabolites to model
-%%%% all metabolites
-selected_mets = 1:size(meanMatrix,1);
-%%%% metabolites detected in the GIT and annotated
-% selected_mets = find((sum(spatialClusters,2)>0) &...
-%                      (annotationTableSpatialClusters.MetaboliteFilter==1));
-% %%%% testing mode: hundred of annotated metabolites
-% if testing_mode_flag
-%     selected_mets = selected_mets(1:100);
-% end
-
-% if select_by_ionmz
-%     targetMZ = [147.053; 74.037; 287.210;...]; %glutamate, propionate, l-octanoylcarnitine 
-%         499.297; 125.015; 131.058; 226.095]; %taurodeoxycholate, taurine, 5-aminolevulinate, porphobilonogen
-%     % find annotated compound with this MZ
-%     % for which modelling results correlate >0.7 with original
-%     selected_mets = find((annotationTableSpatialClusters.MetaboliteFilter>0) &...
-%                          (arrayfun(@(x) sum(abs(x-targetMZ)<=0.001),...
-%                                   annotationTableSpatialClusters.MZ)>0));
-% end
-
+selected_mets = 1:length(meanMatrix_mets);
 % define tissue order
-sampleTissue_unique = {'SI1', 'SI2', 'SI3', 'Cecum', 'Colon', 'Feces'};
+sampleTissue_unique = {'SI', 'SII', 'SIII', 'Cecum', 'Colon', 'Feces'};
 nrand=100;
 % call calculateAmatrix_final with zero matrices of correct size
 % to get coefvalues output, which is used to allocate variables further
@@ -141,12 +76,8 @@ minval = 0.01;
 
 fprintf('Starting parameter estimation for %d metabolites\n',length(selected_mets));
 
-% remove DC and leave only CVR
-sampleType_unique(ismember(sampleType_unique, {'DC'}))=[];
-
 for met_i = 1:length(selected_mets)
    
-    if sum(spatialClusters(met_i,:))>0
         cmpd_interest_idx = selected_mets(met_i);
         % calculate mean profiles            
         idx=1;
@@ -155,7 +86,8 @@ for met_i = 1:length(selected_mets)
             for type_i = 1:length(sampleType_unique)
                 selectDiet = sampleDiet_unique{diet_i};
                 selectMouse = sampleType_unique{type_i};
-                kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
+                kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & ...
+                                        contains(x,selectDiet),meanConditions));
                 kmeanMatrix = kmeanMatrix(cmpd_interest_idx,1:6);
                 kmeanMatrix_joint(idx,:) = kmeanMatrix;
                 idx = idx+1;
@@ -163,6 +95,7 @@ for met_i = 1:length(selected_mets)
         end
         % normalize by max intensity
         kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
+        kmeanMatrix_joint(isnan(kmeanMatrix_joint))=0;
         % replace small values with noise
         kmeanMatrix_joint_orig = kmeanMatrix_joint;
         kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
@@ -216,86 +149,6 @@ for met_i = 1:length(selected_mets)
 
     x_data_corr_shuffled(met_i) = corr(kmeanMatrix_joint_orig(:), dataR_shuffled(:));
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % calculate joint matrix per mouse
-        kmeanMatrix_joint_mouse = cell(5,1);
-        for mouse_i = 1:5
-            kmeanMatrix_joint = zeros(4,6);
-            kmeanMatrix_joint_samples = cell(4,6);
-            idx=1;
-            for diet_i = 1:length(sampleDiet_unique)
-                for type_i = 1:length(sampleType_unique)
-                    for tissue_i = 1:length(sampleTissue_unique)
-                        selectDiet = sampleDiet_unique{diet_i};
-                        selectType = sampleType_unique{type_i};
-                        selectTissue = sampleTissue_unique{tissue_i};
-                        kmeanMatrix = combinedIntensitiesNorm(cmpd_interest_idx,...
-                                                cellfun(@(x) contains(x,selectType),combinedType) & ...
-                                                cellfun(@(x) contains(x,selectDiet),combinedDiet) & ...
-                                                cellfun(@(x) contains(x,selectTissue),combinedTissues));
-                        if length(kmeanMatrix)<mouse_i
-                            kmeanMatrix_joint(idx,tissue_i) = mean(kmeanMatrix);
-                        else
-                            kmeanMatrix_joint(idx,tissue_i) = kmeanMatrix(mouse_i);
-                        end
-                        kmeanMatrix_joint_samples{idx,tissue_i} = ['P_' lower(strrep(selectTissue,'DC','feces')) ...
-                                                                   '_' lower(strrep(selectType,'DC','cv'))...
-                                                                   '_' lower(selectDiet)];
-                    end
-                    idx = idx+1;
-                end
-            end
-
-            kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
-            kmeanMatrix_joint_mouse{mouse_i} = kmeanMatrix_joint;
-        end
-
-        x_rand = zeros(length(coefvalues), nrand);
-        for i=1:nrand
-            curmice = randi(5,1,4);
-            kmeanMatrix_joint = zeros(4,6);
-            for j=1:length(curmice)
-                kmeanMatrix_joint(j,:) = kmeanMatrix_joint_mouse{curmice(j)}(j,:);
-            end
-            % replace small values with noise
-            kmeanMatrix_joint_orig = kmeanMatrix_joint;
-            kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
-                kmeanMatrix_joint(kmeanMatrix_joint<minval)+rand(nnz(kmeanMatrix_joint<minval),1)*minval;
-
-
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            Aorig = calculateAmatrix_final(kmeanMatrix_joint_orig);
-            [A,coefvalues] = calculateAmatrix_final(kmeanMatrix_joint);
-            A(Aorig(:,1)==0,:)=[];
-            b = zeros(size(A,1),1);
-            options = optimoptions(@lsqlin,'Display', 'off');
-
-            xlowerlim = zeros(size(A,2),1);
-            xlowerlim(2:end)=-Inf;
-
-            %%%%%%%%%%%%%%%%%%%%%%%%%
-            %set bact to zero
-            xupperlim = Inf*ones(size(A,2),1);
-            %%%%%%%%%%%%%%%%%%%%%%%%%
-
-            if size(A,1)>0
-                x = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, [], options);
-                x_rand(:, i) = x;
-            end
-
-        end
-        %  remove all zero solutions
-        x_rand(:,sum(x_rand==0,1)==size(x,1))=[];
-        if size(x_rand,1)>0
-            x_met_mean(:,met_i) = mean(x_rand,2);
-            x_met_std(:,met_i) = std(x_rand,[],2);
-        end
-    end
-    % display status every 100 metabolites
-    if mod(met_i,100)==0
-        fprintf('Calculated parameters for %d metabolites\n',met_i);
-    end
 end
 
 % get the original metabolomics data as vectors to calculate correlations
@@ -517,3 +370,100 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
        %'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated'])
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot data and restored intensities and model coefficients
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% define colora and GIT section names for plotting
+mycolors = [0 115 178;... %dark blue
+            204 227 240;...%light blue
+            211 96 39;... %dark orange
+            246 223 212]/256;%light orange
+git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plotting file name
+fileNameprofiles = 'fig_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
+          
+curData_cols = reshape(meanConditions, 6, 4);
+compoundsInterest = 1:length(meanMatrix_mets);
+
+fig = figure('units','normalized','outerposition',[0 0 1 1]);
+
+fprintf('Plotting profiles for %d metabolites\n',length(compoundsInterest));
+for cpdix=1:length(compoundsInterest)
+    
+    testidx = compoundsInterest(cpdix);
+
+    spx=1;
+    spy=3;
+    spidx = 1;
+    coloridx = 1;
+    idx=1;
+    curmat = zeros(4,6);
+    %cur_data = reshape(kmean_vector_joint_orig(:,testidx)', 4, 6)';
+    cur_data = reshape(meanMatrix(testidx,:), 6, 4);
+    cur_rdata = reshape(x_rdata(:,testidx)', 6, 4);
+    
+    %normalize rdata to max
+    cur_rdata = (cur_rdata-0.8);
+    cur_rdata = cur_rdata/max(max(cur_rdata));
+    
+    legend_entries = cell(4,1);
+    for i = 1:size(cur_data,2)
+
+        subplot(spx,spy,idx)
+        hold on
+        h(i) = plot(cur_data(:,i),...
+             'LineWidth', 2,...
+             'Color', mycolors(i,:));
+        ylabel('Original normbymax')
+
+        subplot(spx,spy,idx+1);
+        hold on
+        plot((cur_rdata(:,i)),...
+                 'LineWidth', 2,...
+                 'Color', mycolors(i,:));
+        ylabel('Restored normbymax')
+
+    end
+    title(sprintf('%s PCC=%.2f',...
+                  meanMatrix_mets{testidx},...
+                        x_data_corr(testidx)),...
+                        'Interpreter', 'none');
+
+    legend(h, curData_cols(1,:),...
+             'Interpreter', 'none');%, 'Location', 'bestoutside');
+    
+    subplot(spx,spy,idx+2);
+    
+    curcoefs = x_met_smooth(2:end, testidx);
+    barh(curcoefs./max(abs(curcoefs)))
+    set(gca, 'YTick', 1:length(curcoefs));
+    set(gca, 'YTickLabel', coefvalues(2:end));
+    set(gca, 'YDir','reverse')
+    ylim([0.5 length(curcoefs)+0.5])
+    xlim([-1 1]);
+    axis square
+    
+    for spi = 1:(spx*spy)-1
+        subplot(spx,spy,spi)
+        set(gca, 'XTick', 1:6)
+        xlim([1 6])
+        %ylim([0 1])
+        set(gca, 'XTick', 1:length(git_labels))
+        set(gca, 'XTickLabel', git_labels)
+        
+        axis square
+    end
+%     spt = suptitle({sprintf('MZ=%.3f',testmz(idx,1)),...
+%                                         testannID{1},...
+%                                         testann{1}});
+%     set(spt,'FontSize',8,'FontWeight','normal')
+    orient landscape
+    %print to figure
+    print(gcf, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
+            fileNameprofiles);%[figureFolder,...
+            % fileNameprofiles])
+    clf('reset')
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

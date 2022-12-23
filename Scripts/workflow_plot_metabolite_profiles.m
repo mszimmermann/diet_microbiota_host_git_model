@@ -25,8 +25,10 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read metabolite data
 metaboliteFolder = '.\metabolomics\ProcessedData\';
-metaboliteData = readtable([inputFolder,...
-    'metabolites_allions_combined_norm_intensity.csv']);
+% metaboliteData = readtable([inputFolder,...
+%     'metabolites_allions_combined_norm_intensity.csv']);
+metaboliteData = readtable([outputFolder,...
+    'metabolites_allions_combined_norm_intensity_with_CVR.csv']);
     
 metaboliteFilters = readtable([inputFolder,...
     'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
@@ -69,6 +71,9 @@ end
 % convert table to matrix
 combinedIntensitiesNorm = table2array(metaboliteData(:,dataColumns));
 
+% remove DC and leave only CVR
+sampleType_unique(ismember(sampleType_unique, {'DC'}))=[];
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot all annotated metabolites across tissues
@@ -86,7 +91,8 @@ combinedIntensitiesNorm = table2array(metaboliteData(:,dataColumns));
 
 % plot compounds with specified masses
 % plotting file name
-fileNameprofiles = 'fig2d_5fg_profiles_mets_across_tissues_with_datapoints_hier_clust_bact_and_system.ps'; 	
+%fileNameprofiles = 'fig2d_5fg_profiles_mets_across_tissues_with_datapoints_hier_clust_bact_and_system.ps'; 	
+fileNameprofiles = 'fig2d_5fg_profiles_mets_across_tissues_with_datapoints_hier_clust_bact_and_system_with_CVR10.ps'; 	
 % select ions to plot by ion MZ
 targetMZ = [147.053; 74.037; 287.210;... %glutamate, propionate, l-octanoylcarnitine 
             499.297; 125.015; 131.058; 226.095;... %aurodeoxycholate, taurine, 5-aminolevulinate, porphobilinogen
@@ -112,6 +118,7 @@ end
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
 % flag whether two remove 1-2 ourliers out of 5
 remove_outliers_flag = 1;
+
 
 fprintf('Plotting profiles for %d metabolites\n',length(compoundsInterest));
 for cpdix=1:length(compoundsInterest)
@@ -147,8 +154,10 @@ for cpdix=1:length(compoundsInterest)
                     curMatrix(indx5000(1:min(2,length(indx5000))))=[];
                 end
                 
+               
                 kmeanMatrix(tissue_i) = nanmean(curMatrix);
                 kstdMatrix(tissue_i) = nanstd(curMatrix);
+                
 
                 subplot(spx,spy,1)
             

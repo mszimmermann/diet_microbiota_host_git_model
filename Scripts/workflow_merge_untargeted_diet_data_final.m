@@ -14,6 +14,7 @@ add_global_and_file_dependencies
 % Output: 
 % Files:
 % 'metabolites_allions_combined_norm_intensity.csv'
+% 'metabolites_allions_combined_norm_intensity_with_CVR.csv'
 % 'metabolites_allions_combined_formulas.csv'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -605,6 +606,45 @@ for i=1:length(joinedAnn)
 end
 fclose(fid);
             
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% save normalized data to file
+
+% rename distal colon (DC) to feces
+combinedTissues(cellfun(@(x) isequal(x, 'DC'), combinedTissues)) = {'Feces'};
+%  remove CVR
+% removeCVR = cellfun(@(x) contains(x,'CVR'), combinedType);
+% combinedIntensitiesNorm(:, removeCVR)=[];
+% combinedDiet(removeCVR)=[];
+% combinedTissues(removeCVR)=[];
+% combinedType(removeCVR)=[];
+% combinedMouse(removeCVR) = [];
+
+fid = fopen([outputFolder 'metabolites_allions_combined_norm_intensity_with_CVR.csv'], 'w');
+fprintf(fid, 'MZ\tRT\tMethod\tMode\tSpectrum');
+for i=1:length(combinedMouse)
+    fprintf(fid, '\t%s_%s_%s_%s', combinedDiet{i}, ...
+        combinedType{i}, combinedTissues{i}, combinedMouse{i});
+end
+fprintf(fid, '\n');
+for i=1:size(combinedIntensitiesNorm,1)
+    fprintf(fid, '%.3f\t',changingMets_merged_mass(i));
+    fprintf(fid, '%.3f\t',changingMets_merged_RT(i));
+    fprintf(fid, '%s\t',changingMets_merged_method{i});
+    fprintf(fid, '%d\t',changingMets_merged_mode(i));
+    fprintf(fid, '%s',changingMets_merged_Spectrum{i});
+%     fprintf(fid, '%.3f\t',metaboliteData.MZ(i));
+%     fprintf(fid, '%.3f\t',metaboliteData.RT(i));
+%     fprintf(fid, '%s\t',metaboliteData.Method{i});
+%     fprintf(fid, '%d\t',metaboliteData.Mode(i));
+%     fprintf(fid, '%s',metaboliteData.Spectrum{i});
+    
+    for j=1:size(combinedIntensitiesNorm,2)
+        fprintf(fid, '\t%f',combinedIntensitiesNorm(i,j));
+    end
+    fprintf(fid, '\n');
+end
+fclose(fid);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save normalized data to file
