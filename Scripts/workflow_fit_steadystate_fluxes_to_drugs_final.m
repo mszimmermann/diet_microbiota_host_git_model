@@ -76,6 +76,8 @@ minval = 0.01;
 
 fprintf('Starting parameter estimation for %d metabolites\n',length(selected_mets));
 
+volumeMatrix = repmat([0.3 0.3 0.3 3 3 3], 4, 1);
+
 for met_i = 1:length(selected_mets)
    
         cmpd_interest_idx = selected_mets(met_i);
@@ -93,6 +95,9 @@ for met_i = 1:length(selected_mets)
                 idx = idx+1;
             end
         end
+        % multiply by volume to get amounts
+        kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
+       
         % normalize by max intensity
         kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
         kmeanMatrix_joint(isnan(kmeanMatrix_joint))=0;
@@ -101,6 +106,7 @@ for met_i = 1:length(selected_mets)
         kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
         kmeanMatrix_joint(kmeanMatrix_joint<minval)+rand(nnz(kmeanMatrix_joint<minval),1)*minval;
 
+       
         % calculate fluxes for average profile
         Aorig = calculateAmatrix_final(kmeanMatrix_joint_orig);
         [A,coefvalues] = calculateAmatrix_final(kmeanMatrix_joint);
@@ -382,7 +388,7 @@ git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plotting file name
-fileNameprofiles = 'fig_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
+fileNameprofiles = 'fig_2023_volume_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
           
 curData_cols = reshape(meanConditions, 6, 4);
 compoundsInterest = 1:length(meanMatrix_mets);
@@ -400,13 +406,16 @@ for cpdix=1:length(compoundsInterest)
     coloridx = 1;
     idx=1;
     curmat = zeros(4,6);
-    %cur_data = reshape(kmean_vector_joint_orig(:,testidx)', 4, 6)';
-    cur_data = reshape(meanMatrix(testidx,:), 6, 4);
+    cur_data = reshape(kmean_vector_joint_orig(:,testidx)', 4, 6);
+    cur_data=cur_data.*volumeMatrix;
+    cur_data = cur_data';
+    %cur_data = reshape(meanMatrix(testidx,:), 6, 4);
     cur_rdata = reshape(x_rdata(:,testidx)', 6, 4);
     
     %normalize rdata to max
     cur_rdata = (cur_rdata-0.8);
     cur_rdata = cur_rdata/max(max(cur_rdata));
+    
     
     legend_entries = cell(4,1);
     for i = 1:size(cur_data,2)
@@ -416,7 +425,7 @@ for cpdix=1:length(compoundsInterest)
         h(i) = plot(cur_data(:,i),...
              'LineWidth', 2,...
              'Color', mycolors(i,:));
-        ylabel('Original normbymax')
+        ylabel('Original normbymax x volume')
 
         subplot(spx,spy,idx+1);
         hold on
