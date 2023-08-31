@@ -85,7 +85,7 @@ x_data_corr_LI_shuffled = zeros(length(selected_mets),1);
 x_rdata = zeros(size(Ra,2),length(selected_mets));
 x_rdata_shuffled = zeros(size(Ra,2),length(selected_mets));
 
-minval = 0.01;
+%minval = 0.01;
 
 fprintf('Starting parameter estimation for %d metabolites\n',length(selected_mets));
 
@@ -123,94 +123,70 @@ for met_i = 3:20%length(selected_mets)
         % normalize by max intensity
         kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
         kmeanMatrix_joint(isnan(kmeanMatrix_joint))=0;
-        % replace small values with noise
-        kmeanMatrix_joint_orig = kmeanMatrix_joint;
-        kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
-        kmeanMatrix_joint(kmeanMatrix_joint<minval)+rand(nnz(kmeanMatrix_joint<minval),1)*minval;
 
        
-        % calculate fluxes for average profile
-        Aorig = calculateAmatrix_final(kmeanMatrix_joint_orig);
-        [A,coefvalues] = calculateAmatrix_final(kmeanMatrix_joint);
-        A(Aorig(:,1)==0,:)=[];
-        b = zeros(size(A,1),1);
-
-        xlowerlim = zeros(size(A,2),1);
-        xlowerlim(2:end)=-Inf;
-
-        %%%%%%%%%%%%%%%%%%%%%%%%%
-        %set bact to zero
-        xupperlim = Inf*ones(size(A,2),1);
-        %%%%%%%%%%%%%%%%%%%%%%%%%
-        % check if A is empty an if yes move to the next metabolite
-        if isempty(A)
-            continue;
-        end
-
-        %         options = optimoptions(@lsqlin,'Display', 'off',...
-%             'Algorithm','trust-region-reflective','MaxIterations',1500);
-%     'interior-point' (default)
-%     'trust-region-reflective'
-%     'active-set'
-
-        % test solutions from different algorithms
-        nrepeat=100;
-        %nalgs = {'interior-point', 'trust-region-reflective'};
-        nalgs = {'trust-region-reflective'};
-        if size(A,2)>size(A,1)
-             nalgs = {'interior-point'};
-        end
-        testx = zeros(size(A,2),nrepeat*length(nalgs));
-        testxres = zeros(1,nrepeat*length(nalgs));
-        testCorrRev = zeros(1,nrepeat*length(nalgs));
-        testx_idx=1;
-        for nalgs_i = 1:length(nalgs)
-            for nrepeat_i = 1:nrepeat
-                options = optimoptions(@lsqlin,'Display', 'off',...
-                    'Algorithm',nalgs{nalgs_i},'MaxIterations',1500);
-                rand_x0=rand(5,1);
-                rand_x0 = [rand_x0(1); rand_x0(2:4);rand_x0(2:4);rand_x0(5);rand_x0(5)];
-                if testx_idx==10
-                    rand_x0 = testx(:,1); % interior point solution
-                end
-                %[x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, rand(size(A,2),1), options);
-                [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, rand_x0, options);
-                testx(:, testx_idx) = x;
-                testxres(testx_idx) = xres;
-                
-                % calculate reverse problem
-                options = optimoptions(@lsqlin,'Display', 'off',...
-                    'Algorithm','interior-point','MaxIterations',1500);
-                [Ra,rb] = calculateRAmatrix_final(x*1000);
-                dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
-                dataR = reshape(dataR,[],4)';
-
-                testCorrRev(testx_idx) = corr(kmeanMatrix_joint_orig(:), dataR(:));
-                
-                testx_idx = testx_idx+1;
-            end
-        end
+        %[gitfit] = fitGITmodel(kmeanMatrix_joint, ncond, shuffle_flag)
+        [gitfit] = fitGITmodel(kmeanMatrix_joint, 2, 1);
         
         fig = figure('units','normalized','outerposition',[0 0 1 1]);
 
-        subplot(2,2,1)
+        subplot(2,3,1)
         plot(kmeanMatrix_joint')
         legend(repmat(sampleType_unique,1,2))
         
-        subplot(2,2,2)
-        testx_norm = testx./max(abs(testx));
+        subplot(2,3,2)
+        testx_norm = gitfit.testx./max(abs(gitfit.testx));
         boxplot(testx_norm')
         
-        subplot(2,2,3)
+        subplot(2,3,3)
         %testx_norm = testx(2:end,:)./max(abs(testx(2:end,:)));
-        testx_norm = testx(:,testCorrRev>0.7)./max(abs(testx(:,testCorrRev>0.7)));
+        testx_norm = gitfit.testx(:,gitfit.testCorrRev>0.7)./...
+            max(abs(gitfit.testx(:,gitfit.testCorrRev>0.7)));
         boxplot(testx_norm', 'PlotStyle','compact')
         
-        subplot(2,2,4)
-        %plot(sort(testxres))
-        histogram(testCorrRev)
+        subplot(2,3,4)
+        histogram(gitfit.testCorrRev)
+        
+        % get the best x
+        x = testx(:,testargmax);
+        
+        subplot(2,3,5)
+        barh(x(2:end)/abs(max(x(2:end))))
+        
+        % get the best reciprocal
+        x = [x(1); x(2:4); x(2:4); x(5); x(5)];
+        % calculate reverse problem
+        options = optimoptions(@lsqlin,'Display', 'off',...
+            'Algorithm','interior-point','MaxIterations',1500);
+        [Ra,rb] = calculateRAmatrix_final(x*1000);
+        dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
+        dataR = reshape(dataR,[],4)';
+        
+        subplot(2,3,6)
+        plot(dataR')
         
         suptitle(meanMatrix_mets{met_i});
+        
+        
+        [testmax, testargmax] = max(testCorrRev+testCorrRevSI + testCorrRevLI);
+        sprintf('total corr = %.3f SI = %.3f LI = %.3f\n',...
+            testCorrRev(testargmax), testCorrRevSI(testargmax),...
+            testCorrRevLI(testargmax))
+
+        sprintf('mean corr = %.3f median corr = %.3f nnz0.7 = %.3f\n',...
+            mean(testCorrRev), median(testCorrRev),nnz(testCorrRev>0.7))
+
+        sprintf('SHUFFLED mean corr = %.3f median corr = %.3f nnz0.7 = %.3f\n',...
+            mean(testCorrRev_shuffled), median(testCorrRev_shuffled),...
+            nnz(testCorrRev_shuffled>0.7))
+
+        x = testx(:,testargmax)
+        x(2:end)/abs(max(x(2:end)))
+        
+        
+        
+        
+        
         
         options = optimoptions(@lsqlin,'Display', 'off',...
                     'Algorithm','interior-point','MaxIterations',1500);

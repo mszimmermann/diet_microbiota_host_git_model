@@ -123,6 +123,7 @@ options = optimoptions(@lsqlin,'Display', 'off',...
             'Algorithm','interior-point','MaxIterations',1500);
 rand_x0=rand(size(A,2),1);
 [x_ip] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, rand_x0, options);
+x_ip_orig = x_ip;
  
 % if there are two conditions, they have to be 
 % duplicated to solve the reverse problem for now
@@ -156,7 +157,7 @@ gitfit.b = A;
 gitfit.xlowerlim = xlowerlim;
 gitfit.xupperlim = xupperlim;
 
-gitfit.x_ip = x_ip;
+gitfit.x_ip = x_ip_orig;
 gitfit.dataR_ip = dataR_ip;
 gitfit.x_ip_CorrRev = x_ip_CorrRev;
 gitfit.x_ip_CorrRevSI = x_ip_CorrRevSI;
