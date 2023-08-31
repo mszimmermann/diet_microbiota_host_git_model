@@ -66,6 +66,19 @@ x_data_corr = zeros(length(selected_mets),1);
 x_resid = zeros(length(selected_mets),1);
 x_data_corr_shuffled = zeros(length(selected_mets),1);
 
+% save Rsquared of total
+% calculate corr and Rsquared of SI and LI separately
+x_data_Rsq = zeros(length(selected_mets),1);
+x_data_Rsq_shuffled = zeros(length(selected_mets),1);
+x_data_Rsq_SI = zeros(length(selected_mets),1);
+x_data_Rsq_SI_shuffled = zeros(length(selected_mets),1);
+x_data_Rsq_LI = zeros(length(selected_mets),1);
+x_data_Rsq_LI_shuffled = zeros(length(selected_mets),1);
+x_data_corr_SI = zeros(length(selected_mets),1);
+x_data_corr_SI_shuffled = zeros(length(selected_mets),1);
+x_data_corr_LI = zeros(length(selected_mets),1);
+x_data_corr_LI_shuffled = zeros(length(selected_mets),1);
+
 % calculate reverse A matrix with zero matrix of the right size to allocate
 % variables according to Ra size
 [Ra] = calculateRAmatrix_final(zeros(size(coefvalues)));
@@ -76,11 +89,20 @@ minval = 0.01;
 
 fprintf('Starting parameter estimation for %d metabolites\n',length(selected_mets));
 
-volumeMatrix = repmat([0.3 0.3 0.3 3 3 3], 4, 1);
+volumeMatrix_CVR = repmat([0.3 0.3 0.3 0.3 0.3 0.3;...
+                           0.3 0.3 0.3 3 3 3], 2, 1);
+volumeMatrix_GF = repmat([0.3 0.3 0.3 3 3 3], 4, 1);
 
-for met_i = 1:length(selected_mets)
+fig = figure('units','normalized','outerposition',[0 0 1 1]);
+for met_i = 3:20%length(selected_mets)
    
         cmpd_interest_idx = selected_mets(met_i);
+        % set volume to CV or GF/WT
+        if contains(meanMatrix_mets{cmpd_interest_idx}, '_CV')
+            volumeMatrix = volumeMatrix_CVR;
+        else
+            volumeMatrix = volumeMatrix_GF;
+        end
         % calculate mean profiles            
         idx=1;
         kmeanMatrix_joint = zeros(4,6);
@@ -112,7 +134,6 @@ for met_i = 1:length(selected_mets)
         [A,coefvalues] = calculateAmatrix_final(kmeanMatrix_joint);
         A(Aorig(:,1)==0,:)=[];
         b = zeros(size(A,1),1);
-        options = optimoptions(@lsqlin,'Display', 'off');
 
         xlowerlim = zeros(size(A,2),1);
         xlowerlim(2:end)=-Inf;
@@ -126,9 +147,80 @@ for met_i = 1:length(selected_mets)
             continue;
         end
 
-        [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, [], options);
+        %         options = optimoptions(@lsqlin,'Display', 'off',...
+%             'Algorithm','trust-region-reflective','MaxIterations',1500);
+%     'interior-point' (default)
+%     'trust-region-reflective'
+%     'active-set'
+
+        % test solutions from different algorithms
+        nrepeat=100;
+        %nalgs = {'interior-point', 'trust-region-reflective'};
+        nalgs = {'trust-region-reflective'};
+        if size(A,2)>size(A,1)
+             nalgs = {'interior-point'};
+        end
+        testx = zeros(size(A,2),nrepeat*length(nalgs));
+        testxres = zeros(1,nrepeat*length(nalgs));
+        testCorrRev = zeros(1,nrepeat*length(nalgs));
+        testx_idx=1;
+        for nalgs_i = 1:length(nalgs)
+            for nrepeat_i = 1:nrepeat
+                options = optimoptions(@lsqlin,'Display', 'off',...
+                    'Algorithm',nalgs{nalgs_i},'MaxIterations',1500);
+                rand_x0=rand(5,1);
+                rand_x0 = [rand_x0(1); rand_x0(2:4);rand_x0(2:4);rand_x0(5);rand_x0(5)];
+                if testx_idx==10
+                    rand_x0 = testx(:,1); % interior point solution
+                end
+                %[x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, rand(size(A,2),1), options);
+                [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, rand_x0, options);
+                testx(:, testx_idx) = x;
+                testxres(testx_idx) = xres;
+                
+                % calculate reverse problem
+                options = optimoptions(@lsqlin,'Display', 'off',...
+                    'Algorithm','interior-point','MaxIterations',1500);
+                [Ra,rb] = calculateRAmatrix_final(x*1000);
+                dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
+                dataR = reshape(dataR,[],4)';
+
+                testCorrRev(testx_idx) = corr(kmeanMatrix_joint_orig(:), dataR(:));
+                
+                testx_idx = testx_idx+1;
+            end
+        end
+        
+        fig = figure('units','normalized','outerposition',[0 0 1 1]);
+
+        subplot(2,2,1)
+        plot(kmeanMatrix_joint')
+        legend(repmat(sampleType_unique,1,2))
+        
+        subplot(2,2,2)
+        testx_norm = testx./max(abs(testx));
+        boxplot(testx_norm')
+        
+        subplot(2,2,3)
+        %testx_norm = testx(2:end,:)./max(abs(testx(2:end,:)));
+        testx_norm = testx(:,testCorrRev>0.7)./max(abs(testx(:,testCorrRev>0.7)));
+        boxplot(testx_norm', 'PlotStyle','compact')
+        
+        subplot(2,2,4)
+        %plot(sort(testxres))
+        histogram(testCorrRev)
+        
+        suptitle(meanMatrix_mets{met_i});
+        
+        options = optimoptions(@lsqlin,'Display', 'off',...
+                    'Algorithm','interior-point','MaxIterations',1500);
+
+        [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, [], options);        
         x_met_smooth(:, met_i) = x;
         x_resid(met_i) = xres;
+        
+    
+      
 
 
     [Ra,rb] = calculateRAmatrix_final(x*1000);
@@ -140,6 +232,16 @@ for met_i = 1:length(selected_mets)
     dataR = reshape(dataR,[],4)';
 
     x_data_corr(met_i) = corr(kmeanMatrix_joint_orig(:), dataR(:));
+    x_data_corr_SI(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,1:3),[],1),...
+                                 reshape(dataR(:,1:3),[],1));
+    x_data_corr_LI(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,4:end),[],1),...
+                                 reshape(dataR(:,4:end),[],1));
+
+%     x_data_Rsq(met_i) = calculate_gof(dataR(:), kmeanMatrix_joint_orig(:));
+%     x_data_Rsq_SI(met_i) = calculate_gof(reshape(dataR(:,1:3),[],1),...
+%                                          reshape(kmeanMatrix_joint_orig(:,1:3),[],1));
+%     x_data_Rsq_LI(met_i) = calculate_gof(reshape(dataR(:,4:end),[],1),...
+%                                          reshape(kmeanMatrix_joint_orig(:,4:end),[],1));
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % calculate reverse problem for shuffled x
@@ -154,7 +256,12 @@ for met_i = 1:length(selected_mets)
     dataR_shuffled = reshape(dataR_shuffled,[],4)';
 
     x_data_corr_shuffled(met_i) = corr(kmeanMatrix_joint_orig(:), dataR_shuffled(:));
+    x_data_corr_SI_shuffled(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,1:3),[],1),...
+                                          reshape(dataR_shuffled(:,1:3),[],1));
+    x_data_corr_LI_shuffled(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,4:6),[],1),...
+                                          reshape(dataR_shuffled(:,4:6),[],1));
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 end
 
 % get the original metabolomics data as vectors to calculate correlations
@@ -164,6 +271,12 @@ kmean_vector_joint = zeros(size(Ra,2),length(selected_mets));
 for met_i = 1:length(selected_mets)
    
     cmpd_interest_idx = selected_mets(met_i);
+    % set volume to CV or GF/WT
+        if contains(meanMatrix_mets{cmpd_interest_idx}, '_CV')
+            volumeMatrix = volumeMatrix_CVR;
+        else
+            volumeMatrix = volumeMatrix_GF;
+        end
     % calculate mean profiles            
     idx=1;
     kmeanMatrix_joint = zeros(4,6);
@@ -178,6 +291,9 @@ for met_i = 1:length(selected_mets)
             idx = idx+1;
         end
     end
+    % multiply by volume to get amounts
+    kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
+     
     % normalize by max intensity
     kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
     % replace small values with noise
@@ -349,9 +465,9 @@ p_corr_diff = ranksum(x_data_corr_shuffled(met_filter==1),...
     x_data_corr(met_filter==1));
 figure
 % pearson corr all 
-h = histogram(x_data_corr_shuffled(met_filter==1),100);
+h = histogram(x_data_corr_LI_shuffled(met_filter==1),100);
 hold on
-histogram(x_data_corr(met_filter==1),100)
+histogram(x_data_corr_LI(met_filter==1),100)
 xlim([-1 1])
 axis square
 xlabel('Pearson correlation between metabolomics data and model estimate')
@@ -375,7 +491,21 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
     'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated_CVR'])
        %'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated'])
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% heatmap coefficients and metabolites
+plotorder = [1:2:20 2:2:20 21:length(meanMatrix_mets)];
+plotdata = x_data_corr(plotorder).*...
+            ( (x_data_corr(plotorder)>=0.7) &...
+              ((x_data_corr_SI(plotorder)>=0.7) |...
+               (x_data_corr_LI(plotorder)>=0.7)));
+plotdata_names = meanMatrix_mets(plotorder);
+plotdata = [[reshape(plotdata(1:30),5,[])' zeros(6,1)];...
+            reshape(plotdata(31:end),6,[])'];
+plotdata_names = [[reshape(plotdata_names(1:30),5,[])' repmat({'NaN'},6,1)];...
+                   reshape(plotdata_names(31:end,:),6,[])'];
+heatmap(plotdata,...
+        'YDisplayLabels', plotdata_names(:,1),...
+        'XDisplayLabels', {'0', '3', '5', '7', '9', '12'})               
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot data and restored intensities and model coefficients
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -388,7 +518,7 @@ git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plotting file name
-fileNameprofiles = 'fig_2023_volume_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
+fileNameprofiles = 'fig_2023_moreGOF_volume_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
           
 curData_cols = reshape(meanConditions, 6, 4);
 compoundsInterest = 1:length(meanMatrix_mets);
@@ -400,6 +530,13 @@ for cpdix=1:length(compoundsInterest)
     
     testidx = compoundsInterest(cpdix);
 
+    % set volume to CV or GF/WT
+%         if contains(meanMatrix_mets{testidx}, '_CV')
+%             volumeMatrix = volumeMatrix_CVR;
+%         else
+%             volumeMatrix = volumeMatrix_GF;
+%         end
+        
     spx=1;
     spy=3;
     spidx = 1;
@@ -407,7 +544,7 @@ for cpdix=1:length(compoundsInterest)
     idx=1;
     curmat = zeros(4,6);
     cur_data = reshape(kmean_vector_joint_orig(:,testidx)', 4, 6);
-    cur_data=cur_data.*volumeMatrix;
+    %cur_data=cur_data.*volumeMatrix;
     cur_data = cur_data';
     %cur_data = reshape(meanMatrix(testidx,:), 6, 4);
     cur_rdata = reshape(x_rdata(:,testidx)', 6, 4);
@@ -435,11 +572,13 @@ for cpdix=1:length(compoundsInterest)
         ylabel('Restored normbymax')
 
     end
-    title(sprintf('%s PCC=%.2f',...
-                  meanMatrix_mets{testidx},...
-                        x_data_corr(testidx)),...
-                        'Interpreter', 'none');
-
+    title({sprintf('%s', meanMatrix_mets{testidx}),...
+           sprintf('PCC=%.2f PCC_SI=%.2f PCC_LI=%.2f',...
+                   x_data_corr(testidx),x_data_corr_SI(testidx),x_data_corr_LI(testidx)),...
+           sprintf('RSQ=%.2f RSQ_SI=%.2f RSQ_LI=%.2f',...
+                   x_data_Rsq(testidx),x_data_Rsq_SI(testidx),x_data_Rsq_LI(testidx))},...
+                   'Interpreter', 'none');
+               
     legend(h, curData_cols(1,:),...
              'Interpreter', 'none');%, 'Location', 'bestoutside');
     

@@ -93,86 +93,86 @@ for ds_i = 1:length(dataSheetnames)
     meanMets_cell{ds_i} = meanTable_mets;
 end
 
-cell(length(modelfilenames),1);
-t_mets = cell(length(modelfilenames),1);
-P_tissues = {'P_si1','P_si2','P_si3',...
-             'P_cecum', 'P_colon', 'P_feces'};
-M_tissues = {'M_cecum', 'M_colon', 'M_feces'};
-t_conditions = [strcat('GF_', ...
-    cellfun(@(x) strrep(x, 'P_', 'Chow1_'), P_tissues, 'unif', 0)),...
-    strcat('BAC_', ...
-    cellfun(@(x) strrep(x, 'P_', 'Chow1_'), P_tissues, 'unif', 0))];
-
-    
-for files_i = 1:length(datafilenames)
-    datafilename1 = [dataFolder datafilenames1{files_i}];
-    datafilename2 = [dataFolder datafilenames2{files_i}];
-    
-    % build model according to the definition in the table 
-    [modelGutUniversal] = create_model_from_file(modelfilename);
-    % load experimental data
-    [t_GF,metNamesMap_GF, gd_GF, useForFitting_GF] = load_data_from_file(datafilename1);
-
-    [t_MB,metNamesMap_MB, gd_MB, useForFitting_MB] = load_data_from_file(datafilename2);
-             
-    [~, ~, idxP_GF] = intersect(P_tissues,...
-        t_GF.Properties.VariableNames, 'stable');
-    [~, ~, idxM_GF] = intersect(M_tissues,...
-        t_GF.Properties.VariableNames, 'stable');
-    [~, ~, idxP_MB] = intersect(P_tissues,...
-        t_MB.Properties.VariableNames, 'stable');
-    [~, ~, idxM_MB] = intersect(M_tissues,...
-        t_MB.Properties.VariableNames, 'stable');
-  
-    time3 = find(t_GF.Time==3);
-   
-  
-    figure
-    spidx = 1;
-    for i=time3:size(t_GF,1)
-        subplot(2,3,spidx)
-        plot(t_GF{i,idxP_GF})
-        hold on
-        plot(t_MB{i,idxP_MB})
-        title(sprintf('Time = %d h', t_GF{i,1}))
-        set(gca,'XTick', 1:6)
-        set(gca,'XTickLabel', t_GF.Properties.VariableNames(idxP_GF))
-        spidx = spidx+1;
-        legend({'GF', 'MB'})
-    end
-    suptitle('Parent drug')
-        
-    figure
-    spidx = 1;
-    for i=time3:size(t_GF,1)
-        subplot(2,3,spidx)
-        plot([0 0 0 t_GF{i,idxM_GF}])
-        hold on
-        plot([0 0 0 t_MB{i,idxM_MB}])
-        title(sprintf('Time = %d h', t_GF{i,1}))
-        set(gca,'XTick', 1:6)
-        set(gca,'XTickLabel', t_GF.Properties.VariableNames(idxP_GF))
-        spidx = spidx+1;
-        legend({'GF', 'MB'})
-    end
-    suptitle('Drug metabolite')
-
-    t{files_i} = [[t_GF{time3:end,idxP_GF};...
-                     [zeros(size(t_GF,1)-time3+1,3)...
-                      t_GF{time3:end,idxM_GF}]],...   
-                  [t_MB{time3:end,idxP_MB};...
-                     [zeros(size(t_MB,1)-time3+1,3)...
-                     t_MB{time3:end,idxM_MB}]]];   
-
-    
-    t_mets{files_i} = [strcat(strrep(...
-                           strrep(datafilenames1{files_i}, '.csv',''),...
-                           'example_data_',''),'_',...
-                           arrayfun(@(x) num2str(x), t_GF.Time(time3:end),...
-                            'unif', 0));...
-                       strcat('met',strrep(...
-                           strrep(datafilenames1{files_i}, '.csv',''),...
-                           'example_data_',''),'_',...
-                           arrayfun(@(x) num2str(x), t_GF.Time(time3:end),...
-                            'unif', 0))];     
-end
+% cell(length(modelfilenames),1);
+% t_mets = cell(length(modelfilenames),1);
+% P_tissues = {'P_si1','P_si2','P_si3',...
+%              'P_cecum', 'P_colon', 'P_feces'};
+% M_tissues = {'M_cecum', 'M_colon', 'M_feces'};
+% t_conditions = [strcat('GF_', ...
+%     cellfun(@(x) strrep(x, 'P_', 'Chow1_'), P_tissues, 'unif', 0)),...
+%     strcat('BAC_', ...
+%     cellfun(@(x) strrep(x, 'P_', 'Chow1_'), P_tissues, 'unif', 0))];
+% 
+%     
+% for files_i = 1:length(datafilenames)
+%     datafilename1 = [dataFolder datafilenames1{files_i}];
+%     datafilename2 = [dataFolder datafilenames2{files_i}];
+%     
+%     % build model according to the definition in the table 
+%     [modelGutUniversal] = create_model_from_file(modelfilename);
+%     % load experimental data
+%     [t_GF,metNamesMap_GF, gd_GF, useForFitting_GF] = load_data_from_file(datafilename1);
+% 
+%     [t_MB,metNamesMap_MB, gd_MB, useForFitting_MB] = load_data_from_file(datafilename2);
+%              
+%     [~, ~, idxP_GF] = intersect(P_tissues,...
+%         t_GF.Properties.VariableNames, 'stable');
+%     [~, ~, idxM_GF] = intersect(M_tissues,...
+%         t_GF.Properties.VariableNames, 'stable');
+%     [~, ~, idxP_MB] = intersect(P_tissues,...
+%         t_MB.Properties.VariableNames, 'stable');
+%     [~, ~, idxM_MB] = intersect(M_tissues,...
+%         t_MB.Properties.VariableNames, 'stable');
+%   
+%     time3 = find(t_GF.Time==3);
+%    
+%   
+%     figure
+%     spidx = 1;
+%     for i=time3:size(t_GF,1)
+%         subplot(2,3,spidx)
+%         plot(t_GF{i,idxP_GF})
+%         hold on
+%         plot(t_MB{i,idxP_MB})
+%         title(sprintf('Time = %d h', t_GF{i,1}))
+%         set(gca,'XTick', 1:6)
+%         set(gca,'XTickLabel', t_GF.Properties.VariableNames(idxP_GF))
+%         spidx = spidx+1;
+%         legend({'GF', 'MB'})
+%     end
+%     suptitle('Parent drug')
+%         
+%     figure
+%     spidx = 1;
+%     for i=time3:size(t_GF,1)
+%         subplot(2,3,spidx)
+%         plot([0 0 0 t_GF{i,idxM_GF}])
+%         hold on
+%         plot([0 0 0 t_MB{i,idxM_MB}])
+%         title(sprintf('Time = %d h', t_GF{i,1}))
+%         set(gca,'XTick', 1:6)
+%         set(gca,'XTickLabel', t_GF.Properties.VariableNames(idxP_GF))
+%         spidx = spidx+1;
+%         legend({'GF', 'MB'})
+%     end
+%     suptitle('Drug metabolite')
+% 
+%     t{files_i} = [[t_GF{time3:end,idxP_GF};...
+%                      [zeros(size(t_GF,1)-time3+1,3)...
+%                       t_GF{time3:end,idxM_GF}]],...   
+%                   [t_MB{time3:end,idxP_MB};...
+%                      [zeros(size(t_MB,1)-time3+1,3)...
+%                      t_MB{time3:end,idxM_MB}]]];   
+% 
+%     
+%     t_mets{files_i} = [strcat(strrep(...
+%                            strrep(datafilenames1{files_i}, '.csv',''),...
+%                            'example_data_',''),'_',...
+%                            arrayfun(@(x) num2str(x), t_GF.Time(time3:end),...
+%                             'unif', 0));...
+%                        strcat('met',strrep(...
+%                            strrep(datafilenames1{files_i}, '.csv',''),...
+%                            'example_data_',''),'_',...
+%                            arrayfun(@(x) num2str(x), t_GF.Time(time3:end),...
+%                             'unif', 0))];     
+% end
