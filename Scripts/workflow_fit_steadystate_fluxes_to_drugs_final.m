@@ -430,9 +430,33 @@ plotdata = [[reshape(plotdata(1:32),4,[])' zeros(8,1)];...
             reshape(plotdata(33:end),5,[])'];
 plotdata_names = [[reshape(plotdata_names(1:32),4,[])' repmat({'NaN'},8,1)];...
                    reshape(plotdata_names(33:end,:),5,[])'];
+plotdata_names_compounds = cellfun(@(x) strrep(x,'_','-'),plotdata_names(:,1),'unif',0);
+plotdata_times = {'3', '5', '7', '9', '12'};
+
 heatmap(plotdata,...
         'YDisplayLabels', plotdata_names(:,1),...
-        'XDisplayLabels', {'3', '5', '7', '9', '12'})               
+        'XDisplayLabels', {'3', '5', '7', '9', '12'})     
+    
+plotdataSI = x_data_corr_SI(plotorder);
+plotdataSI = [[reshape(plotdataSI(1:32),4,[])' zeros(8,1)];...
+               reshape(plotdataSI(33:end),5,[])'];
+plotdataLI = x_data_corr_LI(plotorder);
+plotdataLI = [[reshape(plotdataLI(1:32),4,[])' zeros(8,1)];...
+               reshape(plotdataLI(33:end),5,[])'];
+plotdataMEAN = x_data_corr_mean(plotorder);
+plotdataMEAN = [[reshape(plotdataMEAN(1:32),4,[])' zeros(8,1)];...
+               reshape(plotdataMEAN(33:end),5,[])'];
+       
+AB = reshape([plotdata;plotdataSI], size(plotdata,1), []);
+CD = reshape([plotdataLI; plotdataMEAN], size(plotdataLI,1), []);
+[m,n] = size(AB);
+ABCD = zeros(2*m,n);
+ABCD(1:2:end,:) = AB;
+ABCD(2:2:end,:) = CD;
+heatmap(ABCD,...
+        'YDisplayLabels', reshape(repmat(plotdata_names_compounds',2,1),[],1),...
+        'XDisplayLabels', reshape(repmat(plotdata_times,2,1),[],1));
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot data and restored intensities and model coefficients
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
