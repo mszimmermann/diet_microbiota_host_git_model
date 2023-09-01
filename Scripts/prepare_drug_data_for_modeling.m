@@ -89,9 +89,16 @@ for ds_i = 1:length(dataSheetnames)
     meanTable_data(idx:end,:) = [];
     meanTable_mets(idx:end) = [];
     
+    % remove T0 metabolites
+    t0metabolites = cellfun(@(x) contains(x, '_0_'), meanTable_mets);
+    meanTable_data(t0metabolites,:) = [];
+    meanTable_mets(t0metabolites) = [];
+    
+    % save dataset to cell
     meanData_cell{ds_i} = meanTable_data;
     meanMets_cell{ds_i} = meanTable_mets;
 end
+
 
 % cell(length(modelfilenames),1);
 % t_mets = cell(length(modelfilenames),1);
