@@ -93,10 +93,30 @@ volumeMatrix_CVR = repmat([0.3 0.3 0.3 0.3 0.3 0.3;...
                            0.3 0.3 0.3 3 3 3], 2, 1);
 volumeMatrix_GF = repmat([0.3 0.3 0.3 3 3 3], 4, 1);
 
-fileNameFigure = [figureFolder...
-    'fig_2023_drugdiag_volume_profiles_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
 
-fig = figure('units','normalized','outerposition',[0 0 1 1]);
+% use volume flag
+use_volume_flag = 1;
+if use_volume_flag
+%     fileNameFigure = [figureFolder...
+%         'fig_2023_drugdiag_volume_profiles_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
+    fileNameFigure = [figureFolder...
+        'fig_2023_drugdiag_volume_4profiles_plus_mut_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
+else
+%     fileNameFigure = [figureFolder...
+%         'fig_2023_drugdiag_conc_profiles_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
+
+    fileNameFigure = [figureFolder...
+        'fig_2023_drugdiag_conc_4profiles_plus_mut_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
+end
+
+diag_plot_flag = 0; % diagnostic plotting flag
+if diag_plot_flag
+    fig = figure('units','normalized','outerposition',[0 0 1 1]);
+end
+
+met_gitfits = cell(length(selected_mets),1);
+met_bestsols = cell(length(selected_mets),1);
+
 for met_i = 1:length(selected_mets)
    
         cmpd_interest_idx = selected_mets(met_i);
@@ -120,9 +140,11 @@ for met_i = 1:length(selected_mets)
                 idx = idx+1;
             end
         end
-        % multiply by volume to get amounts
-        kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
-       
+        
+        if use_volume_flag
+            % multiply by volume to get amounts
+            kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
+        end
         % normalize by max intensity
         kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
         kmeanMatrix_joint(isnan(kmeanMatrix_joint))=0;
@@ -130,119 +152,81 @@ for met_i = 1:length(selected_mets)
        
         %[gitfit] = fitGITmodel(kmeanMatrix_joint, ncond, shuffle_flag)
         [gitfit] = fitGITmodel(kmeanMatrix_joint, 2, 1);
+        % get best solution
+        [bestsol] = select_gitfit_sol(gitfit);
         
-        gitfit_diag_plot(gitfit,meanMatrix_mets{met_i},fig)
+        % save gitfit and best solution for the current metabolite
+        met_gitfits{met_i} = gitfit;
+        met_bestsols{met_i} = bestsol;
         
-        orient landscape
-        %print to figure
-        print(fig, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
-                fileNameFigure);
-        clf('reset')
-    
-     
-%         options = optimoptions(@lsqlin,'Display', 'off',...
-%                     'Algorithm','interior-point','MaxIterations',1500);
-% 
-%         [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, [], options);        
-%         x_met_smooth(:, met_i) = x;
-%         x_resid(met_i) = xres;
+        if diag_plot_flag
+            gitfit_diag_plot(gitfit,meanMatrix_mets{met_i},fig)
 
-%     [Ra,rb] = calculateRAmatrix_final(x*1000);
-%     dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
-%     % save reconstructed data
-%     x_rdata(:,met_i) = dataR;
-% 
-%     %rsshape to matrix form
-%     dataR = reshape(dataR,[],4)';
-% 
-%     x_data_corr(met_i) = corr(kmeanMatrix_joint_orig(:), dataR(:));
-%     x_data_corr_SI(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,1:3),[],1),...
-%                                  reshape(dataR(:,1:3),[],1));
-%     x_data_corr_LI(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,4:end),[],1),...
-%                                  reshape(dataR(:,4:end),[],1));
-% 
-% %     x_data_Rsq(met_i) = calculate_gof(dataR(:), kmeanMatrix_joint_orig(:));
-% %     x_data_Rsq_SI(met_i) = calculate_gof(reshape(dataR(:,1:3),[],1),...
-% %                                          reshape(kmeanMatrix_joint_orig(:,1:3),[],1));
-% %     x_data_Rsq_LI(met_i) = calculate_gof(reshape(dataR(:,4:end),[],1),...
-% %                                          reshape(kmeanMatrix_joint_orig(:,4:end),[],1));
-% 
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     % calculate reverse problem for shuffled x
-%     x_shuffled = x(randperm(length(x)));
-%     [Ra_shuffled,rb_shuffled] = calculateRAmatrix_final(x_shuffled*1000);
-%     dataR_shuffled = lsqlin(Ra_shuffled,rb_shuffled,[],[],[],[],...
-%                             zeros(1,size(Ra_shuffled,2)), [], [], options);
-%     % save reconstructed data
-%     x_rdata_shuffled(:,met_i) = dataR_shuffled;
-% 
-%     %rsshape to matrix form
-%     dataR_shuffled = reshape(dataR_shuffled,[],4)';
-% 
-%     x_data_corr_shuffled(met_i) = corr(kmeanMatrix_joint_orig(:), dataR_shuffled(:));
-%     x_data_corr_SI_shuffled(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,1:3),[],1),...
-%                                           reshape(dataR_shuffled(:,1:3),[],1));
-%     x_data_corr_LI_shuffled(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,4:6),[],1),...
-%                                           reshape(dataR_shuffled(:,4:6),[],1));
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+            orient landscape
+            %print to figure
+            print(fig, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
+                    fileNameFigure);
+            clf('reset')
+        end    
 end
 
-% get the original metabolomics data as vectors to calculate correlations
-% between original and restored measurements
-kmean_vector_joint_orig = zeros(size(Ra,2),length(selected_mets));
-kmean_vector_joint = zeros(size(Ra,2),length(selected_mets));
-for met_i = 1:length(selected_mets)
-   
-    cmpd_interest_idx = selected_mets(met_i);
-    % set volume to CV or GF/WT
-        if contains(meanMatrix_mets{cmpd_interest_idx}, '_CV')
-            volumeMatrix = volumeMatrix_CVR;
-        else
-            volumeMatrix = volumeMatrix_GF;
-        end
-    % calculate mean profiles            
-    idx=1;
-    kmeanMatrix_joint = zeros(4,6);
-    for diet_i = 1:length(sampleDiet_unique)
-        for type_i = 1:length(sampleType_unique)
-            selectDiet = sampleDiet_unique{diet_i};
-            selectMouse = sampleType_unique{type_i};
-            kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
-            % get serum and liver data
-            kmeanMatrix = kmeanMatrix(cmpd_interest_idx,1:6);
-            kmeanMatrix_joint(idx,:) = kmeanMatrix;
-            idx = idx+1;
-        end
-    end
-    % multiply by volume to get amounts
-    kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
-     
-    % normalize by max intensity
-    kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
-    % replace small values with noise
-    kmeanMatrix_joint_orig = kmeanMatrix_joint;
-    kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
-    kmeanMatrix_joint(kmeanMatrix_joint<minval)+rand(nnz(kmeanMatrix_joint<minval),1)*minval;
-    
-    kmean_vector_joint_orig(:, met_i) = kmeanMatrix_joint_orig(:);
-    kmean_vector_joint(:, met_i) = kmeanMatrix_joint(:);
-end
 
-% calculate Spearman correlations
-x_corr_Spearman = zeros(size(x_data_corr));
-corr_Mouse = zeros(length(x_data_corr),4);
-corr_Mouse_Spearman = zeros(length(x_data_corr),4);
 
-for i = 1:length(x_data_corr)
-    dataR = reshape(x_rdata(:,i),[],4)';
-    dataOrig = reshape(kmean_vector_joint_orig(:,i),4,[]);
-
-    x_corr_Spearman(i) = corr(dataOrig(:), dataR(:), 'type', 'Spearman');
-    corr_Mouse(i,:) = diag(corr(dataOrig', dataR'));
-    corr_Mouse_Spearman(i,:) = diag(corr(dataOrig', dataR', 'type', 'Spearman'));
-
-end
+% % get the original metabolomics data as vectors to calculate correlations
+% % between original and restored measurements
+% kmean_vector_joint_orig = zeros(size(Ra,2),length(selected_mets));
+% kmean_vector_joint = zeros(size(Ra,2),length(selected_mets));
+% for met_i = 1:length(selected_mets)
+%    
+%     cmpd_interest_idx = selected_mets(met_i);
+%     % set volume to CV or GF/WT
+%         if contains(meanMatrix_mets{cmpd_interest_idx}, '_CV')
+%             volumeMatrix = volumeMatrix_CVR;
+%         else
+%             volumeMatrix = volumeMatrix_GF;
+%         end
+%     % calculate mean profiles            
+%     idx=1;
+%     kmeanMatrix_joint = zeros(4,6);
+%     for diet_i = 1:length(sampleDiet_unique)
+%         for type_i = 1:length(sampleType_unique)
+%             selectDiet = sampleDiet_unique{diet_i};
+%             selectMouse = sampleType_unique{type_i};
+%             kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
+%             % get serum and liver data
+%             kmeanMatrix = kmeanMatrix(cmpd_interest_idx,1:6);
+%             kmeanMatrix_joint(idx,:) = kmeanMatrix;
+%             idx = idx+1;
+%         end
+%     end
+%     % multiply by volume to get amounts
+%     kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
+%      
+%     % normalize by max intensity
+%     kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
+%     % replace small values with noise
+%     kmeanMatrix_joint_orig = kmeanMatrix_joint;
+%     kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
+%     kmeanMatrix_joint(kmeanMatrix_joint<minval)+rand(nnz(kmeanMatrix_joint<minval),1)*minval;
+%     
+%     kmean_vector_joint_orig(:, met_i) = kmeanMatrix_joint_orig(:);
+%     kmean_vector_joint(:, met_i) = kmeanMatrix_joint(:);
+% end
+% 
+% % calculate Spearman correlations
+% x_corr_Spearman = zeros(size(x_data_corr));
+% corr_Mouse = zeros(length(x_data_corr),4);
+% corr_Mouse_Spearman = zeros(length(x_data_corr),4);
+% 
+% for i = 1:length(x_data_corr)
+%     dataR = reshape(x_rdata(:,i),[],4)';
+%     dataOrig = reshape(kmean_vector_joint_orig(:,i),4,[]);
+% 
+%     x_corr_Spearman(i) = corr(dataOrig(:), dataR(:), 'type', 'Spearman');
+%     corr_Mouse(i,:) = diag(corr(dataOrig', dataR'));
+%     corr_Mouse_Spearman(i,:) = diag(corr(dataOrig', dataR', 'type', 'Spearman'));
+% 
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -416,20 +400,39 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
        %'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated'])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% select LI within best total solution
+x_selected = zeros(size(met_bestsols{1}.x,1), length(met_bestsols));
+x_data_corr = zeros(1, length(met_bestsols));
+x_data_corr_SI = zeros(1, length(met_bestsols));
+x_data_corr_LI = zeros(1, length(met_bestsols));
+x_data_corr_mean = zeros(1, length(met_bestsols));
+
+for i=1:length(met_bestsols)
+    picksol = ismember(met_bestsols{i}.selection_criterion,...
+                                {'LI PCC within high total'});
+    if size(met_bestsols{i}.x,2)==length(picksol)
+        x_selected(:,i) = met_bestsols{i}.x(:,picksol);
+        x_data_corr(i) = met_bestsols{i}.x_sel_CorrRev(picksol);
+        x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
+        x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
+        x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
+    end
+end
+
 % heatmap coefficients and metabolites
-plotorder = [1:2:20 2:2:20 21:length(meanMatrix_mets)];
+plotorder = [1:3:24 2:3:24 3:3:24 25:length(meanMatrix_mets)];
 plotdata = x_data_corr(plotorder).*...
             ( (x_data_corr(plotorder)>=0.7) &...
               ((x_data_corr_SI(plotorder)>=0.7) |...
                (x_data_corr_LI(plotorder)>=0.7)));
 plotdata_names = meanMatrix_mets(plotorder);
-plotdata = [[reshape(plotdata(1:30),5,[])' zeros(6,1)];...
-            reshape(plotdata(31:end),6,[])'];
-plotdata_names = [[reshape(plotdata_names(1:30),5,[])' repmat({'NaN'},6,1)];...
-                   reshape(plotdata_names(31:end,:),6,[])'];
+plotdata = [[reshape(plotdata(1:32),4,[])' zeros(8,1)];...
+            reshape(plotdata(33:end),5,[])'];
+plotdata_names = [[reshape(plotdata_names(1:32),4,[])' repmat({'NaN'},8,1)];...
+                   reshape(plotdata_names(33:end,:),5,[])'];
 heatmap(plotdata,...
         'YDisplayLabels', plotdata_names(:,1),...
-        'XDisplayLabels', {'0', '3', '5', '7', '9', '12'})               
+        'XDisplayLabels', {'3', '5', '7', '9', '12'})               
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot data and restored intensities and model coefficients
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
