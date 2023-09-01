@@ -49,13 +49,25 @@ for ds_i = 1:length(dataSheetnames)
         Measured_mets = t.Measured_metabolite;
     end
     Measured_mets_unique = unique(Measured_mets);
-    % remove Thymin as it is measured only in liver
+    % remove Thymine as it is measured only in liver
     Measured_mets_unique(cellfun(@(x) contains(x, 'Thymine'), Measured_mets_unique))=[];
+    % remove 7-acetamido-CLZ
+    Measured_mets_unique(cellfun(@(x) contains(x, '7-acetamido-CLZ'), Measured_mets_unique))=[];
+    % remove phenolic and glucuronyl compounds
+    Measured_mets_unique(cellfun(@(x) contains(x, 'Glucuronyl'), Measured_mets_unique))=[];
+    Measured_mets_unique(cellfun(@(x) contains(x, 'Phenolic'), Measured_mets_unique))=[];
+    % get unique time points
     t_time_unique = unique(t.Sample_Time);
     % remove time points between 0 and 3
     t_time_unique(t_time_unique>0 & t_time_unique<3)=[];
     t_sample_type_unique = reshape(unique(t.Sample_Type), 2,[]);
 
+    % for BRV data, add d4554 vs GF condition
+    if ismember('d4554', t_sample_type_unique) && ismember('GF', t_sample_type_unique)
+        addcol = size(t_sample_type_unique,2);
+        t_sample_type_unique{1,addcol+1} = 'd4554';
+        t_sample_type_unique{2,addcol+1} = 'GF';
+    end
 
     meanTable_data = zeros(length(Measured_mets_unique) * length(t_time_unique)*...
                            size(t_sample_type_unique,2),...
