@@ -93,8 +93,11 @@ volumeMatrix_CVR = repmat([0.3 0.3 0.3 0.3 0.3 0.3;...
                            0.3 0.3 0.3 3 3 3], 2, 1);
 volumeMatrix_GF = repmat([0.3 0.3 0.3 3 3 3], 4, 1);
 
+fileNameFigure = [figureFolder...
+    'fig_2023_drugdiag_volume_profiles_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
+
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
-for met_i = 3:20%length(selected_mets)
+for met_i = 1:length(selected_mets)
    
         cmpd_interest_idx = selected_mets(met_i);
         % set volume to CV or GF/WT
@@ -128,115 +131,60 @@ for met_i = 3:20%length(selected_mets)
         %[gitfit] = fitGITmodel(kmeanMatrix_joint, ncond, shuffle_flag)
         [gitfit] = fitGITmodel(kmeanMatrix_joint, 2, 1);
         
-        fig = figure('units','normalized','outerposition',[0 0 1 1]);
-
-        subplot(2,3,1)
-        plot(kmeanMatrix_joint')
-        legend(repmat(sampleType_unique,1,2))
+        gitfit_diag_plot(gitfit,meanMatrix_mets{met_i},fig)
         
-        subplot(2,3,2)
-        testx_norm = gitfit.testx./max(abs(gitfit.testx));
-        boxplot(testx_norm')
-        
-        subplot(2,3,3)
-        %testx_norm = testx(2:end,:)./max(abs(testx(2:end,:)));
-        testx_norm = gitfit.testx(:,gitfit.testCorrRev>0.7)./...
-            max(abs(gitfit.testx(:,gitfit.testCorrRev>0.7)));
-        boxplot(testx_norm', 'PlotStyle','compact')
-        
-        subplot(2,3,4)
-        histogram(gitfit.testCorrRev)
-        
-        % get the best x
-        x = testx(:,testargmax);
-        
-        subplot(2,3,5)
-        barh(x(2:end)/abs(max(x(2:end))))
-        
-        % get the best reciprocal
-        x = [x(1); x(2:4); x(2:4); x(5); x(5)];
-        % calculate reverse problem
-        options = optimoptions(@lsqlin,'Display', 'off',...
-            'Algorithm','interior-point','MaxIterations',1500);
-        [Ra,rb] = calculateRAmatrix_final(x*1000);
-        dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
-        dataR = reshape(dataR,[],4)';
-        
-        subplot(2,3,6)
-        plot(dataR')
-        
-        suptitle(meanMatrix_mets{met_i});
-        
-        
-        [testmax, testargmax] = max(testCorrRev+testCorrRevSI + testCorrRevLI);
-        sprintf('total corr = %.3f SI = %.3f LI = %.3f\n',...
-            testCorrRev(testargmax), testCorrRevSI(testargmax),...
-            testCorrRevLI(testargmax))
-
-        sprintf('mean corr = %.3f median corr = %.3f nnz0.7 = %.3f\n',...
-            mean(testCorrRev), median(testCorrRev),nnz(testCorrRev>0.7))
-
-        sprintf('SHUFFLED mean corr = %.3f median corr = %.3f nnz0.7 = %.3f\n',...
-            mean(testCorrRev_shuffled), median(testCorrRev_shuffled),...
-            nnz(testCorrRev_shuffled>0.7))
-
-        x = testx(:,testargmax)
-        x(2:end)/abs(max(x(2:end)))
-        
-        
-        
-        
-        
-        
-        options = optimoptions(@lsqlin,'Display', 'off',...
-                    'Algorithm','interior-point','MaxIterations',1500);
-
-        [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, [], options);        
-        x_met_smooth(:, met_i) = x;
-        x_resid(met_i) = xres;
-        
+        orient landscape
+        %print to figure
+        print(fig, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
+                fileNameFigure);
+        clf('reset')
     
-      
+     
+%         options = optimoptions(@lsqlin,'Display', 'off',...
+%                     'Algorithm','interior-point','MaxIterations',1500);
+% 
+%         [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, [], options);        
+%         x_met_smooth(:, met_i) = x;
+%         x_resid(met_i) = xres;
 
-
-    [Ra,rb] = calculateRAmatrix_final(x*1000);
-    dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
-    % save reconstructed data
-    x_rdata(:,met_i) = dataR;
-
-    %rsshape to matrix form
-    dataR = reshape(dataR,[],4)';
-
-    x_data_corr(met_i) = corr(kmeanMatrix_joint_orig(:), dataR(:));
-    x_data_corr_SI(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,1:3),[],1),...
-                                 reshape(dataR(:,1:3),[],1));
-    x_data_corr_LI(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,4:end),[],1),...
-                                 reshape(dataR(:,4:end),[],1));
-
-%     x_data_Rsq(met_i) = calculate_gof(dataR(:), kmeanMatrix_joint_orig(:));
-%     x_data_Rsq_SI(met_i) = calculate_gof(reshape(dataR(:,1:3),[],1),...
-%                                          reshape(kmeanMatrix_joint_orig(:,1:3),[],1));
-%     x_data_Rsq_LI(met_i) = calculate_gof(reshape(dataR(:,4:end),[],1),...
-%                                          reshape(kmeanMatrix_joint_orig(:,4:end),[],1));
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % calculate reverse problem for shuffled x
-    x_shuffled = x(randperm(length(x)));
-    [Ra_shuffled,rb_shuffled] = calculateRAmatrix_final(x_shuffled*1000);
-    dataR_shuffled = lsqlin(Ra_shuffled,rb_shuffled,[],[],[],[],...
-                            zeros(1,size(Ra_shuffled,2)), [], [], options);
-    % save reconstructed data
-    x_rdata_shuffled(:,met_i) = dataR_shuffled;
-
-    %rsshape to matrix form
-    dataR_shuffled = reshape(dataR_shuffled,[],4)';
-
-    x_data_corr_shuffled(met_i) = corr(kmeanMatrix_joint_orig(:), dataR_shuffled(:));
-    x_data_corr_SI_shuffled(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,1:3),[],1),...
-                                          reshape(dataR_shuffled(:,1:3),[],1));
-    x_data_corr_LI_shuffled(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,4:6),[],1),...
-                                          reshape(dataR_shuffled(:,4:6),[],1));
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     [Ra,rb] = calculateRAmatrix_final(x*1000);
+%     dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
+%     % save reconstructed data
+%     x_rdata(:,met_i) = dataR;
+% 
+%     %rsshape to matrix form
+%     dataR = reshape(dataR,[],4)';
+% 
+%     x_data_corr(met_i) = corr(kmeanMatrix_joint_orig(:), dataR(:));
+%     x_data_corr_SI(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,1:3),[],1),...
+%                                  reshape(dataR(:,1:3),[],1));
+%     x_data_corr_LI(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,4:end),[],1),...
+%                                  reshape(dataR(:,4:end),[],1));
+% 
+% %     x_data_Rsq(met_i) = calculate_gof(dataR(:), kmeanMatrix_joint_orig(:));
+% %     x_data_Rsq_SI(met_i) = calculate_gof(reshape(dataR(:,1:3),[],1),...
+% %                                          reshape(kmeanMatrix_joint_orig(:,1:3),[],1));
+% %     x_data_Rsq_LI(met_i) = calculate_gof(reshape(dataR(:,4:end),[],1),...
+% %                                          reshape(kmeanMatrix_joint_orig(:,4:end),[],1));
+% 
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     % calculate reverse problem for shuffled x
+%     x_shuffled = x(randperm(length(x)));
+%     [Ra_shuffled,rb_shuffled] = calculateRAmatrix_final(x_shuffled*1000);
+%     dataR_shuffled = lsqlin(Ra_shuffled,rb_shuffled,[],[],[],[],...
+%                             zeros(1,size(Ra_shuffled,2)), [], [], options);
+%     % save reconstructed data
+%     x_rdata_shuffled(:,met_i) = dataR_shuffled;
+% 
+%     %rsshape to matrix form
+%     dataR_shuffled = reshape(dataR_shuffled,[],4)';
+% 
+%     x_data_corr_shuffled(met_i) = corr(kmeanMatrix_joint_orig(:), dataR_shuffled(:));
+%     x_data_corr_SI_shuffled(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,1:3),[],1),...
+%                                           reshape(dataR_shuffled(:,1:3),[],1));
+%     x_data_corr_LI_shuffled(met_i) = corr(reshape(kmeanMatrix_joint_orig(:,4:6),[],1),...
+%                                           reshape(dataR_shuffled(:,4:6),[],1));
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 end
 
