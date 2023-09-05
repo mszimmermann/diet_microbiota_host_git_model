@@ -101,10 +101,11 @@ for ds_i = 1:length(dataSheetnames)
     meanTable_data(idx:end,:) = [];
     meanTable_mets(idx:end) = [];
     
-    % remove T0 metabolites
-    t0metabolites = cellfun(@(x) contains(x, '_0_'), meanTable_mets);
-    meanTable_data(t0metabolites,:) = [];
-    meanTable_mets(t0metabolites) = [];
+    % remove T0 and t12 metabolites
+    t0t12metabolites = cellfun(@(x) contains(x, '_0_') | ...
+                                    contains(x, '_12'), meanTable_mets);
+    meanTable_data(t0t12metabolites,:) = [];
+    meanTable_mets(t0t12metabolites) = [];
     
     % save dataset to cell
     meanData_cell{ds_i} = meanTable_data;

@@ -109,7 +109,7 @@ else
         'fig_2023_drugdiag_conc_4profiles_plus_mut_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
 end
 
-diag_plot_flag = 0; % diagnostic plotting flag
+diag_plot_flag = 1; % diagnostic plotting flag
 if diag_plot_flag
     fig = figure('units','normalized','outerposition',[0 0 1 1]);
 end
@@ -416,47 +416,80 @@ for i=1:length(met_bestsols)
         x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
         x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
         x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
-    end
+    else
+        % there was no total PCC above thresold to select LI PCC,
+        % get the best possible total PCC
+        picksol = ismember(met_bestsols{i}.selection_criterion,...
+                                {'total PCC'});
+        picksol = picksol(1:size(met_bestsols{i}.x,2));
+        x_selected(:,i) = met_bestsols{i}.x(:,picksol);
+        x_data_corr(i) = met_bestsols{i}.x_sel_CorrRev(picksol);
+        x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
+        x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
+        x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
+    end        
 end
 
 % heatmap coefficients and metabolites
 plotorder = [1:3:24 2:3:24 3:3:24 25:length(meanMatrix_mets)];
-plotdata = x_data_corr(plotorder).*...
-            ( (x_data_corr(plotorder)>=0.7) &...
-              ((x_data_corr_SI(plotorder)>=0.7) |...
-               (x_data_corr_LI(plotorder)>=0.7)));
+plotdata = x_data_corr(plotorder);
+% set values below threshold to 0
+% plotdata = x_data_corr(plotorder).*...
+%             ( (x_data_corr(plotorder)>=0.7) &...
+%               ((x_data_corr_SI(plotorder)>=0.7) |...
+%                (x_data_corr_LI(plotorder)>=0.7)));
 plotdata_names = meanMatrix_mets(plotorder);
-plotdata = [[reshape(plotdata(1:32),4,[])' zeros(8,1)];...
-            reshape(plotdata(33:end),5,[])'];
-plotdata_names = [[reshape(plotdata_names(1:32),4,[])' repmat({'NaN'},8,1)];...
-                   reshape(plotdata_names(33:end,:),5,[])'];
+% reshape in matrix form
+plotdata = reshape(plotdata,4,[])';
+plotdata_names = reshape(plotdata_names,4,[])';
+
+% obsolete reshaping when clonazepam samples contain one more timepoint
+% plotdata = [[reshape(plotdata(1:32),4,[])' zeros(8,1)];...
+%             reshape(plotdata(33:end),5,[])'];
+% plotdata_names = [[reshape(plotdata_names(1:32),4,[])' repmat({'NaN'},8,1)];...
+%                    reshape(plotdata_names(33:end,:),5,[])'];
 plotdata_names_compounds = cellfun(@(x) strrep(x,'_','-'),plotdata_names(:,1),'unif',0);
-plotdata_times = {'3', '5', '7', '9', '12'};
+plotdata_times = {'3', '5', '7', '9'};%, '12'};
 
 heatmap(plotdata,...
         'YDisplayLabels', plotdata_names(:,1),...
-        'XDisplayLabels', {'3', '5', '7', '9', '12'})     
+        'XDisplayLabels', plotdata_times)     
     
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot four creteria for each metabolite: 
+% total corr, LI corr, SI corr and mean corr
 plotdataSI = x_data_corr_SI(plotorder);
-plotdataSI = [[reshape(plotdataSI(1:32),4,[])' zeros(8,1)];...
-               reshape(plotdataSI(33:end),5,[])'];
+plotdataSI = reshape(plotdataSI,4,[])';
+% plotdataSI = [[reshape(plotdataSI(1:32),4,[])' zeros(8,1)];...
+%                reshape(plotdataSI(33:end),5,[])'];
 plotdataLI = x_data_corr_LI(plotorder);
-plotdataLI = [[reshape(plotdataLI(1:32),4,[])' zeros(8,1)];...
-               reshape(plotdataLI(33:end),5,[])'];
+plotdataLI = reshape(plotdataLI,4,[])';
+% plotdataLI = [[reshape(plotdataLI(1:32),4,[])' zeros(8,1)];...
+%                reshape(plotdataLI(33:end),5,[])'];
 plotdataMEAN = x_data_corr_mean(plotorder);
-plotdataMEAN = [[reshape(plotdataMEAN(1:32),4,[])' zeros(8,1)];...
-               reshape(plotdataMEAN(33:end),5,[])'];
+plotdataMEAN = reshape(plotdataMEAN,4,[])';
+% plotdataMEAN = [[reshape(plotdataMEAN(1:32),4,[])' zeros(8,1)];...
+%                reshape(plotdataMEAN(33:end),5,[])'];
        
-AB = reshape([plotdata;plotdataSI], size(plotdata,1), []);
-CD = reshape([plotdataLI; plotdataMEAN], size(plotdataLI,1), []);
+AB = reshape([plotdata;plotdataMEAN], size(plotdata,1), []);
+CD = reshape([plotdataLI; plotdataSI], size(plotdataLI,1), []);
 [m,n] = size(AB);
 ABCD = zeros(2*m,n);
 ABCD(1:2:end,:) = AB;
 ABCD(2:2:end,:) = CD;
+figure
 heatmap(ABCD,...
         'YDisplayLabels', reshape(repmat(plotdata_names_compounds',2,1),[],1),...
-        'XDisplayLabels', reshape(repmat(plotdata_times,2,1),[],1));
-    
+        'XDisplayLabels', reshape(repmat(plotdata_times,2,1),[],1),...
+        'CellLabelFormat', '%0.2g');
+caxis([-1 1])
+caxis([0 1])
+colormap(flipud(parula))
+title({'total PCC | mean PCC', 'LI PCC | SI PCC'})
+print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+     [figureFolder,...
+     'FigSX_heatmap_4criteria_volume_drug_data'])
+  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot data and restored intensities and model coefficients
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
