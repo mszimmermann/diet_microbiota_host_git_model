@@ -1,4 +1,9 @@
-function [gitfit] = fitGITmodel(kmeanMatrix_joint, ncond, shuffle_flag)
+function [gitfit] = fitGITmodel(kmeanMatrix_joint, kmeanMatrix_joint_names,...
+                                ncond, shuffle_flag)
+% fit GIT model to the kmeanMatrix_joint data; 
+% kmeanMatrix_joint_names contains names of metabolites in the kmeanMatrix_joint
+% ncond is the number of conditions
+% shuffle_flag determines whether to perform data shuffling
 
 fitwarning = '';
 % minimal value to replace 0 to avoid numerical errors
@@ -158,6 +163,7 @@ x_ip_CorrRevLI = corr(reshape(kmeanMatrix_joint_orig(:,4:end),[],1),...
              
 % return gitfit structure with solutions
 gitfit.kmeanMatrix_joint_orig = kmeanMatrix_joint_orig;
+gitfit.kmeanMatrix_joint_names = kmeanMatrix_joint_names;
 gitfit.A = A;
 gitfit.b = A;
 gitfit.xlowerlim = xlowerlim;

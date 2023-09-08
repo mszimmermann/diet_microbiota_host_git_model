@@ -57,6 +57,7 @@ x_selected.x_sel_CorrRevLI = x_sel_CorrRevLI;
 x_selected.x_sel_dataR = x_sel_dataR;    
 % add original metabolite data to the solution
 x_selected.kmeanMatrix_joint_orig = gitfit.kmeanMatrix_joint_orig;
+x_selected.kmeanMatrix_joint_names = gitfit.kmeanMatrix_joint_names;
 % add coefficient names to the object
 x_selected.coefvalues = gitfit.coefvalues;
               
