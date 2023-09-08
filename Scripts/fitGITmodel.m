@@ -52,6 +52,8 @@ testCorrRev = zeros(1,nrepeat);
 testCorrRevSI = zeros(1,nrepeat);
 testCorrRevLI = zeros(1,nrepeat);
 testCorrRev_shuffled = zeros(1,nrepeat);
+% store restored data for each solution in a matrix
+testdataR = zeros(numel(kmeanMatrix_joint), nrepeat);
 testx_idx=1;
 
 % test nrepeat solutions from trust-region-reflective
@@ -67,7 +69,7 @@ if size(A,2)<=size(A,1)
 %                 if testx_idx==10
 %                     rand_x0 = testx(:,1); % interior point solution
 %                 end
-        [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, rand_x0, options);
+        [x] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, rand_x0, options);
         testx(:, testx_idx) = x;
         %testxres(testx_idx) = xres;
 
@@ -95,6 +97,8 @@ if size(A,2)<=size(A,1)
         % separately for large intestine
         testCorrRevLI(testx_idx) = corr(reshape(kmeanMatrix_joint_orig(:,4:end),[],1),...
                          reshape(dataR(:,4:end),[],1));
+        % save restored dataR in a matrix as well
+        testdataR(:,testx_idx) = dataR(:);
 
         if shuffle_flag
         % calculate shuffled results
@@ -165,9 +169,12 @@ gitfit.x_ip_CorrRevLI = x_ip_CorrRevLI;
 
 % add vector of trust region solutions
 gitfit.testx = testx;
+gitfit.testdataR = testdataR;
 gitfit.testCorrRev = testCorrRev;
 gitfit.testCorrRevSI = testCorrRevSI;
 gitfit.testCorrRevLI = testCorrRevLI;
 gitfit.testCorrRev_shuffled = testCorrRev_shuffled;
 
+% save coefvalues returned by the calculate A matrix function
+gitfit.coefvalues = coefvalues;
 gitfit.fitwarning = fitwarning;
