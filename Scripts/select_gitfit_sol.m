@@ -43,6 +43,9 @@ selection_arg = [1 testargmax_tot testargmax_SI testargmax_LI testargmax_sum,...
 x_sel_CorrRev = [gitfit.x_ip_CorrRev gitfit.testCorrRev(selection_arg(2:end))];
 x_sel_CorrRevSI = [gitfit.x_ip_CorrRevSI gitfit.testCorrRevSI(selection_arg(2:end))];
 x_sel_CorrRevLI = [gitfit.x_ip_CorrRevLI gitfit.testCorrRevLI(selection_arg(2:end))];
+% add resiprocal data for each selected solution
+x_sel_dataR = [gitfit.dataR_ip(:) gitfit.testdataR(:,selection_arg(2:end))];
+
 
 x_selected.x = x_sel;
 x_selected.selection_value = selection_value;
@@ -51,5 +54,7 @@ x_selected.selection_arg = selection_arg;
 x_selected.x_sel_CorrRev = x_sel_CorrRev;
 x_selected.x_sel_CorrRevSI = x_sel_CorrRevSI;
 x_selected.x_sel_CorrRevLI = x_sel_CorrRevLI;
-    
+x_selected.x_sel_dataR = x_sel_dataR;    
+% add coefficient names to the object
+x_selected.coefvalues = gitfit.coefvalues;
               
