@@ -36,13 +36,12 @@ meanMatrix = vertcat(meanData_cell{:});
 meanMatrix = [meanMatrix meanMatrix];
 meanMatrix_mets = horzcat(meanMets_cell{:})';
 
-mycolors = [0 115 178;... %dark blue
-            204 227 240;...%light blue
-            211 96 39;... %dark orange
-            246 223 212]/256;%light orange
-[bb,aa] = ndgrid(sampleType_unique, sampleDiet_unique); 
-condLabels = strcat(aa(:),'-', bb(:));
-
+% mycolors = [0 115 178;... %dark blue
+%             204 227 240;...%light blue
+%             211 96 39;... %dark orange
+%             246 223 212]/256;%light orange
+% [bb,aa] = ndgrid(sampleType_unique, sampleDiet_unique); 
+% condLabels = strcat(aa(:),'-', bb(:));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -50,40 +49,40 @@ condLabels = strcat(aa(:),'-', bb(:));
 selected_mets = 1:length(meanMatrix_mets);
 % define tissue order
 sampleTissue_unique = {'SI', 'SII', 'SIII', 'Cecum', 'Colon', 'Feces'};
-nrand=100;
+%nrand=100;
 % call calculateAmatrix_final with zero matrices of correct size
 % to get coefvalues output, which is used to allocate variables further
-[~, coefvalues] = calculateAmatrix_final(zeros(length(condLabels), length(sampleTissue_unique)));
+%[~, coefvalues] = calculateAmatrix_final(zeros(length(condLabels), length(sampleTissue_unique)));
 
-% allocate variables for model prediction results
-x_met_mean = zeros(length(coefvalues),length(selected_mets));
-x_met_std = zeros(length(coefvalues),length(selected_mets));
-x_met_smooth = zeros(length(coefvalues),length(selected_mets));
-
-% allocate variables for correlation calculated from values restored with
-% reverse problem with original and randomly shuffled parameters
-x_data_corr = zeros(length(selected_mets),1);
-x_resid = zeros(length(selected_mets),1);
-x_data_corr_shuffled = zeros(length(selected_mets),1);
-
-% save Rsquared of total
-% calculate corr and Rsquared of SI and LI separately
-x_data_Rsq = zeros(length(selected_mets),1);
-x_data_Rsq_shuffled = zeros(length(selected_mets),1);
-x_data_Rsq_SI = zeros(length(selected_mets),1);
-x_data_Rsq_SI_shuffled = zeros(length(selected_mets),1);
-x_data_Rsq_LI = zeros(length(selected_mets),1);
-x_data_Rsq_LI_shuffled = zeros(length(selected_mets),1);
-x_data_corr_SI = zeros(length(selected_mets),1);
-x_data_corr_SI_shuffled = zeros(length(selected_mets),1);
-x_data_corr_LI = zeros(length(selected_mets),1);
-x_data_corr_LI_shuffled = zeros(length(selected_mets),1);
+% % allocate variables for model prediction results
+% x_met_mean = zeros(length(coefvalues),length(selected_mets));
+% x_met_std = zeros(length(coefvalues),length(selected_mets));
+% x_met_smooth = zeros(length(coefvalues),length(selected_mets));
+% 
+% % allocate variables for correlation calculated from values restored with
+% % reverse problem with original and randomly shuffled parameters
+% x_data_corr = zeros(length(selected_mets),1);
+% x_resid = zeros(length(selected_mets),1);
+% x_data_corr_shuffled = zeros(length(selected_mets),1);
+% 
+% % save Rsquared of total
+% % calculate corr and Rsquared of SI and LI separately
+% x_data_Rsq = zeros(length(selected_mets),1);
+% x_data_Rsq_shuffled = zeros(length(selected_mets),1);
+% x_data_Rsq_SI = zeros(length(selected_mets),1);
+% x_data_Rsq_SI_shuffled = zeros(length(selected_mets),1);
+% x_data_Rsq_LI = zeros(length(selected_mets),1);
+% x_data_Rsq_LI_shuffled = zeros(length(selected_mets),1);
+% x_data_corr_SI = zeros(length(selected_mets),1);
+% x_data_corr_SI_shuffled = zeros(length(selected_mets),1);
+% x_data_corr_LI = zeros(length(selected_mets),1);
+% x_data_corr_LI_shuffled = zeros(length(selected_mets),1);
 
 % calculate reverse A matrix with zero matrix of the right size to allocate
 % variables according to Ra size
-[Ra] = calculateRAmatrix_final(zeros(size(coefvalues)));
-x_rdata = zeros(size(Ra,2),length(selected_mets));
-x_rdata_shuffled = zeros(size(Ra,2),length(selected_mets));
+% [Ra] = calculateRAmatrix_final(zeros(size(coefvalues)));
+% x_rdata = zeros(size(Ra,2),length(selected_mets));
+% x_rdata_shuffled = zeros(size(Ra,2),length(selected_mets));
 
 %minval = 0.01;
 
@@ -109,7 +108,7 @@ else
         'fig_2023_drugdiag_conc_4profiles_plus_mut_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
 end
 
-diag_plot_flag = 1; % diagnostic plotting flag
+diag_plot_flag = 0; % diagnostic plotting flag
 if diag_plot_flag
     fig = figure('units','normalized','outerposition',[0 0 1 1]);
 end
@@ -129,6 +128,7 @@ for met_i = 1:length(selected_mets)
         % calculate mean profiles            
         idx=1;
         kmeanMatrix_joint = zeros(4,6);
+        kmeanMatrix_joint_names = cell(4,6);
         for diet_i = 1:length(sampleDiet_unique)
             for type_i = 1:length(sampleType_unique)
                 selectDiet = sampleDiet_unique{diet_i};
@@ -137,6 +137,11 @@ for met_i = 1:length(selected_mets)
                                         contains(x,selectDiet),meanConditions));
                 kmeanMatrix = kmeanMatrix(cmpd_interest_idx,1:6);
                 kmeanMatrix_joint(idx,:) = kmeanMatrix;
+                kmeanMatrix_joint_names(idx,:) = strcat(selectDiet,...
+                                                        '_',...
+                                                        selectMouse,...
+                                                        '_',...
+                                                        sampleTissue_unique);
                 idx = idx+1;
             end
         end
@@ -151,7 +156,7 @@ for met_i = 1:length(selected_mets)
 
        
         %[gitfit] = fitGITmodel(kmeanMatrix_joint, ncond, shuffle_flag)
-        [gitfit] = fitGITmodel(kmeanMatrix_joint, 2, 1);
+        [gitfit] = fitGITmodel(kmeanMatrix_joint, kmeanMatrix_joint_names, 2, 1);
         % get best solution
         [bestsol] = select_gitfit_sol(gitfit);
         
@@ -171,233 +176,12 @@ for met_i = 1:length(selected_mets)
 end
 
 
-
-% % get the original metabolomics data as vectors to calculate correlations
-% % between original and restored measurements
-% kmean_vector_joint_orig = zeros(size(Ra,2),length(selected_mets));
-% kmean_vector_joint = zeros(size(Ra,2),length(selected_mets));
-% for met_i = 1:length(selected_mets)
-%    
-%     cmpd_interest_idx = selected_mets(met_i);
-%     % set volume to CV or GF/WT
-%         if contains(meanMatrix_mets{cmpd_interest_idx}, '_CV')
-%             volumeMatrix = volumeMatrix_CVR;
-%         else
-%             volumeMatrix = volumeMatrix_GF;
-%         end
-%     % calculate mean profiles            
-%     idx=1;
-%     kmeanMatrix_joint = zeros(4,6);
-%     for diet_i = 1:length(sampleDiet_unique)
-%         for type_i = 1:length(sampleType_unique)
-%             selectDiet = sampleDiet_unique{diet_i};
-%             selectMouse = sampleType_unique{type_i};
-%             kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
-%             % get serum and liver data
-%             kmeanMatrix = kmeanMatrix(cmpd_interest_idx,1:6);
-%             kmeanMatrix_joint(idx,:) = kmeanMatrix;
-%             idx = idx+1;
-%         end
-%     end
-%     % multiply by volume to get amounts
-%     kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
-%      
-%     % normalize by max intensity
-%     kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
-%     % replace small values with noise
-%     kmeanMatrix_joint_orig = kmeanMatrix_joint;
-%     kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
-%     kmeanMatrix_joint(kmeanMatrix_joint<minval)+rand(nnz(kmeanMatrix_joint<minval),1)*minval;
-%     
-%     kmean_vector_joint_orig(:, met_i) = kmeanMatrix_joint_orig(:);
-%     kmean_vector_joint(:, met_i) = kmeanMatrix_joint(:);
-% end
-% 
-% % calculate Spearman correlations
-% x_corr_Spearman = zeros(size(x_data_corr));
-% corr_Mouse = zeros(length(x_data_corr),4);
-% corr_Mouse_Spearman = zeros(length(x_data_corr),4);
-% 
-% for i = 1:length(x_data_corr)
-%     dataR = reshape(x_rdata(:,i),[],4)';
-%     dataOrig = reshape(kmean_vector_joint_orig(:,i),4,[]);
-% 
-%     x_corr_Spearman(i) = corr(dataOrig(:), dataR(:), 'type', 'Spearman');
-%     corr_Mouse(i,:) = diag(corr(dataOrig', dataR'));
-%     corr_Mouse_Spearman(i,:) = diag(corr(dataOrig', dataR', 'type', 'Spearman'));
-% 
-% end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% save model results to file - raw coefficients
-% add gut filter to file - flag indicating whether metabolites were
-% detected in the GIT
-gut_filter = (sum(spatialClusters,2)>0);
-
-fid = fopen([outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions_with_CVR.csv'], 'w');
-             %'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-fprintf(fid, 'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\tReciprocalCorr');
-for i=1:length(coefvalues)
-    fprintf(fid, '\t%s', coefvalues{i});
-end
-fprintf(fid, '\n');
-for i=1:size(x_met_smooth,2)
-    fprintf(fid, '%.3f\t%3f', annotationTableSpatialClusters.MZ(i),...
-        annotationTableSpatialClusters.RT(i));
-    fprintf(fid, '\t%s\t%s\t%d', annotationTableSpatialClusters.CompoundID{i},...
-        annotationTableSpatialClusters.CompoundName{i},...
-        annotationTableSpatialClusters.MetaboliteFilter(i));
-    fprintf(fid, '\t%d', gut_filter(i));
-    fprintf(fid, '\t%.3f', x_data_corr(i));
-    for j=1:size(x_met_smooth,1)
-        fprintf(fid, '\t%e', x_met_smooth(j,i));
-    end
-    fprintf(fid, '\n');
-end
-fclose(fid);
-
-% save model results to file - normalized by max coefficient
-fid = fopen([outputFolder...
-    'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_allions_with_CVR.csv'], 'w');
-    %'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-fprintf(fid, 'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\tReciprocalCorr');
-for i=1:length(coefvalues)
-    fprintf(fid, '\t%s', coefvalues{i});
-end
-fprintf(fid, '\n');
-for i=1:size(x_met_smooth,2)
-    fprintf(fid, '%.3f\t%3f', annotationTableSpatialClusters.MZ(i),...
-        annotationTableSpatialClusters.RT(i));
-    fprintf(fid, '\t%s\t%s\t%d', annotationTableSpatialClusters.CompoundID{i},...
-        annotationTableSpatialClusters.CompoundName{i},...
-        annotationTableSpatialClusters.MetaboliteFilter(i));
-    fprintf(fid, '\t%d', gut_filter(i));
-    fprintf(fid, '\t%.3f', x_data_corr(i));
-    for j=1:size(x_met_smooth,1)
-        fprintf(fid, '\t%.3f', x_met_smooth(j,i)./max(abs(x_met_smooth(:,i))));
-    end
-    fprintf(fid, '\n');
-end
-fclose(fid);
-
-% save model results to file - metabolism_coefficients_only
-fid = fopen([outputFolder...
-    'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_allions_with_CVR.csv'], 'w');
-    %'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-fprintf(fid, 'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\tReciprocalCorr');
-for i=2:length(coefvalues)
-    fprintf(fid, '\t%s', coefvalues{i});
-end
-fprintf(fid, '\n');
-for i=1:size(x_met_smooth,2)
-    fprintf(fid, '%.3f\t%3f', annotationTableSpatialClusters.MZ(i),...
-        annotationTableSpatialClusters.RT(i));
-    fprintf(fid, '\t%s\t%s\t%d', annotationTableSpatialClusters.CompoundID{i},...
-        annotationTableSpatialClusters.CompoundName{i},...
-        annotationTableSpatialClusters.MetaboliteFilter(i));
-    fprintf(fid, '\t%d', gut_filter(i));
-    fprintf(fid, '\t%.3f', x_data_corr(i));
-    for j=2:size(x_met_smooth,1)
-        fprintf(fid, '\t%.3f', x_met_smooth(j,i)./max(abs(x_met_smooth(2:end,i))));
-    end
-    fprintf(fid, '\n');
-end
-fclose(fid);
-    
-% save model results to file - reciprocal data restoration
-fid = fopen([outputFolder...
-    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions_with_CVR.csv'], 'w');
-    %'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv'], 'w');
-columnNames = cell(size(x_rdata,1),1);
-idx=1;
-for diet_i = 1:length(sampleDiet_unique)
-    for type_i = 1:length(sampleType_unique)
-        for tiss_i = 1:length(sampleTissue_order)-2
-                selectDiet = sampleDiet_unique{diet_i};
-                selectMouse = sampleType_unique{type_i};
-                selectTissue = sampleTissue_order{tiss_i};
-                columnNames{idx} = [selectDiet '_' selectMouse '_' selectTissue];
-                idx = idx+1;
-        end
-    end
-end
-         
-fprintf(fid, 'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\tReciprocalCorr\tRandomCorr');
-for i=1:length(columnNames)
-    fprintf(fid, '\t%s', columnNames{i});
-end
-for i=1:length(columnNames)
-    fprintf(fid, '\tRecip_%s', columnNames{i});
-end
-for i=1:length(columnNames)
-    fprintf(fid, '\tRandom_%s', columnNames{i});
-end
-fprintf(fid, '\n');
-for i=1:size(x_rdata,2)
-    fprintf(fid, '%.3f\t%3f', annotationTableSpatialClusters.MZ(i),...
-        annotationTableSpatialClusters.RT(i));
-    fprintf(fid, '\t%s\t%s\t%d', annotationTableSpatialClusters.CompoundID{i},...
-        annotationTableSpatialClusters.CompoundName{i},...
-        annotationTableSpatialClusters.MetaboliteFilter(i));
-    fprintf(fid, '\t%d', gut_filter(i));
-    fprintf(fid, '\t%.3f', x_data_corr(i));
-    fprintf(fid, '\t%.3f', x_data_corr_shuffled(i));
-    for j=1:size(kmean_vector_joint_orig(:,i),1)
-        fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j,i));
-    end
-    for j=1:size(x_rdata(:,i),1)
-        fprintf(fid, '\t%.3f', x_rdata(j,i));
-    end
-    for j=1:size(x_rdata_shuffled(:,i),1)
-        fprintf(fid, '\t%.3f', x_rdata_shuffled(j,i));
-    end
-    fprintf(fid, '\n');
-end
-fclose(fid);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation of restored and original data
-% %testing mode: all calculated
-if testing_mode_flag
-    met_filter = ones(size(x_data_corr,1),1);
-else
-    % %metabolites detected in the GIT and annotated
-    met_filter = ((annotationTableSpatialClusters.MetaboliteFilter==1) &...
-               (sum(spatialClusters,2)>0));
-end
-
 % calculate differentce in corr distrbutions
-p_corr_diff = ranksum(x_data_corr_shuffled(met_filter==1),...
-    x_data_corr(met_filter==1));
-figure
-% pearson corr all 
-h = histogram(x_data_corr_LI_shuffled(met_filter==1),100);
-hold on
-histogram(x_data_corr_LI(met_filter==1),100)
-xlim([-1 1])
-axis square
-xlabel('Pearson correlation between metabolomics data and model estimate')
-ylabel('Number of ions')
-title('All data together')
-orient landscape
-% print line for PCC=0.7
-plot([0.7, 0.7], [0, max(h.Values)], 'k--')
-
-legend({'Random coefficients', 'Model coefficients', 'PCC=0.7'},...
-        'Location', 'NorthWest')
-    
-% compare distributions of correlations
-pval = signrank(x_data_corr_shuffled(met_filter==1),...
-                x_data_corr(met_filter==1));
-% print Wilcoxon signed rank test o-value on the plot
-text(-0.9, 0.7*max(h.Values), sprintf('signrank p = %.2e', pval))
-% save figure to file
-print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
-    [figureFolder,...
-    'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated_CVR'])
-       %'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated'])
+filename = [figureFolder,...
+    'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_drugs'];
+plot_gitfit_model_corr(met_gitfits, filename)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % select LI within best total solution
@@ -430,6 +214,18 @@ for i=1:length(met_bestsols)
     end        
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% print best solutions to files
+filename = [outputFolder ...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_drugs'];
+% create met_info object needed for the printing function
+met_info.CompoundID = meanMatrix_mets;
+met_info.CompoundName = meanMatrix_mets;          
+% print solutions to files
+print_bestsol_to_files(met_info, met_bestsols, filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % heatmap coefficients and metabolites
 plotorder = [1:3:24 2:3:24 3:3:24 25:length(meanMatrix_mets)];
 plotdata = x_data_corr(plotorder);
@@ -451,10 +247,18 @@ plotdata_names = reshape(plotdata_names,4,[])';
 plotdata_names_compounds = cellfun(@(x) strrep(x,'_','-'),plotdata_names(:,1),'unif',0);
 plotdata_times = {'3', '5', '7', '9'};%, '12'};
 
+figure
 heatmap(plotdata,...
         'YDisplayLabels', plotdata_names(:,1),...
-        'XDisplayLabels', plotdata_times)     
-    
+        'XDisplayLabels', plotdata_times,...
+        'CellLabelFormat', '%0.2g')     
+caxis([0 1])
+colormap(flipud(parula))
+title('Max total PCC')  
+print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+     [figureFolder,...
+     'FigSX_heatmap_maxTotalPCC_volume_drug_data'])
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot four creteria for each metabolite: 
 % total corr, LI corr, SI corr and mean corr
