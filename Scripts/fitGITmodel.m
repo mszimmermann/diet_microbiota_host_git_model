@@ -26,6 +26,8 @@ if ncond==2
     Aorig(:,[5:7 9]) = [];
     A(:,[5:7 9]) = [];
     % end half the matrices
+    % also half the coef values
+    coefvalues([5:7 9]) = [];
 end
         
 A(Aorig(:,1)==0,:)=[];
