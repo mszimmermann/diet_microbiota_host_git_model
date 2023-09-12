@@ -11,7 +11,7 @@ function assess_model_for_drugs(met_names, met_bestsols, figureFolder)
 
 % corr threshold for reliable solutions
 corrthreshold = 0.7;
-classthreshold = 0.5;
+classthreshold = 1;%0.5;
 
 solution_types = met_bestsols{1}.selection_criterion;
 classification_reports = cell(size(solution_types))';
@@ -132,7 +132,9 @@ caxis([0 1])
 title('Classification report')
 
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
-    [figureFolder, 'figSX_classification_report_drugs'])
+    [figureFolder, 'figSX_classification_report_drugs',...
+    '_class', strrep(num2str(classthreshold),'.','_'),...
+    '_corr', strrep(num2str(corrthreshold),'.','_')])
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot confusion matrices for different solutions
@@ -155,7 +157,9 @@ suptitle('Confusion matrices')
 orient landscape
 
 print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
-    [figureFolder, 'figSX_confusion_matrices_classification_drugs'])
+    [figureFolder, 'figSX_confusion_matrices_classification_drugs',...
+    '_class', strrep(num2str(classthreshold),'.','_'),...
+    '_corr', strrep(num2str(corrthreshold),'.','_')])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot all solutions in precision recall and specificity sensitivity
@@ -217,5 +221,7 @@ legend(C(1:3), 'Location', 'best')
 orient landscape
 
 print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
-    [figureFolder, 'figSX_selection_criteria_classification_drugs'])
+    [figureFolder, 'figSX_selection_criteria_classification_drugs',...
+    '_class', strrep(num2str(classthreshold),'.','_'),...
+    '_corr', strrep(num2str(corrthreshold),'.','_')])
 
