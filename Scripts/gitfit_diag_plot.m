@@ -12,7 +12,7 @@ subplot(spi,spj,spidx)
 plot(gitfit.kmeanMatrix_joint_orig')
 xlim([1,size(gitfit.kmeanMatrix_joint_orig,2)])
 title('Original data')
-%legend(repmat(sampleType_unique,1,2))
+legend(gitfit.kmeanMatrix_joint_names(:,1))
 spidx = spidx+1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
