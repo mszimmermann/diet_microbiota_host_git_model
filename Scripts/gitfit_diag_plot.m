@@ -12,7 +12,10 @@ subplot(spi,spj,spidx)
 plot(gitfit.kmeanMatrix_joint_orig')
 xlim([1,size(gitfit.kmeanMatrix_joint_orig,2)])
 title('Original data')
-legend(gitfit.kmeanMatrix_joint_names(:,1))
+lh=legend(cellfun(@(x) strrep(x, '_','-'),...
+            gitfit.kmeanMatrix_joint_names(:,1), 'unif', 0),...
+            'Location', 'West');
+set(lh,'position',[.0 .75 .1 .1])
 spidx = spidx+1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
