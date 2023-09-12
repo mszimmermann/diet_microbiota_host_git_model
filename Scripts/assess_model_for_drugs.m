@@ -1,6 +1,7 @@
-function assess_model_for_drugs(met_names, met_bestsols)
+function assess_model_for_drugs(met_names, met_bestsols, figureFolder)
 % assess the model fitting to drugs data 
 % based on information of bacterial drug metabolism
+% figureFolder is the folder to store plots
 
 % use classification criteria to 
 % substrate (-1)
@@ -14,6 +15,7 @@ classthreshold = 0.5;
 
 solution_types = met_bestsols{1}.selection_criterion;
 classification_reports = cell(size(solution_types))';
+confusion_matrices = cell(size(solution_types))';
 
 for sol_type = 1:length(solution_types)
     picksol = find(ismember(met_bestsols{1}.selection_criterion,...
@@ -114,8 +116,11 @@ for sol_type = 1:length(solution_types)
 
     end
     classification_reports{sol_type} = classification_report;
+    confusion_matrices{sol_type} = confmat;
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot classification report for different solutions
 ST = reshape(repmat(solution_types, length(classlabels),1),[],1); 
 C = repmat(arrayfun(@(x) num2str(x), classlabels, 'unif', 0),length(solution_types),1);
 combined_report = cell2mat(vertcat(classification_reports));
@@ -124,7 +129,37 @@ heatmap(combined_report, ...
     'YDisplayLabels', strcat(ST, ': class ', C),...
     'XDisplayLabels', report_labels)
 caxis([0 1]) 
+title('Classification report')
 
+print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+    [figureFolder, 'figSX_classification_report_drugs'])
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot confusion matrices for different solutions
+fig = figure('units','normalized','outerposition',[0 0 1 1]);
+
+spx = 3;
+spy = 3;
+
+for sol_type=1:length(solution_types)
+    subplot(spx, spy, sol_type)
+    confmat = confusion_matrices{sol_type};
+    heatmap(confmat, ...
+        'YDisplayLabels', classlabels,...
+        'XDisplayLabels', classlabels)
+    xlabel('Predicted class')
+    ylabel('True class')
+    title(solution_types{sol_type})
+end
+suptitle('Confusion matrices')
+orient landscape
+
+print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
+    [figureFolder, 'figSX_confusion_matrices_classification_drugs'])
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot all solutions in precision recall and specificity sensitivity
+% metrics
 marker_shape = {'o', '+', '*', 'x', 's', 'd', '^'};
 marker_color = {'b','k','r'};
 marker_color_num = [0 0 1;...
@@ -179,3 +214,8 @@ set(gca, 'YTick', 1:length(solution_types))
 set(gca, 'YTickLabel', solution_types)
 axis square
 legend(C(1:3), 'Location', 'best')
+orient landscape
+
+print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
+    [figureFolder, 'figSX_selection_criteria_classification_drugs'])
+
