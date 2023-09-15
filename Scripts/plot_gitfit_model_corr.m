@@ -14,17 +14,17 @@ p_corr_diff = ranksum(x_data_corr_shuffled, x_data_corr);
 figure
 nbins=10;
 % pearson corr all 
-h = histogram(x_data_corr_shuffled, nbins);
+histogram(x_data_corr_shuffled, nbins);
 hold on
-histogram(x_data_corr, nbins)
+h = histogram(x_data_corr, nbins);
 xlim([-1 1])
 axis square
 xlabel('MAX PCC between metabolomics data and model estimate')
 ylabel('Number of ions')
-title('Drug data')
+%title('Drug data')
 orient landscape
 % print line for PCC=0.7
-plot([0.7, 0.7], [0, max(h.Values)], 'k--')
+plot([0.7, 0.7], [0, max(h.Values)], 'k--', 'LineWidth',2)
 
 legend({'Random coefficients', 'Model coefficients', 'PCC=0.7'},...
         'Location', 'NorthWest')

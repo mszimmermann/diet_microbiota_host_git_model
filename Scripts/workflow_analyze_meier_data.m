@@ -1,6 +1,8 @@
+
+addpath(genpath('.\'));
 % load data from Meier et al and reformat for the model
 figureFolder = '.\Figures\';
-outputFolder = '.\ProccesedData\';
+outputFolder = '.\ProcessedData\';
 inputFolder = '.\InputData\';
 
 fileName = '2023_Meier_NatMet_42255_2023_802_MOESM3_ESM.xlsx';
@@ -44,7 +46,6 @@ mycolors = [204 227 240;...%light blue
 git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 meier_figure_file_name = 'Figures_final\Meier_data_plots_smooth_by_sum.ps';
-fig = figure('units','normalized','outerposition',[0 0 1 1]);
 
 % smooth first metabolite to create placeholder matrices
 [smoothloc, smoothcond, smoothrep, smoothdata] = ...
@@ -55,6 +56,9 @@ fig = figure('units','normalized','outerposition',[0 0 1 1]);
 meier_data_smooth = zeros(length(meier_mets), length(smoothloc));   
  % plot all datapoints separately
 printflag=0;
+if printflag
+    fig = figure('units','normalized','outerposition',[0 0 1 1]);
+end
 for met_i=1:length(meier_mets)
      % smooth data for the current metabolite
      [smoothloc, smoothcond, smoothrep, smoothdata] = ...
@@ -192,14 +196,14 @@ condLabels = strcat(aa(:),'-', bb(:));
 fileNameFigure = [figureFolder...
     'fig_meierInt_diag_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
 
-diag_plot_flag = 1; % diagnostic plotting flag
+diag_plot_flag = 0; % diagnostic plotting flag
 if diag_plot_flag
     fig = figure('units','normalized','outerposition',[0 0 1 1]);
 end
 
 
 % % % selected_mets are metabolites detected along the GI tract
-selected_mets = 1:length(meier_mets);
+selected_mets = 1:length(meier_mets)-1; % last metabolite is not measured
 
 met_gitfits = cell(length(selected_mets),1);
 met_bestsols = cell(length(selected_mets),1);
@@ -269,7 +273,7 @@ end
 % plot correlation of restored and original data
 % calculate differentce in corr distrbutions
 filename = [figureFolder,...
-    'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_drugs'];
+    'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_meier'];
 plot_gitfit_model_corr(met_gitfits, filename)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -553,51 +557,13 @@ for cpdix=1:length(compoundsInterest)
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% plot correlation of restored and original data
-% %testing mode: all calculated
-met_filter = ones(size(x_data_corr,1),1);
-
-% calculate differentce in corr distrbutions
-p_corr_diff = ranksum(x_data_corr_shuffled(met_filter==1),...
-    x_data_corr(met_filter==1));
-figure
-% pearson corr all 
-h = histogram(x_data_corr_shuffled(met_filter==1),100);
-hold on
-histogram(x_data_corr(met_filter==1),100)
-xlim([-1 1])
-axis square
-xlabel('Pearson correlation between metabolomics data and model estimate')
-ylabel('Number of ions')
-title('All data together')
-orient landscape
-% print line for PCC=0.7
-plot([0.7, 0.7], [0, max(h.Values)], 'k--')
-
-legend({'Random coefficients', 'Model coefficients', 'PCC=0.7'},...
-        'Location', 'NorthWest')
-    
-% compare distributions of correlations
-pval = signrank(x_data_corr_shuffled(met_filter==1),...
-                x_data_corr(met_filter==1));
-% print Wilcoxon signed rank test o-value on the plot
-text(-0.9, 0.7*max(h.Values), sprintf('signrank p = %.2e', pval))
-% save figure to file
-print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
-    [figureFolder,...
-    'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_meier_smoothbysum'])
-       %'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated'])
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % cluster only metabolites with corr>0.7
 % uncomment if using whole metabolite table
-clustidx = 1:size(x_met_smooth,2); % for testing purposed plot all 
-clustdata = x_met_smooth(2:end,clustidx);
-clustrows = coefvalues(2:end);
+clustidx = 1:size(x_selected,2); % for testing purposed plot all 
+clustdata = x_selected(2:end,clustidx);
+clustrows = met_bestsols{1}.coefvalues(2:end);
 % filter by resiprocal corr
 clustcorr = x_data_corr(clustidx);
 clustdata = clustdata(:,clustcorr>=0.7);
@@ -626,111 +592,123 @@ fig = cgo.plot;
 orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
     [figureFolder,...
-    'fig_clustergram_2LIhos1LIbact_model_coefs_MeierData_Rmodel_corr_0_7_smoothbysum'])
+    'fig_clustergram_2LIhos1LIbact_model_coefs_MeierData_Rmodel_LIwithinTotcorr_0_7_smoothbysum'])
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% print best solutions to files
+filename = [outputFolder ...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
+% create met_info object needed for the printing function
+met_info.CompoundID = meier_mets;
+met_info.CompoundName = meier_mets;          
+% print solutions to files
+print_bestsol_to_files(met_info, met_bestsols, filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% save model results to file - raw coefficients
-
-fid = fopen([outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
-             %'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-fprintf(fid, 'CompoundName\tReciprocalCorr');
-for i=1:length(coefvalues)
-    fprintf(fid, '\t%s', coefvalues{i});
-end
-fprintf(fid, '\n');
-for i=1:size(x_met_smooth,2)
-    fprintf(fid, '%s', meier_mets{i});
-    fprintf(fid, '\t%.3f', x_data_corr(i));
-    for j=1:size(x_met_smooth,1)
-        fprintf(fid, '\t%e', x_met_smooth(j,i));
-    end
-    fprintf(fid, '\n');
-end
-fclose(fid);
-
-% save model results to file - normalized by max coefficient
-fid = fopen([outputFolder...
-    'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
-    %'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-fprintf(fid, 'CompoundName\tReciprocalCorr');
-for i=1:length(coefvalues)
-    fprintf(fid, '\t%s', coefvalues{i});
-end
-fprintf(fid, '\n');
-for i=1:size(x_met_smooth,2)
-    fprintf(fid, '%s', meier_mets{i});
-    fprintf(fid, '\t%.3f', x_data_corr(i));
-    for j=1:size(x_met_smooth,1)
-        fprintf(fid, '\t%.3f', x_met_smooth(j,i)./max(abs(x_met_smooth(:,i))));
-    end
-    fprintf(fid, '\n');
-end
-fclose(fid);
-
-% save model results to file - metabolism_coefficients_only
-fid = fopen([outputFolder...
-    'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
-    %'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-fprintf(fid, 'CompoundName\tReciprocalCorr');
-for i=2:length(coefvalues)
-    fprintf(fid, '\t%s', coefvalues{i});
-end
-fprintf(fid, '\n');
-for i=1:size(x_met_smooth,2)
-    fprintf(fid, '%s', meier_mets{i});
-    fprintf(fid, '\t%.3f', x_data_corr(i));
-    for j=2:size(x_met_smooth,1)
-        fprintf(fid, '\t%.3f', x_met_smooth(j,i)./max(abs(x_met_smooth(2:end,i))));
-    end
-    fprintf(fid, '\n');
-end
-fclose(fid);
-    
-% save model results to file - reciprocal data restoration
-fid = fopen([outputFolder...
-    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_MeierData_smoothbysum.csv'], 'w');
-    %'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv'], 'w');
-columnNames = cell(size(x_rdata,1),1);
-idx=1;
-for diet_i = 1:length(sampleDiet_unique)
-    for type_i = 1:length(sampleType_unique)
-        for tiss_i = 1:length(git_labels)
-                selectDiet = sampleDiet_unique{diet_i};
-                selectMouse = sampleType_unique{type_i};
-                selectTissue = git_labels{tiss_i};
-                columnNames{idx} = [selectDiet '_' selectMouse '_' selectTissue];
-                idx = idx+1;
-        end
-    end
-end
-         
-fprintf(fid, 'CompoundName\tReciprocalCorr\tRandomCorr');
-for i=1:length(columnNames)
-    fprintf(fid, '\t%s', columnNames{i});
-end
-for i=1:length(columnNames)
-    fprintf(fid, '\tRecip_%s', columnNames{i});
-end
-for i=1:length(columnNames)
-    fprintf(fid, '\tRandom_%s', columnNames{i});
-end
-fprintf(fid, '\n');
-for i=1:size(x_rdata,2)
-    fprintf(fid, '%s', meier_mets{i});
-    fprintf(fid, '\t%.3f', x_data_corr(i));
-    fprintf(fid, '\t%.3f', x_data_corr_shuffled(i));
-    for j=1:size(kmean_vector_joint_orig(:,i),1)
-        fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j,i));
-    end
-    for j=1:size(x_rdata(:,i),1)
-        fprintf(fid, '\t%.3f', x_rdata(j,i));
-    end
-    for j=1:size(x_rdata_shuffled(:,i),1)
-        fprintf(fid, '\t%.3f', x_rdata_shuffled(j,i));
-    end
-    fprintf(fid, '\n');
-end
-fclose(fid);
+% % save model results to file - raw coefficients
+% 
+% fid = fopen([outputFolder ...
+%             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
+%              %'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
+% fprintf(fid, 'CompoundName\tReciprocalCorr');
+% for i=1:length(coefvalues)
+%     fprintf(fid, '\t%s', coefvalues{i});
+% end
+% fprintf(fid, '\n');
+% for i=1:size(x_met_smooth,2)
+%     fprintf(fid, '%s', meier_mets{i});
+%     fprintf(fid, '\t%.3f', x_data_corr(i));
+%     for j=1:size(x_met_smooth,1)
+%         fprintf(fid, '\t%e', x_met_smooth(j,i));
+%     end
+%     fprintf(fid, '\n');
+% end
+% fclose(fid);
+% 
+% % save model results to file - normalized by max coefficient
+% fid = fopen([outputFolder...
+%     'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
+%     %'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
+% fprintf(fid, 'CompoundName\tReciprocalCorr');
+% for i=1:length(coefvalues)
+%     fprintf(fid, '\t%s', coefvalues{i});
+% end
+% fprintf(fid, '\n');
+% for i=1:size(x_met_smooth,2)
+%     fprintf(fid, '%s', meier_mets{i});
+%     fprintf(fid, '\t%.3f', x_data_corr(i));
+%     for j=1:size(x_met_smooth,1)
+%         fprintf(fid, '\t%.3f', x_met_smooth(j,i)./max(abs(x_met_smooth(:,i))));
+%     end
+%     fprintf(fid, '\n');
+% end
+% fclose(fid);
+% 
+% % save model results to file - metabolism_coefficients_only
+% fid = fopen([outputFolder...
+%     'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
+%     %'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
+% fprintf(fid, 'CompoundName\tReciprocalCorr');
+% for i=2:length(coefvalues)
+%     fprintf(fid, '\t%s', coefvalues{i});
+% end
+% fprintf(fid, '\n');
+% for i=1:size(x_met_smooth,2)
+%     fprintf(fid, '%s', meier_mets{i});
+%     fprintf(fid, '\t%.3f', x_data_corr(i));
+%     for j=2:size(x_met_smooth,1)
+%         fprintf(fid, '\t%.3f', x_met_smooth(j,i)./max(abs(x_met_smooth(2:end,i))));
+%     end
+%     fprintf(fid, '\n');
+% end
+% fclose(fid);
+%     
+% % save model results to file - reciprocal data restoration
+% fid = fopen([outputFolder...
+%     'model_results_SMOOTH_normbyabsmax_reciprocal_problem_MeierData_smoothbysum.csv'], 'w');
+%     %'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv'], 'w');
+% columnNames = cell(size(x_rdata,1),1);
+% idx=1;
+% for diet_i = 1:length(sampleDiet_unique)
+%     for type_i = 1:length(sampleType_unique)
+%         for tiss_i = 1:length(git_labels)
+%                 selectDiet = sampleDiet_unique{diet_i};
+%                 selectMouse = sampleType_unique{type_i};
+%                 selectTissue = git_labels{tiss_i};
+%                 columnNames{idx} = [selectDiet '_' selectMouse '_' selectTissue];
+%                 idx = idx+1;
+%         end
+%     end
+% end
+%          
+% fprintf(fid, 'CompoundName\tReciprocalCorr\tRandomCorr');
+% for i=1:length(columnNames)
+%     fprintf(fid, '\t%s', columnNames{i});
+% end
+% for i=1:length(columnNames)
+%     fprintf(fid, '\tRecip_%s', columnNames{i});
+% end
+% for i=1:length(columnNames)
+%     fprintf(fid, '\tRandom_%s', columnNames{i});
+% end
+% fprintf(fid, '\n');
+% for i=1:size(x_rdata,2)
+%     fprintf(fid, '%s', meier_mets{i});
+%     fprintf(fid, '\t%.3f', x_data_corr(i));
+%     fprintf(fid, '\t%.3f', x_data_corr_shuffled(i));
+%     for j=1:size(kmean_vector_joint_orig(:,i),1)
+%         fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j,i));
+%     end
+%     for j=1:size(x_rdata(:,i),1)
+%         fprintf(fid, '\t%.3f', x_rdata(j,i));
+%     end
+%     for j=1:size(x_rdata_shuffled(:,i),1)
+%         fprintf(fid, '\t%.3f', x_rdata_shuffled(j,i));
+%     end
+%     fprintf(fid, '\n');
+% end
+% fclose(fid);
 
