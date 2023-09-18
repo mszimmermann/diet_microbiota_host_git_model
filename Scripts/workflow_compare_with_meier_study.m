@@ -59,6 +59,7 @@ met_bestsol_DC.sol_coefs = x_met_smooth(select_mets,:);
 %met_bestsol_DC.ReciprocalCorr = modelingResults.ReciprocalCorr(select_mets);
 met_bestsol_DC.ReciprocalCorr = cellfun(@(x) str2double(x),...
     modelingResults.ReciprocalCorr(select_mets));
+met_bestsol_DC.modelname = 'Old_IP_DC';
 
 
 modelingResults = readtable([outputFolder...
@@ -69,6 +70,8 @@ coefvalues_CVR = modelingResults.Properties.VariableNames(width(modelingResults)
 met_bestsol_CVR.coefvalues = coefvalues_CVR;
 met_bestsol_CVR.sol_coefs = x_met_smooth_CVR(select_mets,:);
 met_bestsol_CVR.ReciprocalCorr = modelingResults.ReciprocalCorr(select_mets);
+met_bestsol_CVR.modelname = 'Old_IP_CVR';
+
 % % load data and restored data from file
 % % save model results to file - reciprocal data restoration
 % modelData = readtable([resultsFolder...
@@ -116,7 +119,7 @@ met_bestsol_CVR.ReciprocalCorr = modelingResults.ReciprocalCorr(select_mets);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 filename = '.\ProcessedData\model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier';
-sel_crit = 'LI PCC within high total';
+sel_crit = 'LI PCC within high total';%'IP';%
 [met_info_meier, met_bestsol_meier] = read_bestsol_from_file(filename,...
                                                 sel_crit);
 %edit meier names to remove x in front of metabolites
@@ -129,7 +132,11 @@ for i=1:length(met_info_meier.CompoundName)
         end
     end
 end
+met_bestsol_meier.modelname = 'Meier_LIPCCwT';%'Meier_IP';
 
+compare_two_model_results(met_info, met_bestsol_DC,...
+                          met_info_meier, met_bestsol_meier,...
+                                   figureFolder);
                                                          
 x_met_smooth_meier = met_bestsol_meier.sol_coefs;
 coefvalues_meier = met_bestsol_meier.coefvalues;

@@ -13,7 +13,7 @@ function compare_two_model_results(met_names1, met_bestsols1,...
 
 % corr threshold for reliable solutions
 corrthreshold = 0.7;
-classthreshold = 1;%0.5;
+classthreshold = 0.5;%1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % intersect modelled metabolite names
@@ -43,7 +43,8 @@ for i=1:length(met_names)
     end
 end
 
-model2_corr = met_bestsols2.ReciprocalCorrLI(idx2);
+%model2_corr = met_bestsols2.ReciprocalCorrLI(idx2);
+model2_corr = met_bestsols2.ReciprocalCorr(idx2);
 for i=1:length(met_names)
     bestsol = met_bestsols2.sol_coefs(idx2(i),:);
     %normalize without the first coefficient (f)
@@ -75,7 +76,28 @@ model2_classes((model2_classes>-classthreshold) &...
 
 % get the confusion matrix
 [confmat, classlabels] = confusionmat(model1_classes(:,1),...
-                                      model2_classes);
+                                      model2_classes(:,1));
+                                  
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot confusion matrix
+fig = figure;%('units','normalized','outerposition',[0 0 1 1]);
+
+heatmap(confmat, ...
+        'YDisplayLabels', classlabels,...
+        'XDisplayLabels', classlabels)
+xlabel([met_bestsols2.modelname ' class'])
+ylabel([met_bestsols1.modelname ' class'])
+suptitle('Confusion matrix')
+orient landscape
+
+print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
+    [figureFolder, 'figSX_confusion_matrix_'...
+    met_bestsols2.modelname, '_vs_',...
+    met_bestsols1.modelname,...
+    '_class', strrep(num2str(classthreshold),'.','_'),...
+    '_corr', strrep(num2str(corrthreshold),'.','_')])
+
+
 % % create a matrix with 
 % % accuracy, precision, recall, specificity, F1, support 
 % report_labels = {'accuracy', 'precision', 'recall',...
