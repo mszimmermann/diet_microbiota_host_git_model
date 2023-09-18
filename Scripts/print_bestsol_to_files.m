@@ -34,7 +34,7 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
                    '.csv'];
     fid = fopen(curfilename, 'w');
     fprintf(fid, ['MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\t'...
-                  'ReciprocalCorr\tReciprocalCorrSI\tReciprocalCorrLI\tReciprocalCorrMean\t']);
+                  'ReciprocalCorr\tReciprocalCorrSI\tReciprocalCorrLI\tReciprocalCorrMean']);
     for i=1:length(met_bestsols{1}.coefvalues)
         fprintf(fid, '\t%s', met_bestsols{1}.coefvalues{i});
     end
@@ -85,7 +85,7 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
     columnNames = met_bestsols{1}.kmeanMatrix_joint_names;
     
     fprintf(fid, ['MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\t'...
-                  'ReciprocalCorr\tReciprocalCorrSI\tReciprocalCorrLI\tReciprocalCorrMean\t']);
+                  'ReciprocalCorr\tReciprocalCorrSI\tReciprocalCorrLI\tReciprocalCorrMean']);
     for i=1:length(columnNames)
         fprintf(fid, '\t%s', columnNames{i});
     end
