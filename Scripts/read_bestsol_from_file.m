@@ -18,14 +18,52 @@ met_info.SumGITclusters = soldata.SumGITclusters;
 columnNames = soldata.Properties.VariableNames;
 columnNames_reciprocal_idx = find(cellfun(@(x) contains(lower(x), ...
                     'reciprocal'), columnNames));
-for i=1:length(columnNames_reciprocal_idx)
-    met_bestsol.(columnNames{columnNames_reciprocal_idx(i)}) = ...
-        soldata.(columnNames{columnNames_reciprocal_idx(i)});
-end
-met_bestsol.sol_coefs = soldata{:, columnNames_reciprocal_idx(end)+1:end};
+% save the filed names in the same way as in bestsol
+met_bestsol.x_sel_CorrRev = soldata.ReciprocalCorr;
+met_bestsol.x_sel_CorrRevSI = soldata.ReciprocalCorrSI;
+met_bestsol.x_sel_CorrRevLI = soldata.ReciprocalCorrLI;
+met_bestsol.x_sel_CorrRevMean = soldata.ReciprocalCorrMean;
+% get the x values that come after correlation columns
+met_bestsol.x = soldata{:, columnNames_reciprocal_idx(end)+1:end};
 met_bestsol.coefvalues = columnNames(columnNames_reciprocal_idx(end)+1:end);
 % save criterion and file
-met_bestsol.sel_crit = sel_crit;
+met_bestsol.selection_criterion = sel_crit;
 met_bestsol.fileName = curfilename;
 
-    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% read reciprocal data
+curfilenameR = [filename...
+               '_reciprocal_'... 
+               strrep(sel_crit,' ','_'),...
+               '.csv'];
+soldataR = readtable(curfilenameR,...
+    'delim', '\t', 'ReadVariableNames',1, 'HeaderLines',0);
+
+% check that the metabolites are the same in soldata and soldataR
+if ~isequal(soldata.CompoundID, soldataR.CompoundID)
+    fprintf(['Warning: metabolite IDs do not match between:\n%s\nand\n%s\n'...
+             'omit loading reciprocal data\n'], curfilename, curfilenameR)
+else
+    % load original data
+    % get colunms with original data
+    columnNamesR = soldataR.Properties.VariableNames;
+    columnNamesR_reciprocal_idx = find(cellfun(@(x) contains(lower(x), ...
+                    'reciprocal'), columnNamesR));
+    columnNamesR_reciprocal_data_idx = find(cellfun(@(x) contains(lower(x), ...
+                    'recip_'), columnNamesR));
+                
+    met_bestsol.kmeanMatrix_joint_names = columnNamesR(columnNamesR_reciprocal_idx(end)+1:...
+                        columnNamesR_reciprocal_data_idx(1)-1);
+    met_bestsol.kmeanMatrix_joint_orig = soldataR{:,columnNamesR_reciprocal_idx(end)+1:...
+                        columnNamesR_reciprocal_data_idx(1)-1};
+
+    % check if the correlations are the same in the reciprocal file
+    % if not, this might be a different solution
+    if ~isequal(soldata.ReciprocalCorr, soldataR.ReciprocalCorr)
+        fprintf(['Warning: reciprocal correlations do not match between:\n%s\nand\n%s\n'...
+          'omit loading reciprocal data\n'], curfilename, curfilenameR)
+    else
+        % add reciprocal data to met_bestsol
+        met_bestsol.x_sel_dataR = soldataR{:,columnNamesR_reciprocal_data_idx};
+    end
+end  
