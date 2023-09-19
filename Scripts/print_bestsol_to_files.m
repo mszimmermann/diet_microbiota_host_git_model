@@ -82,12 +82,13 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
     fid = fopen(curfilename, 'w');
 
     % column names for the data
-    columnNames = met_bestsols{1}.kmeanMatrix_joint_names;
+    columnNames = met_bestsols{1}.kmeanMatrix_joint_names(:);
     
     fprintf(fid, ['MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\t'...
                   'ReciprocalCorr\tReciprocalCorrSI\tReciprocalCorrLI\tReciprocalCorrMean']);
     for i=1:length(columnNames)
         fprintf(fid, '\t%s', columnNames{i});
+        
     end
     for i=1:length(columnNames)
         fprintf(fid, '\tRecip_%s', columnNames{i});
