@@ -116,7 +116,6 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
             for j=1:size(met_bestsols{i}.x_sel_dataR,1)
                 fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_dataR(j));
             end
-            fprintf(fid, '\n');
         else
             % best solution of this type was not possible to select for
             % this metabolite
@@ -129,6 +128,7 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
                 fprintf(fid, '\t0');
             end
         end
+        fprintf(fid, '\n');
     end
     fclose(fid);
 end
