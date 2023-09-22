@@ -208,7 +208,7 @@ selected_mets = 1:length(meier_mets)-1; % last metabolite is not measured
 met_gitfits = cell(length(selected_mets),1);
 met_bestsols = cell(length(selected_mets),1);
 
-for met_i = 33:33%1:length(selected_mets)
+for met_i = 1:length(selected_mets)
    
         cmpd_interest_idx = selected_mets(met_i);
 %         % set volume to CV or GF/WT
@@ -601,10 +601,18 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
 filename = [outputFolder ...
             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
 % create met_info object needed for the printing function
+met_info = struct;
 met_info.CompoundID = meier_mets;
 met_info.CompoundName = meier_mets;          
 % print solutions to files
 print_bestsol_to_files(met_info, met_bestsols, filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% print all solutions to files
+filename = [outputFolder ...
+            'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
+% print solutions to files
+print_allsols_to_files(met_info, met_gitfits, filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

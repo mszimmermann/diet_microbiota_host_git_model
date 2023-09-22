@@ -18,18 +18,11 @@ add_global_and_file_dependencies
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read annotation from file with Meier IDs
-% annotationTableSpatialClusters = readtable([inputFolder ...
-%     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
 annotationTableMeier = readtable([inputFolder ...
     'metabolites_allions_combined_formulas_with_metabolite_filters_meier.csv']);
 
-%annotationTableSpatialClusters = readtable([inputFolder ...
-%    'metabolites_allions_combined_formulas_with_metabolite_filters_meier_nonunique.csv']);
-% sort annotation according to the indeces
-[~,sortidx] = sort(annotationTableSpatialClusters.Index, 'ascend');
-annotationTableSpatialClusters = annotationTableSpatialClusters(sortidx,:);
-
-select_mets = cellfun(@(x) ~isempty(x), annotationTableMeier.Meier_compound);
+%select_mets = cellfun(@(x) ~isempty(x), annotationTableMeier.Meier_compound);
+select_mets = annotationTableMeier.MetaboliteFilter==1;
 
 met_info.MZ =annotationTableMeier.MZ(select_mets);
 met_info.RT =annotationTableMeier.RT(select_mets);
@@ -45,8 +38,6 @@ for i=1:length(met_info.CompoundName)
     met_info.CompoundName{i} = str;
 end
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 modelingResults = readtable([resultsFolder ...
@@ -55,11 +46,14 @@ x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
 coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
 
 met_bestsol_DC.coefvalues = coefvalues;
-met_bestsol_DC.sol_coefs = x_met_smooth(select_mets,:);
+met_bestsol_DC.x = x_met_smooth(select_mets,:);
 %met_bestsol_DC.ReciprocalCorr = modelingResults.ReciprocalCorr(select_mets);
-met_bestsol_DC.ReciprocalCorr = cellfun(@(x) str2double(x),...
+met_bestsol_DC.x_sel_CorrRev = cellfun(@(x) str2double(x),...
     modelingResults.ReciprocalCorr(select_mets));
+met_bestsol_DC.x_sel_CorrRevSI = modelingResults.ReciprocalCorr(select_mets);
+met_bestsol_DC.x_sel_CorrRevLI = modelingResults.ReciprocalCorr(select_mets);
 met_bestsol_DC.modelname = 'Old_IP_DC';
+met_bestsol_DC.selection_criterion = 'IP';
 
 
 modelingResults = readtable([outputFolder...
@@ -68,51 +62,61 @@ x_met_smooth_CVR = modelingResults{:, width(modelingResults)-8:end};
 coefvalues_CVR = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
 
 met_bestsol_CVR.coefvalues = coefvalues_CVR;
-met_bestsol_CVR.sol_coefs = x_met_smooth_CVR(select_mets,:);
-met_bestsol_CVR.ReciprocalCorr = modelingResults.ReciprocalCorr(select_mets);
+met_bestsol_CVR.x = x_met_smooth_CVR(select_mets,:);
+met_bestsol_CVR.x_sel_CorrRev = modelingResults.ReciprocalCorr(select_mets);
+met_bestsol_CVR.x_sel_CorrRevSI = modelingResults.ReciprocalCorr(select_mets);
+met_bestsol_CVR.x_sel_CorrRevLI = modelingResults.ReciprocalCorr(select_mets);
 met_bestsol_CVR.modelname = 'Old_IP_CVR';
+met_bestsol_CVR.selection_criterion = 'IP';
 
-% % load data and restored data from file
-% % save model results to file - reciprocal data restoration
-% modelData = readtable([resultsFolder...
-%     'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv']);
-% modelData_data = modelData(:, 9:end);
-% modelData_orig = modelData_data{:, cellfun(@(x) ~(contains(x, 'Recip') |...
-%                                              contains(x, 'Random') ),...
-%                                              modelData_data.Properties.VariableNames)};
-% modelData_orig_cols = modelData_data.Properties.VariableNames(cellfun(@(x) ~(contains(x, 'Recip') |...
-%                                              contains(x, 'Random') ),...
-%                                              modelData_data.Properties.VariableNames));
-% modelData_recip = modelData_data{:, cellfun(@(x) contains(x, 'Recip'),...
-%                                              modelData_data.Properties.VariableNames)};
-% % get correlations calculated with reverse problem
-% if isnumeric(modelData.ReciprocalCorr(1))
-%     x_data_corr = modelData.ReciprocalCorr;
-% else
-%     % it is not numeric, probably contains NaN - convert to numeric
-%     x_data_corr = cellfun(@(x) str2double(x), modelData.ReciprocalCorr);
-% end
-% 
-% %%%%%%%%%%%%%%%%%%
-% % get CVR modelling results
-% modelData_CVR = readtable([outputFolder...
-%     'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions_with_CVR.csv']);
-% modelData_data_CVR = modelData_CVR(:, 9:end);
-% modelData_orig_CVR = modelData_data_CVR{:, cellfun(@(x) ~(contains(x, 'Recip') |...
-%                                              contains(x, 'Random') ),...
-%                                              modelData_data_CVR.Properties.VariableNames)};
-% modelData_orig_cols_CVR = modelData_data_CVR.Properties.VariableNames(cellfun(@(x) ~(contains(x, 'Recip') |...
-%                                              contains(x, 'Random') ),...
-%                                              modelData_data_CVR.Properties.VariableNames));
-% modelData_recip_CVR = modelData_data_CVR{:, cellfun(@(x) contains(x, 'Recip'),...
-%                                              modelData_data_CVR.Properties.VariableNames)};
-% % get correlations calculated with reverse problem
-% if isnumeric(modelData_CVR.ReciprocalCorr(1))
-%     x_data_corr_CVR = modelData_CVR.ReciprocalCorr;
-% else
-%     % it is not numeric, probably contains NaN - convert to numeric
-%     x_data_corr_CVR = cellfun(@(x) str2double(x), modelData_CVR.ReciprocalCorr);
-% end
+% load data and restored data from file
+% save model results to file - reciprocal data restoration
+modelData = readtable([resultsFolder...
+    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv']);
+modelData_data = modelData(:, 9:end);
+modelData_orig = modelData_data{:, cellfun(@(x) ~(contains(x, 'Recip') |...
+                                             contains(x, 'Random') ),...
+                                             modelData_data.Properties.VariableNames)};
+modelData_orig_cols = modelData_data.Properties.VariableNames(cellfun(@(x) ~(contains(x, 'Recip') |...
+                                             contains(x, 'Random') ),...
+                                             modelData_data.Properties.VariableNames));
+modelData_recip = modelData_data{:, cellfun(@(x) contains(x, 'Recip'),...
+                                             modelData_data.Properties.VariableNames)};
+% get correlations calculated with reverse problem
+if isnumeric(modelData.ReciprocalCorr(1))
+    x_data_corr = modelData.ReciprocalCorr;
+else
+    % it is not numeric, probably contains NaN - convert to numeric
+    x_data_corr = cellfun(@(x) str2double(x), modelData.ReciprocalCorr);
+end
+
+met_bestsol_DC.kmeanMatrix_joint_names = modelData_data.Properties.VariableNames(1:24);
+met_bestsol_DC.kmeanMatrix_joint_orig = modelData_data{select_mets, 1:24};
+met_bestsol_DC.x_sel_dataR = modelData_data{select_mets, 25:48};
+%%%%%%%%%%%%%%%%%%
+% get CVR modelling results
+modelData_CVR = readtable([outputFolder...
+    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions_with_CVR.csv']);
+modelData_data_CVR = modelData_CVR(:, 9:end);
+modelData_orig_CVR = modelData_data_CVR{:, cellfun(@(x) ~(contains(x, 'Recip') |...
+                                             contains(x, 'Random') ),...
+                                             modelData_data_CVR.Properties.VariableNames)};
+modelData_orig_cols_CVR = modelData_data_CVR.Properties.VariableNames(cellfun(@(x) ~(contains(x, 'Recip') |...
+                                             contains(x, 'Random') ),...
+                                             modelData_data_CVR.Properties.VariableNames));
+modelData_recip_CVR = modelData_data_CVR{:, cellfun(@(x) contains(x, 'Recip'),...
+                                             modelData_data_CVR.Properties.VariableNames)};
+% get correlations calculated with reverse problem
+if isnumeric(modelData_CVR.ReciprocalCorr(1))
+    x_data_corr_CVR = modelData_CVR.ReciprocalCorr;
+else
+    % it is not numeric, probably contains NaN - convert to numeric
+    x_data_corr_CVR = cellfun(@(x) str2double(x), modelData_CVR.ReciprocalCorr);
+end
+
+met_bestsol_CVR.kmeanMatrix_joint_names = modelData_data_CVR.Properties.VariableNames(1:24);
+met_bestsol_CVR.kmeanMatrix_joint_orig = modelData_data_CVR{select_mets, 1:24};
+met_bestsol_CVR.x_sel_dataR = modelData_data_CVR{select_mets, 25:48};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read meier modelling results
@@ -136,7 +140,15 @@ met_bestsol_meier.modelname = 'Meier_LIPCCwT';%'Meier_IP';
 
 compare_two_model_results(met_info, met_bestsol_DC,...
                           met_info_meier, met_bestsol_meier,...
-                                   figureFolder);
+                          figureFolder);
+
+[confmat, classlabels] = compare_two_model_results(met_info, met_bestsol_DC,...
+                          met_info, met_bestsol_CVR,...
+                          figureFolder);
+
+compare_two_model_reciprocal_data(met_info, met_bestsol_DC,...
+                          met_info_meier, met_bestsol_meier,...
+                          figureFolder);
                                                          
 x_met_smooth_meier = met_bestsol_meier.sol_coefs;
 coefvalues_meier = met_bestsol_meier.coefvalues;

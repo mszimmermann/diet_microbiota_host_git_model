@@ -1,4 +1,4 @@
-function compare_two_model_results(met_names1, met_bestsols1,...
+function [confmat, classlabels] = compare_two_model_results(met_names1, met_bestsols1,...
                                    met_names2, met_bestsols2,...
                                    figureFolder)
 % assess two modelling results (e.g. to two datasets,
@@ -23,17 +23,22 @@ classthreshold = 0.5;%1;
 % get classification by each model
 model1_classes = zeros(length(met_names),1);
 model2_classes = zeros(length(met_names),1);
+% record also the "sources" - diet, host or microbe
+model1_sources = zeros(length(met_names),1);
+model2_sources = zeros(length(met_names),1);
 
 if length(met_bestsols1.coefvalues)>5
     model1_classes = zeros(length(met_names),2);
+    model1_sources = zeros(length(met_names),2);
 end
 if length(met_bestsols2.coefvalues)>5
     model2_classes = zeros(length(met_names),2);
+    model2_sources = zeros(length(met_names),2);
 end
 
-model1_corr = met_bestsols1.ReciprocalCorr(idx1);
+model1_corr = met_bestsols1.x_sel_CorrRev(idx1);
 for i=1:length(met_names)
-    bestsol = met_bestsols1.sol_coefs(idx1(i),:);
+    bestsol = met_bestsols1.x(idx1(i),:);
     %normalize without the first coefficient (f)
     bestsol = bestsol(2:end)/max(abs(bestsol(2:end)));
     if length(met_bestsols1.coefvalues)>5
@@ -41,12 +46,13 @@ for i=1:length(met_names)
     else
         model1_classes(i) = bestsol(end);
     end
+    model1_sources(i) = determine_met_source(bestsol);
 end
 
-%model2_corr = met_bestsols2.ReciprocalCorrLI(idx2);
-model2_corr = met_bestsols2.ReciprocalCorr(idx2);
+%model2_corr = met_bestsols2.x_sel_CorrRevLI(idx2);
+model2_corr = met_bestsols2.x_sel_CorrRev(idx2);
 for i=1:length(met_names)
-    bestsol = met_bestsols2.sol_coefs(idx2(i),:);
+    bestsol = met_bestsols2.x(idx2(i),:);
     %normalize without the first coefficient (f)
     bestsol = bestsol(2:end)/max(abs(bestsol(2:end)));
     if length(met_bestsols2.coefvalues)>5
@@ -54,6 +60,7 @@ for i=1:length(met_names)
     else
         model2_classes(i) = bestsol(end);
     end
+    model2_sources(i) = determine_met_source(bestsol);
 end
 
 % keep only metabolites that pass the corr threshold
@@ -97,6 +104,23 @@ print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
     '_class', strrep(num2str(classthreshold),'.','_'),...
     '_corr', strrep(num2str(corrthreshold),'.','_')])
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% get the confusion matrix for metabolite sources
+% select_mets = (model1_corr >= corrthreshold) & ...
+%               (model2_corr >= corrthreshold); 
+% model1_sources = model1_sources(select_mets,:);
+% model2_sources = model2_sources(select_mets,:);
+% 
+% [confmat, classlabels] = confusionmat(model1_sources(:,1),...
+%                                       model2_sources);
+
+% heatmap(confmat, ...
+%         'YDisplayLabels', classlabels,...
+%         'XDisplayLabels', classlabels)
+% xlabel([met_bestsols2.modelname ' source'])
+% ylabel([met_bestsols1.modelname ' source'])
+% suptitle('Confusion matrix')
+% orient landscape
 
 % % create a matrix with 
 % % accuracy, precision, recall, specificity, F1, support 
