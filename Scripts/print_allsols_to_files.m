@@ -52,11 +52,19 @@ for i=1:length(gitfits)
                                 met_info.MetaboliteFilter(i));
     fprintf(fid, '\t%d', met_info.gut_filter(i));
 
-    testx = gitfits{i}.testx;
-    testx = reshape(testx, [],1);
-    for j=1:length(testx)
-        fprintf(fid, '\t%e', testx(j));
+
+    if ~isempty(gitfits{i})
+        testx = gitfits{i}.testx;
+        testx = reshape(testx, [],1);
+        for j=1:length(testx)
+            fprintf(fid, '\t%e', testx(j));
+        end
+    else
+        for j=1:numel(gitfits{1}.testx)
+            fprintf(fid, '\t0');
+        end
     end
+        
     fprintf(fid, '\n');
 end
 fclose(fid);
@@ -90,13 +98,24 @@ for i=1:length(gitfits)
                                 met_info.MetaboliteFilter(i));
     fprintf(fid, '\t%d', met_info.gut_filter(i));
 
-    kmean_vector_joint_orig = gitfits{i}.kmeanMatrix_joint_orig(:);
-    for j=1:length(kmean_vector_joint_orig)
-        fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j));
-    end
-    dataR = reshape(gitfits{i}.testdataR,[],1); 
-    for j=1:length(dataR)
-        fprintf(fid, '\t%.3f', dataR(j));
+    if ~isempty(gitfits{i})
+        kmean_vector_joint_orig = gitfits{i}.kmeanMatrix_joint_orig(:);
+        for j=1:length(kmean_vector_joint_orig)
+            fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j));
+        end
+        dataR = reshape(gitfits{i}.testdataR,[],1); 
+        for j=1:length(dataR)
+            fprintf(fid, '\t%.3f', dataR(j));
+        end
+    else
+        %"original data"
+        for j=1:numel(gitfits{1}.kmeanMatrix_joint_orig)
+            fprintf(fid, '\t0');
+        end
+        % "reciprocal data"
+        for j=1:numel(gitfits{1}.testdataR)
+            fprintf(fid, '\t0');
+        end
     end
     fprintf(fid, '\n');
 end

@@ -47,25 +47,33 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
                                     met_info.MetaboliteFilter(i));
         fprintf(fid, '\t%d', met_info.gut_filter(i));
         
-        if sel_crit <= length(met_bestsols{i}.x_sel_CorrRev)
-            fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRev(sel_crit));
-            fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRevSI(sel_crit));
-            fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRevLI(sel_crit));
-            fprintf(fid, '\t%.3f', mean([met_bestsols{i}.x_sel_CorrRev(sel_crit),...
-                                         met_bestsols{i}.x_sel_CorrRevSI(sel_crit),...
-                                         met_bestsols{i}.x_sel_CorrRevLI(sel_crit)]));
-            for j=1:size(met_bestsols{i}.x,1)
-                fprintf(fid, '\t%e', met_bestsols{i}.x(j,sel_crit));
+        if ~isempty(met_bestsols{i})
+            if sel_crit <= length(met_bestsols{i}.x_sel_CorrRev)
+                fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRev(sel_crit));
+                fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRevSI(sel_crit));
+                fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRevLI(sel_crit));
+                fprintf(fid, '\t%.3f', mean([met_bestsols{i}.x_sel_CorrRev(sel_crit),...
+                                             met_bestsols{i}.x_sel_CorrRevSI(sel_crit),...
+                                             met_bestsols{i}.x_sel_CorrRevLI(sel_crit)]));
+                for j=1:size(met_bestsols{i}.x,1)
+                    fprintf(fid, '\t%e', met_bestsols{i}.x(j,sel_crit));
+                end
+            else
+                % best solution of this type was not possible to select for
+                % this metabolite
+                fprintf(fid, '\t0\t0\t0\t0');
+                for j=1:size(met_bestsols{i}.x,1)
+                    fprintf(fid, '\t0');
+                end
             end
         else
-            % best solution of this type was not possible to select for
-            % this metabolite
-            fprintf(fid, '\t0\t0\t0\t0');
-            for j=1:size(met_bestsols{i}.x,1)
-                fprintf(fid, '\t0');
-            end
-        end
-            
+                % best solution of this type was not possible to select for
+                % this metabolite
+                fprintf(fid, '\t0\t0\t0\t0');
+                for j=1:size(met_bestsols{1}.x,1)
+                    fprintf(fid, '\t0');
+                end
+            end   
         fprintf(fid, '\n');
     end
     fclose(fid);
@@ -102,29 +110,43 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
                                     met_info.MetaboliteFilter(i));
         fprintf(fid, '\t%d', met_info.gut_filter(i));
         
-        if sel_crit <= length(met_bestsols{i}.x_sel_CorrRev)
-        
-            fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRev(sel_crit));
-            fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRevSI(sel_crit));
-            fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRevLI(sel_crit));
-            fprintf(fid, '\t%.3f', mean([met_bestsols{i}.x_sel_CorrRev(sel_crit),...
-                                         met_bestsols{i}.x_sel_CorrRevSI(sel_crit),...
-                                         met_bestsols{i}.x_sel_CorrRevLI(sel_crit)]));
-            kmean_vector_joint_orig = met_bestsols{i}.kmeanMatrix_joint_orig(:);
-            for j=1:length(kmean_vector_joint_orig)
-                fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j));
-            end
-            for j=1:size(met_bestsols{i}.x_sel_dataR,1)
-                fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_dataR(j));
+        if ~isempty(met_bestsols{i})
+            if sel_crit <= length(met_bestsols{i}.x_sel_CorrRev)
+
+                fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRev(sel_crit));
+                fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRevSI(sel_crit));
+                fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_CorrRevLI(sel_crit));
+                fprintf(fid, '\t%.3f', mean([met_bestsols{i}.x_sel_CorrRev(sel_crit),...
+                                             met_bestsols{i}.x_sel_CorrRevSI(sel_crit),...
+                                             met_bestsols{i}.x_sel_CorrRevLI(sel_crit)]));
+                kmean_vector_joint_orig = met_bestsols{i}.kmeanMatrix_joint_orig(:);
+                for j=1:length(kmean_vector_joint_orig)
+                    fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j));
+                end
+                for j=1:size(met_bestsols{i}.x_sel_dataR,1)
+                    fprintf(fid, '\t%.3f', met_bestsols{i}.x_sel_dataR(j));
+                end
+            else
+                % best solution of this type was not possible to select for
+                % this metabolite
+                fprintf(fid, '\t0\t0\t0\t0');
+                kmean_vector_joint_orig = met_bestsols{i}.kmeanMatrix_joint_orig(:);
+                for j=1:length(kmean_vector_joint_orig)
+                    fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j));
+                end
+                for j=1:length(kmean_vector_joint_orig)
+                    fprintf(fid, '\t0');
+                end
             end
         else
-            % best solution of this type was not possible to select for
+        % best solution of this type was not possible to select for
             % this metabolite
             fprintf(fid, '\t0\t0\t0\t0');
-            kmean_vector_joint_orig = met_bestsols{i}.kmeanMatrix_joint_orig(:);
+            % "original data"
             for j=1:length(kmean_vector_joint_orig)
-                fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j));
+                fprintf(fid, '\t0');
             end
+            %"reciprical data"
             for j=1:length(kmean_vector_joint_orig)
                 fprintf(fid, '\t0');
             end
