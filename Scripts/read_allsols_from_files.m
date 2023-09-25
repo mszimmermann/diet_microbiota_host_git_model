@@ -56,9 +56,34 @@ else
                     'recip_'), columnNamesR));
     columnNamesR_data = columnNamesR(datastartidx:columnNamesR_reciprocal_data_idx(1)-1);
     kmeanMatrix_joint_orig = soldataR{:,datastartidx:columnNamesR_reciprocal_data_idx(1)-1};
+    kmeanMatrix_joint_names = reshape(columnNamesR_data, [],6);
     dataR = soldataR{:,columnNamesR_reciprocal_data_idx};
     for i=1:size(dataR,1)
-        kmeanMatrix_joint_orig = 
+        cur_kmeanMatrix_joint_orig = reshape(kmeanMatrix_joint_orig(i,:),[],6);
+        cur_dataR = reshape(dataR(i,:), nsols,[]);
+        gitfits{i}.kmeanMatrix_joint_orig = cur_kmeanMatrix_joint_orig;
+        gitfits{i}.kmeanMatrix_joint_names = kmeanMatrix_joint_names;
+        gitfits{i}.testdataR = cur_dataR;
+        %calculate correlations between original and restored data
+        testCorrRev = zeros(1,nsols);
+        testCorrRevSI = zeros(1,nsols);
+        testCorrRevLI = zeros(1,nsols);
+        for k=1:nsols
+            cur_dataRi = reshape(cur_dataR(k,:),[],6);
+            testCorrRev(k) = corr(kmeanMatrix_joint_orig(k,:)',...
+                                      cur_dataR(k,:)');
+            testCorrRevSI(k) = corr(reshape(cur_kmeanMatrix_joint_orig(:,1:3),[],1),...
+                                    reshape(cur_dataRi(:,1:3),[],1));
+            testCorrRevLI(k) = corr(reshape(cur_kmeanMatrix_joint_orig(:,4:6),[],1),...
+                                    reshape(cur_dataRi(:,4:6),[],1)); 
+        end
+        gitfits{i}.testCorrRev = testCorrRev;
+        gitfits{i}.testCorrRevSI = testCorrRevSI;
+        gitfits{i}.testCorrRevLI = testCorrRevLI;
+    end
+end
+        
+        
         
         
         
