@@ -91,7 +91,102 @@ condLabels = strcat(aa(:),'-', bb(:));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % selected_mets are metabolites detected along the GI tract
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% calculate the mean normalized value across replicates
 
+% define tissue order
+sampleTissue_unique = {'SI1', 'SI2', 'SI3', 'Cecum', 'Colon', 'Feces'};
+git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
+
+% remove DC and leave only CVR
+%sampleType_unique(ismember(sampleType_unique, {'DC'}))=[];
+% remove CVR and leave only DC
+sampleType_unique(ismember(sampleType_unique, {'CVR'}))=[];
+
+fileNameFigure = [figureFolder...
+    'fig_DCann_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
+
+diag_plot_flag = 0; % diagnostic plotting flag
+if diag_plot_flag
+    fig = figure('units','normalized','outerposition',[0 0 1 1]);
+end
+
+
+% define which metabolites to model
+%%%% all metabolites
+%selected_mets = 1:size(meanMatrix,1);
+%%%% metabolites detected in the GIT and annotated
+selected_mets = find((sum(spatialClusters,2)>0) &...
+                     (annotationTableSpatialClusters.MetaboliteFilter==1));
+
+met_gitfits = cell(length(selected_mets),1);
+met_bestsols = cell(length(selected_mets),1);
+
+for met_i = 1:length(selected_mets)
+   
+    if sum(spatialClusters(met_i,:))>0
+        cmpd_interest_idx = selected_mets(met_i);
+        % calculate mean profiles            
+        idx=1;
+        kmeanMatrix_joint = zeros(4,6);
+        kmeanMatrix_joint_names = cell(4,6);
+        for diet_i = 1:length(sampleDiet_unique)
+            for type_i = 1:length(sampleType_unique)
+                selectDiet = sampleDiet_unique{diet_i};
+                selectMouse = sampleType_unique{type_i};
+                kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
+                kmeanMatrix = kmeanMatrix(cmpd_interest_idx,1:6);
+                kmeanMatrix_joint(idx,:) = kmeanMatrix;
+                kmeanMatrix_joint_names(idx,:) = strcat(selectDiet,...
+                                                        '_',...
+                                                        selectMouse,...
+                                                        '_',...
+                                                        git_labels);
+                idx = idx+1;
+            end
+        end
+        % normalize by max intensity
+        kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
+        kmeanMatrix_joint(isnan(kmeanMatrix_joint))=0;
+
+        if nnz(kmeanMatrix_joint)
+            %[gitfit] = fitGITmodel(kmeanMatrix_joint, ncond, shuffle_flag)
+            [gitfit] = fitGITmodel(kmeanMatrix_joint, kmeanMatrix_joint_names, 4, 1);
+            % get best solution
+            [bestsol] = select_gitfit_sol(gitfit);
+            
+            % save gitfit and best solution for the current metabolite
+            met_gitfits{met_i} = gitfit;
+            met_bestsols{met_i} = bestsol;
+
+            if diag_plot_flag
+                gitfit_diag_plot(gitfit,...
+                    [num2str(annotationTableSpatialClusters.MZ(cmpd_interest_idx)),'_',...
+                     num2str(annotationTableSpatialClusters.RT(cmpd_interest_idx)),'_',...
+                     annotationTableSpatialClusters.CompoundName{cmpd_interest_idx}],...
+                     fig)
+
+                orient landscape
+                %print to figure
+                print(fig, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
+                        fileNameFigure);
+                clf('reset')
+            end    
+        end
+    end
+    % display status every 100 metabolites
+    if mod(met_i,100)==0
+        fprintf('Calculated parameters for %d metabolites\n',met_i);
+    end
+end
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % define which metabolites to model
 %%%% all metabolites
 selected_mets = 1:size(meanMatrix,1);
