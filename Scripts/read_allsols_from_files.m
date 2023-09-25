@@ -60,7 +60,7 @@ else
     dataR = soldataR{:,columnNamesR_reciprocal_data_idx};
     for i=1:size(dataR,1)
         cur_kmeanMatrix_joint_orig = reshape(kmeanMatrix_joint_orig(i,:),[],6);
-        cur_dataR = reshape(dataR(i,:), nsols,[]);
+        cur_dataR = reshape(dataR(i,:), [], nsols);
         gitfits{i}.kmeanMatrix_joint_orig = cur_kmeanMatrix_joint_orig;
         gitfits{i}.kmeanMatrix_joint_names = kmeanMatrix_joint_names;
         gitfits{i}.testdataR = cur_dataR;
@@ -69,9 +69,9 @@ else
         testCorrRevSI = zeros(1,nsols);
         testCorrRevLI = zeros(1,nsols);
         for k=1:nsols
-            cur_dataRi = reshape(cur_dataR(k,:),[],6);
-            testCorrRev(k) = corr(kmeanMatrix_joint_orig(k,:)',...
-                                      cur_dataR(k,:)');
+            cur_dataRi = reshape(cur_dataR(:,k),[],6);
+            testCorrRev(k) = corr(cur_kmeanMatrix_joint_orig(:),...
+                                  cur_dataRi(:));
             testCorrRevSI(k) = corr(reshape(cur_kmeanMatrix_joint_orig(:,1:3),[],1),...
                                     reshape(cur_dataRi(:,1:3),[],1));
             testCorrRevLI(k) = corr(reshape(cur_kmeanMatrix_joint_orig(:,4:6),[],1),...
