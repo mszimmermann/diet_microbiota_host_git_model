@@ -14,6 +14,9 @@ function [confmat, classlabels] = compare_two_model_results(met_names1, met_best
 % corr threshold for reliable solutions
 corrthreshold = 0.7;
 classthreshold = 0.5;%1;
+% make a flag for positive or negative class additional requirement of 
+% LI PCC passing the threshold as well
+flag_strictclass = 1;%0;%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % intersect modelled metabolite names
@@ -37,6 +40,7 @@ if length(met_bestsols2.coefvalues)>5
 end
 
 model1_corr = met_bestsols1.x_sel_CorrRev(idx1);
+model1_corrLI = met_bestsols1.x_sel_CorrRevLI(idx1);
 for i=1:length(met_names)
     bestsol = met_bestsols1.x(idx1(i),:);
     %normalize without the first coefficient (f)
@@ -49,8 +53,8 @@ for i=1:length(met_names)
     model1_sources(i) = determine_met_source(bestsol);
 end
 
-%model2_corr = met_bestsols2.x_sel_CorrRevLI(idx2);
 model2_corr = met_bestsols2.x_sel_CorrRev(idx2);
+model2_corrLI = met_bestsols2.x_sel_CorrRevLI(idx2);
 for i=1:length(met_names)
     bestsol = met_bestsols2.x(idx2(i),:);
     %normalize without the first coefficient (f)
@@ -68,6 +72,10 @@ select_mets = (model1_corr >= corrthreshold) & ...
               (model2_corr >= corrthreshold); 
 model1_classes = model1_classes(select_mets,:);
 model2_classes = model2_classes(select_mets,:);
+model1_corr = model1_corr(select_mets,:);
+model1_corrLI = model1_corrLI(select_mets,:);
+model2_corr = model2_corr(select_mets,:);
+model2_corrLI = model2_corrLI(select_mets,:);
 met_names = met_names(select_mets);
 
 % set model classifiers based on threshold
@@ -81,6 +89,23 @@ model2_classes(model2_classes>=classthreshold)=1;
 model2_classes((model2_classes>-classthreshold) &...
               (model2_classes<classthreshold))=0;
 
+          
+model1_classes = model1_classes(:,1);
+
+if flag_strictclass
+    % keep only positions that pass the LI corr threshold
+    % for nozero classes
+    unreliable_classes = ((model1_classes~=0) & (model1_corrLI<corrthreshold)) |...
+                         ((model2_classes~=0) & (model2_corrLI<corrthreshold));
+    model1_classes(unreliable_classes)=[];
+    model1_corrLI(unreliable_classes)=[];
+    model1_corr(unreliable_classes)=[];
+    model2_classes(unreliable_classes)=[];
+    model2_corrLI(unreliable_classes)=[];
+    model2_corr(unreliable_classes)=[];
+end
+    
+          
 % get the confusion matrix
 [confmat, classlabels] = confusionmat(model1_classes(:,1),...
                                       model2_classes(:,1));
@@ -102,7 +127,8 @@ print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
     met_bestsols2.modelname, '_vs_',...
     met_bestsols1.modelname,...
     '_class', strrep(num2str(classthreshold),'.','_'),...
-    '_corr', strrep(num2str(corrthreshold),'.','_')])
+    '_corr', strrep(num2str(corrthreshold),'.','_'),...
+    '_strictclass', num2str(flag_strictclass)])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get the confusion matrix for metabolite sources
@@ -112,8 +138,8 @@ print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
 % model2_sources = model2_sources(select_mets,:);
 % 
 % [confmat, classlabels] = confusionmat(model1_sources(:,1),...
-%                                       model2_sources);
-
+%                                       model2_sources(:,1));
+% 
 % heatmap(confmat, ...
 %         'YDisplayLabels', classlabels,...
 %         'XDisplayLabels', classlabels)
@@ -121,7 +147,7 @@ print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
 % ylabel([met_bestsols1.modelname ' source'])
 % suptitle('Confusion matrix')
 % orient landscape
-
+% 
 % % create a matrix with 
 % % accuracy, precision, recall, specificity, F1, support 
 % report_labels = {'accuracy', 'precision', 'recall',...
