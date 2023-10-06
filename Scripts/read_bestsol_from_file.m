@@ -59,7 +59,7 @@ else
 
     % check if the correlations are the same in the reciprocal file
     % if not, this might be a different solution
-    if ~isequal(soldata.ReciprocalCorr, soldataR.ReciprocalCorr)
+    if max(abs(soldata.ReciprocalCorr-soldataR.ReciprocalCorr))>eps
         fprintf(['Warning: reciprocal correlations do not match between:\n%s\nand\n%s\n'...
           'omit loading reciprocal data\n'], curfilename, curfilenameR)
     else
