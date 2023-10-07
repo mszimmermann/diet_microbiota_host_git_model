@@ -1,6 +1,6 @@
 function [confmat, classlabels] = compare_two_model_results(met_names1, met_bestsols1,...
                                    met_names2, met_bestsols2,...
-                                   figureFolder)
+                                   figureFolder, flag_strictclass)
 % assess two modelling results (e.g. to two datasets,
 % or two models to the same dataset)
 % figureFolder is the folder to store plots
@@ -13,10 +13,11 @@ function [confmat, classlabels] = compare_two_model_results(met_names1, met_best
 
 % corr threshold for reliable solutions
 corrthreshold = 0.7;
+corrthresholdLI = 0.7;
 classthreshold = 0.5;%1;
 % make a flag for positive or negative class additional requirement of 
 % LI PCC passing the threshold as well
-flag_strictclass = 1;%0;%
+%flag_strictclass = 1;%0;%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % intersect modelled metabolite names
@@ -95,8 +96,8 @@ model1_classes = model1_classes(:,1);
 if flag_strictclass
     % keep only positions that pass the LI corr threshold
     % for nozero classes
-    unreliable_classes = ((model1_classes~=0) & (model1_corrLI<corrthreshold)) |...
-                         ((model2_classes~=0) & (model2_corrLI<corrthreshold));
+    unreliable_classes = ((model1_classes~=0) & (model1_corrLI<corrthresholdLI)) |...
+                         ((model2_classes~=0) & (model2_corrLI<corrthresholdLI));
     model1_classes(unreliable_classes)=[];
     model1_corrLI(unreliable_classes)=[];
     model1_corr(unreliable_classes)=[];
