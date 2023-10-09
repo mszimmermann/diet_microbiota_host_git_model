@@ -11,7 +11,7 @@ function assess_model_for_drugs(met_names, met_bestsols, figureFolder)
 
 % corr threshold for reliable solutions
 corrthreshold = 0.7;
-classthreshold = 0.5;
+classthreshold = 0.7;
 % make a flag for positive or negative class additional requirement of 
 % LI PCC passing the threshold as well
 flag_strictclass = 1;
