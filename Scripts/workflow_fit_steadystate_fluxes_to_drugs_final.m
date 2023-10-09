@@ -176,6 +176,10 @@ for met_i = 1:length(selected_mets)
 end
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% perform model assessment based on known drug metabolite classes
+assess_model_for_drugs(meanMatrix_mets, met_bestsols, figureFolder)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation of restored and original data
 % calculate differentce in corr distrbutions

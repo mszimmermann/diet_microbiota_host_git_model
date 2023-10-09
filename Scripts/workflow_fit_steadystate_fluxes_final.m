@@ -100,12 +100,14 @@ sampleTissue_unique = {'SI1', 'SI2', 'SI3', 'Cecum', 'Colon', 'Feces'};
 git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 % remove DC and leave only CVR
-%sampleType_unique(ismember(sampleType_unique, {'DC'}))=[];
+sampleType_unique(ismember(sampleType_unique, {'DC'}))=[];
 % remove CVR and leave only DC
-sampleType_unique(ismember(sampleType_unique, {'CVR'}))=[];
+%sampleType_unique(ismember(sampleType_unique, {'CVR'}))=[];
 
+% fileNameFigure = [figureFolder...
+%     'fig_DCann_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
 fileNameFigure = [figureFolder...
-    'fig_DCann_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
+    'fig_CVRann_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
 
 diag_plot_flag = 0; % diagnostic plotting flag
 if diag_plot_flag
@@ -115,11 +117,11 @@ end
 
 % define which metabolites to model
 %%%% all metabolites
-%selected_mets = 1:size(meanMatrix,1);
+selected_mets = 1:size(meanMatrix,1);
 %%%% metabolites detected in the GIT and annotated
-selected_mets = find((sum(spatialClusters,2)>0) &...
-                     (annotationTableSpatialClusters.MetaboliteFilter==1));
-
+% selected_mets = find((sum(spatialClusters,2)>0) &...
+%                      (annotationTableSpatialClusters.MetaboliteFilter==1));
+% 
 met_gitfits = cell(length(selected_mets),1);
 met_bestsols = cell(length(selected_mets),1);
 
@@ -182,6 +184,38 @@ for met_i = 1:length(selected_mets)
 end
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% print best solutions to files
+filename = [outputFolder ...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allCVR'];%DC'];
+% create met_info object needed for the printing function
+met_info = annotationTableSpatialClusters(selected_mets,:);
+% print solutions to files
+print_bestsol_to_files(met_info, met_bestsols, filename);
+
+filename = [outputFolder ...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allDC'];
+% create met_info object needed for the printing function
+met_info = annotationTableSpatialClusters(selected_mets,:);
+% print solutions to files
+print_bestsol_to_files(met_info, met_bestsols_dc, filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% print all solutions to files
+filename = [outputFolder ...
+            'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_annDC'];
+% print solutions to files
+print_allsols_to_files(met_info, met_gitfits_dc, filename);
+% CVR
+filename = [outputFolder ...
+            'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_annCVR'];
+% print solutions to files
+print_allsols_to_files(met_info, met_gitfits, filename);
+
+% test reading from file
+[met_info_read, met_gitfits_read] = read_allsols_from_files(filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 

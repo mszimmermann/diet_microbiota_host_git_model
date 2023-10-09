@@ -613,6 +613,8 @@ filename = [outputFolder ...
             'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
 % print solutions to files
 print_allsols_to_files(met_info, met_gitfits, filename);
+% test reading from file
+[met_info_read, met_gitfits_read] = read_allsols_from_files(filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
