@@ -16,22 +16,28 @@ Entrez.email = "m.kogadeeva@gmail.com"
 
 ###########################################################################
 # read the strain table
-geneTable = pd.read_table('table_selected_enzymes.csv', sep=',')
+geneTable = pd.read_table('.\ProcessedData\\example_output\\selected_genes_ann.csv', sep=',')
 
 ###########################################################################
 # load B.theta genome and feature table from NCBI
 protein_names = geneTable["proteinID"]
 gene_locustag = geneTable["locus_tag"]
-gene_ec = geneTable["EC.1"]
+gene_ec = geneTable["EC"]
+# remove empty protein names
+protein_empty = [type(i)==float for i in protein_names]
+protein_names = [protein_names for (protein_names, remove) 
+                 in zip(protein_names, protein_empty) if not remove]
+gene_locustag = [gene_locustag for (gene_locustag, remove) 
+                 in zip(gene_locustag, protein_empty) if not remove]
+gene_ec = [gene_ec for (gene_ec, remove) 
+                 in zip(gene_ec, protein_empty) if not remove]
 
-
-protein_info = []
 
 #############################################
 # get protein sequences from NCBI by protein ID
 # concatenate names with gene locustag and EC
 # write all proteins to one sequence file
-proteinfilename = 'diet_selected_enzymes.fasta'
+proteinfilename = '.\ProcessedData\\example_output\\selected_genes_proteins.fasta'
 for i in range(len(protein_names)):
     record = Entrez.efetch(db="protein", id=protein_names[i], rettype="fasta", retmode="text")
     curseq = record.read()
