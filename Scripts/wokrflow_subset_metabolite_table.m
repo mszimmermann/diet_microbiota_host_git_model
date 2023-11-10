@@ -33,7 +33,19 @@ select_mets_IDX = [shortestPathTable_unique.Substrate_IDX;...
 [select_mets_ID, uniqueidx] = unique(select_mets_ID);
 select_mets_IDX = select_mets_IDX(uniqueidx);
 
+% add dethiobiotin and biotin
+mz_interest = [214.1317;... % dethiobiotin
+               244.0882]; %biotin
+add_idx = [];
+for i=1:length(mz_interest)
+    curidx = find((abs(metaboliteFilters.MZ-mz_interest(i))<0.002) &...
+                    (metaboliteFilters.MetaboliteFilter==1));
+    add_idx = [add_idx; curidx];
+end
+select_mets_IDX = [select_mets_IDX; add_idx];
+
 select_mets_IDX_unique = unique(select_mets_IDX);
+
 select_metaboliteTable = metaboliteFilters(select_mets_IDX_unique,:);
 
 writetable(select_metaboliteTable, ...
