@@ -16,3 +16,9 @@ Contains raw metabolomics data from six methods (three LC columns: C08, C18 and 
 ## Folder sequencing_data
 Contains folders ballgown_DNA and ballgown_RNA with results of metagenomic and metatranscriptomic data analysis (raw counts, GetMM normalized counts, EdgeR and DeSeq2 analysis).   
 
+## Folder genomes14_eggnog
+Contains folders eggNOG annotations of the 14 bacterial genomes.   
+
+## Folder human_microbiome_data
+Should contain files hub.cellcount.motu.Phylum.v2.data.frame.R, hub.cellcount.motu.Species.v2.data.frame.R and hub.adjusted_KEGG_module.down.10000000.v3.data.frame.R from the depository https://zenodo.org/records/6242715 file input_features.tar.gz
+
