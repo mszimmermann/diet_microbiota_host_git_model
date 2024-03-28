@@ -135,6 +135,7 @@ for sol_type = 1:length(solution_types)+1
     model_classes(model_corr<corrthreshold)=[];
     met_classes(model_corr<corrthreshold)=[];
     model_corrLI(model_corr<corrthreshold)=[];
+    met_names(model_corr<corrthreshold)=[];
     model_corr(model_corr<corrthreshold)=[];
     
     % set model classifiers based on threshold
@@ -151,8 +152,9 @@ for sol_type = 1:length(solution_types)+1
         met_classes(unreliable_classes)=[];
         model_corrLI(unreliable_classes)=[];
         model_corr(unreliable_classes)=[];
+        met_names(unreliable_classes)=[];
     end
-    % get the confusion matrix
+    % get the confusion matrix    
     [confmat, classlabels] = confusionmat(met_classes,model_classes);
     % check if all expected classes are present
     [~, idx_exp, idx_cur] = intersect(classlabels_expected, classlabels, 'stable');
@@ -265,7 +267,7 @@ xlabel('Predicted class')
 ylabel('True class')
 title(solution_types{sol_type})
     
-suptitle('Confusion matrices')
+sgtitle('Confusion matrices')
 orient landscape
 
 print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
