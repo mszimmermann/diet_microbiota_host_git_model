@@ -32,6 +32,10 @@ gene_locustag = [gene_locustag for (gene_locustag, remove)
 gene_ec = [gene_ec for (gene_ec, remove) 
                  in zip(gene_ec, protein_empty) if not remove]
 
+# replace brackets in protein names
+protein_names = [x.replace("['","") for x in protein_names]
+protein_names = [x.replace("']","") for x in protein_names]
+
 
 #############################################
 # get protein sequences from NCBI by protein ID
