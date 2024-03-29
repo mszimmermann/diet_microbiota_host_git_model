@@ -22,6 +22,9 @@ add_global_and_file_dependencies
 % Figures:
 % 'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated'])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% run script prepare_drug_data_for_modeling.m first t get the data
+prepare_drug_data_for_modeling;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % try to cluster ions based on their GI profiles
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -180,6 +183,12 @@ end
 % perform model assessment based on known drug metabolite classes
 assess_model_for_drugs(meanMatrix_mets, met_bestsols, figureFolder)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% perform model assessment based on known drug metabolite classes
+% for each drug separately
+[sol_types, met_names_predicted] = ...
+    assess_model_for_drugs_per_drug(meanMatrix_mets, met_bestsols, figureFolder);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation of restored and original data
 % calculate differentce in corr distrbutions
@@ -187,41 +196,41 @@ filename = [figureFolder,...
     'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_drugs'];
 plot_gitfit_model_corr(met_gitfits, filename)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% select LI within best total solution
-x_selected = zeros(size(met_bestsols{1}.x,1), length(met_bestsols));
-x_data_corr = zeros(1, length(met_bestsols));
-x_data_corr_SI = zeros(1, length(met_bestsols));
-x_data_corr_LI = zeros(1, length(met_bestsols));
-x_data_corr_mean = zeros(1, length(met_bestsols));
-
-for i=1:length(met_bestsols)
-    picksol = ismember(met_bestsols{i}.selection_criterion,...
-                                {'LI PCC within high total'});
-    if size(met_bestsols{i}.x,2)==length(picksol)
-        x_selected(:,i) = met_bestsols{i}.x(:,picksol);
-        x_data_corr(i) = met_bestsols{i}.x_sel_CorrRev(picksol);
-        x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
-        x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
-        x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
-    else
-        % there was no total PCC above thresold to select LI PCC,
-        % get the best possible total PCC
-        picksol = ismember(met_bestsols{i}.selection_criterion,...
-                                {'total PCC'});
-        picksol = picksol(1:size(met_bestsols{i}.x,2));
-        x_selected(:,i) = met_bestsols{i}.x(:,picksol);
-        x_data_corr(i) = met_bestsols{i}.x_sel_CorrRev(picksol);
-        x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
-        x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
-        x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
-    end        
-end
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % select LI within best total solution
+% x_selected = zeros(size(met_bestsols{1}.x,1), length(met_bestsols));
+% x_data_corr = zeros(1, length(met_bestsols));
+% x_data_corr_SI = zeros(1, length(met_bestsols));
+% x_data_corr_LI = zeros(1, length(met_bestsols));
+% x_data_corr_mean = zeros(1, length(met_bestsols));
+% 
+% for i=1:length(met_bestsols)
+%     picksol = ismember(met_bestsols{i}.selection_criterion,...
+%                                 {'LI PCC within high total'});
+%     if size(met_bestsols{i}.x,2)==length(picksol)
+%         x_selected(:,i) = met_bestsols{i}.x(:,picksol);
+%         x_data_corr(i) = met_bestsols{i}.x_sel_CorrRev(picksol);
+%         x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
+%         x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
+%         x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
+%     else
+%         % there was no total PCC above thresold to select LI PCC,
+%         % get the best possible total PCC
+%         picksol = ismember(met_bestsols{i}.selection_criterion,...
+%                                 {'total PCC'});
+%         picksol = picksol(1:size(met_bestsols{i}.x,2));
+%         x_selected(:,i) = met_bestsols{i}.x(:,picksol);
+%         x_data_corr(i) = met_bestsols{i}.x_sel_CorrRev(picksol);
+%         x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
+%         x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
+%         x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
+%     end        
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % print best solutions to files
 filename = [outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_drugs'];
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_drugs_202403'];
 % create met_info object needed for the printing function
 met_info.CompoundID = meanMatrix_mets;
 met_info.CompoundName = meanMatrix_mets;          
@@ -229,10 +238,19 @@ met_info.CompoundName = meanMatrix_mets;
 print_bestsol_to_files(met_info, met_bestsols, filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% combine IP and LI within PCC criteria
+sel_crit1 = 'IP';
+sel_crit2 = 'LI PCC within high total';%
+[met_info_drug_combined, met_bestsol_drug_combined] = ...
+                combine_bestsols_from_file(filename, sel_crit1, sel_crit2);
+met_bestsol_drug_combined.modelname = 'Drug_IP_LIPCCwT';%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % heatmap coefficients and metabolites
 plotorder = [1:3:24 2:3:24 3:3:24 25:length(meanMatrix_mets)];
-plotdata = x_data_corr(plotorder);
+plotdata = met_bestsol_drug_combined.x_sel_CorrRev(plotorder);
 % set values below threshold to 0
 % plotdata = x_data_corr(plotorder).*...
 %             ( (x_data_corr(plotorder)>=0.7) &...
@@ -255,26 +273,26 @@ figure
 heatmap(plotdata,...
         'YDisplayLabels', plotdata_names(:,1),...
         'XDisplayLabels', plotdata_times,...
-        'CellLabelFormat', '%0.2g')     
+        'CellLabelFormat', '%0.3g')     
 caxis([0 1])
 colormap(flipud(parula))
-title('Max total PCC')  
+title(met_bestsol_drug_combined.modelname)  
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
      [figureFolder,...
-     'FigSX_heatmap_maxTotalPCC_volume_drug_data'])
+     sprintf('FigSX_heatmap_%s_volume_drug_data', met_bestsol_drug_combined.modelname)])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot four creteria for each metabolite: 
 % total corr, LI corr, SI corr and mean corr
-plotdataSI = x_data_corr_SI(plotorder);
+plotdataSI = met_bestsol_drug_combined.x_sel_CorrRevSI(plotorder);
 plotdataSI = reshape(plotdataSI,4,[])';
 % plotdataSI = [[reshape(plotdataSI(1:32),4,[])' zeros(8,1)];...
 %                reshape(plotdataSI(33:end),5,[])'];
-plotdataLI = x_data_corr_LI(plotorder);
+plotdataLI = met_bestsol_drug_combined.x_sel_CorrRevLI(plotorder);
 plotdataLI = reshape(plotdataLI,4,[])';
 % plotdataLI = [[reshape(plotdataLI(1:32),4,[])' zeros(8,1)];...
 %                reshape(plotdataLI(33:end),5,[])'];
-plotdataMEAN = x_data_corr_mean(plotorder);
+plotdataMEAN = met_bestsol_drug_combined.x_sel_CorrRevMean(plotorder);
 plotdataMEAN = reshape(plotdataMEAN,4,[])';
 % plotdataMEAN = [[reshape(plotdataMEAN(1:32),4,[])' zeros(8,1)];...
 %                reshape(plotdataMEAN(33:end),5,[])'];
@@ -310,7 +328,7 @@ git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plotting file name
-fileNameprofiles = 'fig_2023_moreGOF_volume_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
+fileNameprofiles = 'fig_2024_moreGOF_volume_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
           
 curData_cols = reshape(meanConditions, 6, 4);
 compoundsInterest = 1:length(meanMatrix_mets);
