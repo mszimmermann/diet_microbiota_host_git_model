@@ -1,8 +1,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % prepare data from BRV paper for modeling
-dataFolder = 'C:\Users\mazimmer\Documents\Desktop\MikeBrivudine\REVISIONS\';
-dataFilenames = 'Brivudine_Supp_Tables_V26.xlsx';
+% table can be downloaded from https://www.science.org/doi/full/10.1126/science.aat9931
+dataFolder = '.\ProcessedData\public_data\';
+dataFilenames = 'aat9931_tables_s1-26.xlsx';
 dataSheetnames = {'Table S4';'Table S17'};
 
 meanData_cell = cell(size(dataSheetnames));
@@ -16,7 +17,10 @@ for ds_i = 1:length(dataSheetnames)
     dataSheetname = dataSheetnames{ds_i};
               
     % read drug data
-    t = readtable([dataFolder dataFilenames], 'Sheet', dataSheetname);
+    opts = detectImportOptions([dataFolder dataFilenames],'Sheet', dataSheetname, 'NumHeaderLines',0);
+    % read all columns as characters and reformat later on
+    opts = setvartype(opts, 'char');
+    t = readtable([dataFolder dataFilenames], opts);%'Sheet', dataSheetname, 'NumHeaderLines',0, opts);
     % get column names which are in the third row
     t_colnames = t{3,:};
     % remove spaces in column names
