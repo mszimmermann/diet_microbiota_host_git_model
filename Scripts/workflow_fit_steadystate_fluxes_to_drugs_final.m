@@ -319,6 +319,14 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot data and restored intensities and model coefficients
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% get original and restored data from the final solution selected
+kmean_vector_joint_orig = met_bestsol_drug_combined.kmeanMatrix_joint_orig;
+x_rdata = met_bestsol_drug_combined.x_sel_dataR;
+x_data_corr = met_bestsol_drug_combined.x_sel_CorrRev;
+x_data_corr_SI = met_bestsol_drug_combined.x_sel_CorrRevSI;
+x_data_corr_LI = met_bestsol_drug_combined.x_sel_CorrRevLI;
+x_met_smooth = met_bestsol_drug_combined.x;
+coefvalues = met_bestsol_drug_combined.coefvalues;
 % define colora and GIT section names for plotting
 mycolors = [0 115 178;... %dark blue
             204 227 240;...%light blue
@@ -328,7 +336,7 @@ git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plotting file name
-fileNameprofiles = 'fig_2024_moreGOF_volume_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
+fileNameprofiles = 'fig_2024_moreGOF_volume_profiles_modelSMOOTH_2LIcoefHost_1LIbact_drugs.ps';
           
 curData_cols = reshape(meanConditions, 6, 4);
 compoundsInterest = 1:length(meanMatrix_mets);
@@ -353,12 +361,13 @@ for cpdix=1:length(compoundsInterest)
     coloridx = 1;
     idx=1;
     curmat = zeros(4,6);
-    cur_data = reshape(kmean_vector_joint_orig(:,testidx)', 4, 6);
+    cur_data = reshape(kmean_vector_joint_orig(testidx,:), 4, 6);
     %cur_data=cur_data.*volumeMatrix;
     cur_data = cur_data';
     %cur_data = reshape(meanMatrix(testidx,:), 6, 4);
-    cur_rdata = reshape(x_rdata(:,testidx)', 6, 4);
-    
+    cur_rdata = reshape(x_rdata(testidx,:), 4, 6);
+    cur_rdata = cur_rdata';
+
     %normalize rdata to max
     cur_rdata = (cur_rdata-0.8);
     cur_rdata = cur_rdata/max(max(cur_rdata));
@@ -382,11 +391,15 @@ for cpdix=1:length(compoundsInterest)
         ylabel('Restored normbymax')
 
     end
+    % title({sprintf('%s', meanMatrix_mets{testidx}),...
+    %        sprintf('PCC=%.2f PCC_SI=%.2f PCC_LI=%.2f',...
+    %                x_data_corr(testidx),x_data_corr_SI(testidx),x_data_corr_LI(testidx)),...
+    %        sprintf('RSQ=%.2f RSQ_SI=%.2f RSQ_LI=%.2f',...
+    %                x_data_Rsq(testidx),x_data_Rsq_SI(testidx),x_data_Rsq_LI(testidx))},...
+    %                'Interpreter', 'none');
     title({sprintf('%s', meanMatrix_mets{testidx}),...
            sprintf('PCC=%.2f PCC_SI=%.2f PCC_LI=%.2f',...
-                   x_data_corr(testidx),x_data_corr_SI(testidx),x_data_corr_LI(testidx)),...
-           sprintf('RSQ=%.2f RSQ_SI=%.2f RSQ_LI=%.2f',...
-                   x_data_Rsq(testidx),x_data_Rsq_SI(testidx),x_data_Rsq_LI(testidx))},...
+                   x_data_corr(testidx),x_data_corr_SI(testidx),x_data_corr_LI(testidx))},...
                    'Interpreter', 'none');
                
     legend(h, curData_cols(1,:),...
@@ -394,7 +407,7 @@ for cpdix=1:length(compoundsInterest)
     
     subplot(spx,spy,idx+2);
     
-    curcoefs = x_met_smooth(2:end, testidx);
+    curcoefs = x_met_smooth(testidx, 2:end);
     barh(curcoefs./max(abs(curcoefs)))
     set(gca, 'YTick', 1:length(curcoefs));
     set(gca, 'YTickLabel', coefvalues(2:end));
@@ -407,16 +420,12 @@ for cpdix=1:length(compoundsInterest)
         subplot(spx,spy,spi)
         set(gca, 'XTick', 1:6)
         xlim([1 6])
-        %ylim([0 1])
+        ylim([0 1])
         set(gca, 'XTick', 1:length(git_labels))
         set(gca, 'XTickLabel', git_labels)
         
         axis square
     end
-%     spt = suptitle({sprintf('MZ=%.3f',testmz(idx,1)),...
-%                                         testannID{1},...
-%                                         testann{1}});
-%     set(spt,'FontSize',8,'FontWeight','normal')
     orient landscape
     %print to figure
     print(gcf, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
