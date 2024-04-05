@@ -48,8 +48,16 @@ add_global_and_file_dependencies
 shortestPathTable = readtable([resultsFolder, ...
     'shortest_paths_upto_length_4.csv'], 'delim', ',');
 % get gene FC
-geneTable = readtable([inputFolderSeq, ...
-    'edgeR_gene_fold_changes_and_ann.csv'], 'delim', ',');
+geneFileName = [inputFolderSeq, ...
+    'edgeR_gene_fold_changes_and_ann.csv'];
+% detect import options to change some of the variable to strings
+opts = detectImportOptions(geneFileName);
+for i = 26:42
+    opts.VariableTypes{i} = 'char';  % This will change column 15 from 'double' or whatever it is to 'char', which is what you want.
+end
+opts.Delimiter = ',';
+geneTable = readtable(geneFileName, opts);
+
 % get EC annotation
 ecTable = readtable([inputFolderSeq, ...
     'gene_annotation_EC.tsv'], 'fileType','text', 'delim', '\t');
@@ -71,10 +79,16 @@ countsMatrixGetMM_DNA_table = readtable([inputFolderSeq,...
 % add filter and remove unfiltered genes
 countsMatrixGetMM_DNA_table = countsMatrixGetMM_DNA_table(countsMatrixGetMM_DNA_table.geneFilter==1,:);
 
+% read shortbred counts for selected proteins across all mice
+countsMatrix_shortBRED = readtable(['.\ProcessedData\shortBRED\',...
+    'merged_results_4-2-1-24.txt']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read metabolite data
-metaboliteData = readtable([inputFolder,...
-    'metabolites_allions_combined_norm_intensity.csv']);
+metaboliteData = readtable([outputFolder,...
+    'metabolites_allions_combined_norm_intensity_with_CVR.csv']);
+
+% metaboliteData = readtable([inputFolder,...
+%     'metabolites_allions_combined_norm_intensity.csv']);
     
 metaboliteFilters = readtable([inputFolder,...
     'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
@@ -1254,7 +1268,7 @@ for i=1:length(plotdata_rows)
         end
         spidx = spidx+1;
    end
-   suptitle(sprintf('%s (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
+   sgtitle(sprintf('%s (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
    orient landscape 
    print(gcf, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
        [figureFolder, figureFile]);
@@ -1301,12 +1315,120 @@ for i=1:length(plotdata_rows)
         end
         spidx = spidx+1;
    end
-   suptitle(sprintf('%s DNA (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
+   sgtitle(sprintf('%s DNA (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
    orient landscape 
    print(gcf, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
        [figureFolder, figureFile]);
    close(fig)
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% include data from CV mice as well
+%figureFile = 'fig_sup_scatter_metabolites_vs_best_enzymes_DNA_per_species.ps';
+%for i=1:length(plotdata_rows)
+i=9; % porph
+   curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
+   fig = figure('units','normalized','outerposition',[0 0 1 1]);
+   spidx=1;   
+   for k=1:size(plotdata_genes,2)
+        if ~isempty(plotdata_genes{i,k})
+            cur_expression = table2array(countsMatrixGetMM_DNA_table(...
+                plotdata_genes{i,k},gene_idx))';
+            cur_expression = sum(cur_expression, 2);
+
+            if sum(cur_expression)>0
+                % corr with product
+                X = cur_expression;
+                if shortestPathTable.Dir(select_path_idx(curmetidx(1)))==1
+                    y = kegg_prod_sum_intensities(select_path_idx(curmetidx(1)),...
+                                              metabolomics_idx)';  
+                else
+                    y = kegg_sub_sum_intensities(select_path_idx(curmetidx(1)),...
+                                              metabolomics_idx)'; 
+                end
+                [curcorr, curcorrP] = corr(X,y);
+                [curcorrS] = corr(X,y, 'type','spearman');                          
+                                        
+
+                mdl = fitlm(X,y);
+                subplot(3,5,spidx);
+                scatter(X,y);
+                axis square
+                title(sprintf('%s %.2f %.2f %.2f %.2f %.2f',species_list{k},...
+                                             plotdataDNA(i,k),...
+                                             curcorr, curcorrP, curcorrS,...
+                                             mdl.Rsquared.Adjusted))
+            end
+        end
+        spidx = spidx+1;
+   end
+   sgtitle(sprintf('%s DNA (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
+
+% plot shortbred results
+shortbred_genes = unique(countsMatrix_shortBRED.Family);
+shortbred_columns = cellfun(@(x) contains(x, 'hits'), countsMatrix_shortBRED.Properties.VariableNames);
+% allocate row for each unique protein and calculate sum
+plotdata_shortbred = zeros(length(shortbred_genes), nnz(shortbred_columns));
+for i=1:length(shortbred_genes)
+    curcounts = countsMatrix_shortBRED(ismember(countsMatrix_shortBRED.Family, shortbred_genes{i}),:);
+    plotdata_shortbred(i,:) = sum(table2array(curcounts(:,shortbred_columns)),1);
+end
+%remove zero rows
+shortbred_genes(sum(plotdata_shortbred,2)==0)=[];
+plotdata_shortbred(sum(plotdata_shortbred,2)==0,:)=[];
+shortbred_columns = countsMatrix_shortBRED.Properties.VariableNames(shortbred_columns);
+% match shortbred columns with metabolomics columns
+[~, metabolomics_shortbred_idx, shortbred_columns_idx] = intersect(metabolomics_samples, shortbred_columns);
+
+% leave only sample names
+shortbred_columns = cellfun(@(x)x(1:strfind(x,'_')-1), shortbred_columns, 'unif',0);
+% plot correlation for each enzyme
+fig = figure('units','normalized','outerposition',[0 0 1 1]);
+spidx=1;   
+for k=1:size(plotdata_shortbred,1)
+    cur_expression = plotdata_shortbred(k,shortbred_columns_idx)';
+    cur_expression = sum(cur_expression, 2);
+
+    if sum(cur_expression)>0
+        % corr with product
+        X = cur_expression;
+        if shortestPathTable.Dir(select_path_idx(curmetidx(1)))==1
+            y = kegg_prod_sum_intensities(select_path_idx(curmetidx(1)),...
+                                      metabolomics_shortbred_idx)';  
+        else
+            y = kegg_sub_sum_intensities(select_path_idx(curmetidx(1)),...
+                                      metabolomics_shortbred_idx)'; 
+        end
+        
+        X = X(11:20);
+        y = y(11:20);
+
+        [curcorr, curcorrP] = corr(X,y);
+        [curcorrS] = corr(X,y, 'type','spearman');                          
+                                
+
+        mdl = fitlm(X,y);
+        subplot(3,5,spidx);
+        hold on
+        scatter(X,y);
+        %scatter(X(1:10),y(1:10), 'r');
+        %scatter(X(11:20),y(11:20), 'b');
+        
+        axis square
+        title({shortbred_genes{k},...
+               sprintf('%.2f %.2f %.2f %.2f',curcorr, curcorrP, curcorrS,...
+                                     mdl.Rsquared.Adjusted)})
+    end
+    spidx = spidx+1;
+end
+ sgtitle(sprintf('%s shortbred CV DNA (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
+
+   % orient landscape 
+   % print(gcf, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
+   %     [figureFolder, figureFile]);
+   % close(fig)
+%end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation between species enzymes and metabolites for each
@@ -1341,7 +1463,7 @@ for i=1:length(plotdata_rows)
     
         spidx = spidx+1;
    end
-   suptitle(sprintf('%s OTU DNA (corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
+   sgtitle(sprintf('%s OTU DNA (corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
    orient landscape 
    print(gcf, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
        [figureFolder, figureFile]);
