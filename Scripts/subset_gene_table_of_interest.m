@@ -21,10 +21,13 @@ met_ec_table = readtable([outputFolder, ...
     'table_DNA_kegg_RNA_sub_prod_products_bestcorr_EC_pos.csv'], 'delim', ',');
 % get gene annotation
 % detect import options to change some of the variable to strings
-annfileName = [inputFolderSeq, 'countsMatrix_annTable_filtered.csv'];
+%annfileName = [inputFolderSeq, 'countsMatrix_annTable_filtered.csv'];
+annfileName =  [outputFolder 'geneAnnTable_filtered.csv'];
 opts = detectImportOptions(annfileName);
-opts.VariableTypes{ismember(opts.VariableNames, 'genome_id')} = 'char';
-for i = find(ismember(opts.VariableNames, 'gene')):length(opts.VariableTypes)
+if (ismember(opts.VariableNames, 'genome_id'))
+    opts.VariableTypes{ismember(opts.VariableNames, 'genome_id')} = 'char';
+end
+for i = find(ismember(opts.VariableNames, 'seed_eggNOG_ortholog')):length(opts.VariableTypes)
     if (~isequal(opts.VariableNames{i}, 'seed_ortholog_evalue')) &&...
        (~isequal(opts.VariableNames{i}, 'seed_ortholog_score'))
         opts.VariableTypes{i} = 'char';  % This will change column 15 from 'double' or whatever it is to 'char', which is what you want.
@@ -48,7 +51,7 @@ gene_list = gene_list';
 gene_list = unique(cat(2,gene_list{:}))';
 
 gene_list_ann = geneAnnotationTable(...
-    ismember(geneAnnotationTable.species_gene, gene_list),:);
+    ismember(geneAnnotationTable.species_genes, gene_list),:);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get all species genes from met_EC_table
@@ -80,9 +83,9 @@ selected_genes_idx(cellfun(@(x) isempty(x), selected_genes_idx))=[];
 selected_genes_idx = cellfun(@(x) str2num(x), selected_genes_idx);
 
 selected_genes_ann = geneAnnotationTable(selected_genes_idx,:);
-% remove rows without EC
-selected_genes_ann(ismember(selected_genes_ann.EC, {'nan'}),:)=[];
 
-gene_list_ann = [gene_list_ann; selected_genes_ann];
-
-writetable(gene_list_ann, [resultsFolder, 'selected_genes_ann.csv']);
+%gene_list_ann = [gene_list_ann; selected_genes_ann];
+gene_list_ann = [selected_ec_ann; selected_genes_ann];
+ 
+%writetable(gene_list_ann, [resultsFolder, 'selected_genes_gitann.csv']);
+writetable(gene_list_ann, [resultsFolder, 'selected_genes_from_ec_ann.csv']);
