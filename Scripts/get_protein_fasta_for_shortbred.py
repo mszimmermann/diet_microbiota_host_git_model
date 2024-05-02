@@ -16,8 +16,8 @@ Entrez.email = "m.kogadeeva@gmail.com"
 
 ###########################################################################
 # read the strain table
-geneTable = pd.read_table('.\ProcessedData\\example_output\\selected_genes_ann.csv', sep=',')
-
+#geneTable = pd.read_table('.\ProcessedData\\example_output\\selected_genes_ann.csv', sep=',')
+geneTable = pd.read_table('.\ProcessedData\\example_output\\selected_genes_from_ec_ann.csv', sep=',')
 ###########################################################################
 # load B.theta genome and feature table from NCBI
 protein_names = geneTable["proteinID"]
@@ -41,7 +41,8 @@ protein_names = [x.replace("']","") for x in protein_names]
 # get protein sequences from NCBI by protein ID
 # concatenate names with gene locustag and EC
 # write all proteins to one sequence file
-proteinfilename = '.\ProcessedData\\example_output\\selected_genes_proteins.fasta'
+#proteinfilename = '.\ProcessedData\\example_output\\selected_genes_proteins.fasta'
+proteinfilename = '.\ProcessedData\\example_output\\selected_genes_from_ec_proteins.fasta'
 for i in range(len(protein_names)):
     record = Entrez.efetch(db="protein", id=protein_names[i], rettype="fasta", retmode="text")
     curseq = record.read()
