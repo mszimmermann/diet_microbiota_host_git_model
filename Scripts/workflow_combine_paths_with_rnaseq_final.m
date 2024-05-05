@@ -80,8 +80,12 @@ countsMatrixGetMM_DNA_table = readtable([inputFolderSeq,...
 countsMatrixGetMM_DNA_table = countsMatrixGetMM_DNA_table(countsMatrixGetMM_DNA_table.geneFilter==1,:);
 
 % read shortbred counts for selected proteins across all mice
-countsMatrix_shortBRED = readtable(['.\ProcessedData\shortBRED\',...
-    'merged_results_4-2-1-24.txt']);
+% countsMatrix_shortBRED = readtable(['.\ProcessedData\shortBRED\',...
+%     'merged_results_4-2-1-24.txt']);
+countsMatrix_shortBRED_DNA = readtable(['.\ProcessedData\shortBRED\',...
+     'merged_metaG_shortBRED_results.txt']);
+countsMatrix_shortBRED_RNA = readtable(['.\ProcessedData\shortBRED\',...
+     'merged_metaT_shortBRED_results.txt']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read metabolite data
 metaboliteData = readtable([outputFolder,...
@@ -1365,28 +1369,69 @@ i=9; % porph
    sgtitle(sprintf('%s DNA (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
 
 % plot shortbred results
-shortbred_genes = unique(countsMatrix_shortBRED.Family);
-shortbred_columns = cellfun(@(x) contains(x, 'hits'), countsMatrix_shortBRED.Properties.VariableNames);
+%shortbred_genes = unique(countsMatrix_shortBRED.Family);
+%shortbred_columns = cellfun(@(x) contains(x, 'hits'), countsMatrix_shortBRED.Properties.VariableNames);
+shortbred_genes = unique(countsMatrix_shortBRED_DNA.Var1); 
+shortbred_columns = cellfun(@(x) contains(x, 'MSZ'), countsMatrix_shortBRED_DNA.Properties.VariableNames);
 % allocate row for each unique protein and calculate sum
 plotdata_shortbred = zeros(length(shortbred_genes), nnz(shortbred_columns));
 for i=1:length(shortbred_genes)
-    curcounts = countsMatrix_shortBRED(ismember(countsMatrix_shortBRED.Family, shortbred_genes{i}),:);
+    curcounts = countsMatrix_shortBRED_DNA(ismember(countsMatrix_shortBRED_DNA.Var1, shortbred_genes{i}),:);
     plotdata_shortbred(i,:) = sum(table2array(curcounts(:,shortbred_columns)),1);
 end
 %remove zero rows
 shortbred_genes(sum(plotdata_shortbred,2)==0)=[];
 plotdata_shortbred(sum(plotdata_shortbred,2)==0,:)=[];
-shortbred_columns = countsMatrix_shortBRED.Properties.VariableNames(shortbred_columns);
+%shortbred_columns = countsMatrix_shortBRED.Properties.VariableNames(shortbred_columns);
+shortbred_columns = countsMatrix_shortBRED_DNA.Properties.VariableNames(shortbred_columns);
 % match shortbred columns with metabolomics columns
 [~, metabolomics_shortbred_idx, shortbred_columns_idx] = intersect(metabolomics_samples, shortbred_columns);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot for each metablite product shortbred results
+curenzymes_locustags_combined=[];
+
+for i=1:length(plotdata_rows)
+%i = 7; 
+    
+    curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
+    
+    curenzymes_geneidx = plotdata_genes(i,:);
+    % remove empty values and keep only indeces of existing genes
+    curenzymes_geneidx(cellfun(@(x) isempty(x), curenzymes_geneidx)) = [];
+    curenzymes_geneidx = cell2mat(curenzymes_geneidx);
+    curenzymes_geneinfo = geneTable(curenzymes_geneidx,:);
+    curenzymes_locustags = curenzymes_geneinfo.locus_tag;
+    % reformat locutags to cell array of strings without special symbols
+    curenzymes_locustags = cellfun(@(x) strrep(x, "['", ""), curenzymes_locustags, 'unif', 0);
+    curenzymes_locustags = cellfun(@(x) strrep(x, "']", ""), curenzymes_locustags, 'unif', 0);
+    curenzymes_locustags = cellfun(@(x) x{1}, curenzymes_locustags, 'unif', 0);
+    
+    
+    sprintf('%s expected enzymes: %d,  found enzymes: %d\n', ...
+        plotdata_rows{i}, ...
+        length(curenzymes_locustags),...
+        length(intersect(shortbred_genes, curenzymes_locustags)))
+    curenzymes_locustags_combined = [curenzymes_locustags_combined; ...
+        [repmat(plotdata_rows(i),length(curenzymes_locustags),1), curenzymes_locustags]];
+end
+
+curenzymes_locustags_combined = table(curenzymes_locustags_combined(:,1),...
+                                      curenzymes_locustags_combined(:,2),...
+                                      'VariableNames', {'KEGGID_product', 'locus_tag'});
+writetable(curenzymes_locustags_combined, ...
+    '.\ProcessedData\shortBRED\locustags_for_plotting_products.txt');
+
 % leave only sample names
-shortbred_columns = cellfun(@(x)x(1:strfind(x,'_')-1), shortbred_columns, 'unif',0);
+%shortbred_columns = cellfun(@(x)x(1:strfind(x,'_')-1), shortbred_columns, 'unif',0);
 % plot correlation for each enzyme
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
 spidx=1;   
-for k=1:size(plotdata_shortbred,1)
+for k=1:length(curenzymes_locustags)%size(plotdata_shortbred,1)
+    %cur_expression = plotdata_shortbred(k,shortbred_columns_idx)';
+    shortbred_row_idx = ismember(shortbred_genes, curenzymes_locustags{k});
     cur_expression = plotdata_shortbred(k,shortbred_columns_idx)';
+    
     cur_expression = sum(cur_expression, 2);
 
     if sum(cur_expression)>0
