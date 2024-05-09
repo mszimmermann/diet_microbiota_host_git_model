@@ -220,10 +220,6 @@ for method_i = 1:2
         end
     end
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% compare deseq and edgeR results
-[~, idx1, idx2] = intersect(deseqResultsDNA{1}{:,1}, edgeResultsDNA{1}{:,1});
-scatter(deseqResultsDNA{1}{idx1,3}, edgeResultsDNA{1}{idx2,3})
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -335,6 +331,15 @@ padjMatrixHFDCTR_DNA= zeros(totalsize,1);
 fcMatrixHFDCTR_RNA = zeros(totalsize,1);
 pMatrixHFDCTR_RNA = zeros(totalsize,1);
 padjMatrixHFDCTR_RNA = zeros(totalsize,1);
+% create matrices for deseq2 results 
+fcMatrixDeseq2HFDCTR_DNA = zeros(totalsize,1);
+pMatrixDeseq2HFDCTR_DNA = zeros(totalsize,1);
+padjMatrixDeseq2HFDCTR_DNA= zeros(totalsize,1);
+fcMatrixDeseq2HFDCTR_RNA = zeros(totalsize,1);
+pMatrixDeseq2HFDCTR_RNA = zeros(totalsize,1);
+padjMatrixDeseq2HFDCTR_RNA = zeros(totalsize,1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% get gene names and info
 geneNamesHFDCTR = cell(totalsize,1);
 abbrMatrix = cell(totalsize,1);
 idx = 1;
@@ -356,6 +361,20 @@ for i=1:length(edgeRFileNames_abbr)
     fcMatrixHFDCTR_RNA(idx:idx+cursize-1) = edgeResultsRNA{i}.logFC(rnaidx);
     pMatrixHFDCTR_RNA(idx:idx+cursize-1) = edgeResultsRNA{i}.PValue(rnaidx);
     padjMatrixHFDCTR_RNA(idx:idx+cursize-1) = edgeResultsRNA{i}.FDR(rnaidx);
+
+    % get DNA deseq2 data
+    [~, ~, deseqidx] = intersect(curgeneidx, deseqResultsDNA{i}.species_genes,'stable');
+    fcMatrixDeseq2HFDCTR_DNA(idx:idx+cursize-1) = deseqResultsDNA{i}.log2FoldChange(deseqidx);
+    pMatrixDeseq2HFDCTR_DNA(idx:idx+cursize-1) = deseqResultsDNA{i}.pvalue(deseqidx);
+    padjMatrixDeseq2HFDCTR_DNA(idx:idx+cursize-1) = deseqResultsDNA{i}.padj(deseqidx);
+    % get RNA deseq data
+    % find corresponding gene ids
+    [~, ~, rnaidx] = intersect(curgeneidx, deseqResultsRNA{i}.species_genes,'stable');
+    
+    fcMatrixDeseq2HFDCTR_RNA(idx:idx+cursize-1) = deseqResultsRNA{i}.log2FoldChange(rnaidx);
+    pMatrixDeseq2HFDCTR_RNA(idx:idx+cursize-1) = deseqResultsRNA{i}.pvalue(rnaidx);
+    padjMatrixDeseq2HFDCTR_RNA(idx:idx+cursize-1) = deseqResultsRNA{i}.padj(rnaidx);
+
     % gene names and species abbreviations
     abbrMatrix(idx:idx+cursize-1) = repmat(edgeRFileNames_abbr(i),cursize,1);
     geneNamesHFDCTR(idx:idx+cursize-1) = curgeneidx;
@@ -413,11 +432,18 @@ fcMatrixHFDCTR_RNA_filtered = fcMatrixHFDCTR_RNA(filter_index,:);
 pMatrixHFDCTR_RNA_filtered = pMatrixHFDCTR_RNA(filter_index,:);
 padjMatrixHFDCTR_RNA_filtered = padjMatrixHFDCTR_RNA(filter_index,:);
 
+fcMatrixDeseq2HFDCTR_DNA_filtered = fcMatrixDeseq2HFDCTR_DNA(filter_index,:);
+pMatrixDeseq2HFDCTR_DNA_filtered = pMatrixDeseq2HFDCTR_DNA(filter_index,:);
+padjMatrixDeseq2HFDCTR_DNA_filtered= padjMatrixDeseq2HFDCTR_DNA(filter_index,:);
+fcMatrixDeseq2HFDCTR_RNA_filtered = fcMatrixDeseq2HFDCTR_RNA(filter_index,:);
+pMatrixDeseq2HFDCTR_RNA_filtered = pMatrixDeseq2HFDCTR_RNA(filter_index,:);
+padjMatrixDeseq2HFDCTR_RNA_filtered = padjMatrixDeseq2HFDCTR_RNA(filter_index,:);
+
 geneNamesHFDCTR_filtered = geneNamesHFDCTR(filter_index);
 abbrMatrix_filtered = abbrMatrix(filter_index);
 annTable_filtered = annTable(filter_index,:);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % extract pathway annotation from genes
 keggPathways = cell(200,1);
@@ -589,8 +615,17 @@ annTable_FCinfo.fdrHFDCTR_DNA = padjMatrixHFDCTR_DNA;
 annTable_FCinfo.fcHFDCTR_RNA = fcMatrixHFDCTR_RNA;
 annTable_FCinfo.pHFDCTR_RNA = pMatrixHFDCTR_RNA;
 annTable_FCinfo.fdrHFDCTR_RNA = padjMatrixHFDCTR_RNA;
+% add fold change, p-values and fdr from deseq2
+%dna
+annTable_FCinfo.fcDeseq2HFDCTR_DNA = fcMatrixDeseq2HFDCTR_DNA;
+annTable_FCinfo.pDeseq2HFDCTR_DNA = pMatrixDeseq2HFDCTR_DNA;
+annTable_FCinfo.fdrDeseq2HFDCTR_DNA = padjMatrixDeseq2HFDCTR_DNA;
+%rna
+annTable_FCinfo.fcDeseq2HFDCTR_RNA = fcMatrixDeseq2HFDCTR_RNA;
+annTable_FCinfo.pDeseq2HFDCTR_RNA = pMatrixDeseq2HFDCTR_RNA;
+annTable_FCinfo.fdrDeseq2HFDCTR_RNA = padjMatrixDeseq2HFDCTR_RNA;
 % save table to file
-writetable(annTable_FCinfo, [outputFolder 'edgeR_gene_fold_changes_and_ann.csv']);
+writetable(annTable_FCinfo, [outputFolder 'edgeR_deseq2_gene_fold_changes_and_ann.csv']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % write pathway-gene relationships to file
 % kegg
