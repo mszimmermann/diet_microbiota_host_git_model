@@ -30,8 +30,9 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-edgeRTable = readtable([inputFolderSeq, ...
-                    'edgeR_gene_fold_changes_and_ann.csv']);
+% read updated table with edgeR and deseq2 results instead of edgeR_gene_fold_changes_and_ann.csv
+edgeRTable = readtable([outputFolder, ...
+                    'edgeR_deseq2_gene_fold_changes_and_ann.csv']);
 
 % filter out genes that are not detected in >5 samples
 edgeRTable_filtered = edgeRTable(edgeRTable.geneFilter==1,:);
@@ -40,9 +41,13 @@ edgeRTable_filtered = edgeRTable(edgeRTable.geneFilter==1,:);
 edgeRTable_filtered.fdrHFDCTR_DNA = mafdr(edgeRTable_filtered.pHFDCTR_DNA, 'bhfdr', 1);
 edgeRTable_filtered.fdrHFDCTR_RNA = mafdr(edgeRTable_filtered.pHFDCTR_RNA, 'bhfdr', 1);
 
+% recalculate FDR for deseq2
+edgeRTable_filtered.fdrDeseq2HFDCTR_DNA = mafdr(edgeRTable_filtered.pDeseq2HFDCTR_DNA, 'bhfdr', 1);
+edgeRTable_filtered.fdrDeseq2HFDCTR_RNA = mafdr(edgeRTable_filtered.pDeseq2HFDCTR_RNA, 'bhfdr', 1);
+
 % write filtered edgeR table with updated FDRs to file
 writetable(edgeRTable_filtered, [outputFolder, ...
-    'edgeR_gene_fold_changes_and_ann_filtered_FDRrecalculated.csv']);
+    'edgeR_deseq2_gene_fold_changes_and_ann_filtered_FDRrecalculated.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -127,6 +132,13 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
 % plot number of changing genes per species
 changingGenesUP = zeros(length(edgeRFileNames_abbr),1);
 changingGenesDOWN = zeros(length(edgeRFileNames_abbr),1);
+% calculate number of changing genes per deseq2
+changingGenesDeseq2UP = zeros(length(edgeRFileNames_abbr),1);
+changingGenesDeseq2DOWN = zeros(length(edgeRFileNames_abbr),1);
+% calculate number of changing genes per deseq2 and edgeR
+changingGenesEdgeRDeseq2UP = zeros(length(edgeRFileNames_abbr),1);
+changingGenesEdgeRDeseq2DOWN = zeros(length(edgeRFileNames_abbr),1);
+% save total number of genes
 changingGenesTotalNum = zeros(length(edgeRFileNames_abbr),1);
 for i=1:length(edgeRFileNames_abbr)
     curidx = cellfun(@(x) isequal(x,edgeRFileNames_abbr{i}),...
@@ -136,6 +148,24 @@ for i=1:length(edgeRFileNames_abbr)
 
     changingGenesDOWN(i) = nnz( (edgeRTable_filtered.fcHFDCTR_RNA(curidx) <= -fcThreshold) &...
                            (edgeRTable_filtered.fdrHFDCTR_RNA(curidx) <= fdrThreshold));
+    % deseq2
+    changingGenesDeseq2UP(i) = nnz( (edgeRTable_filtered.fcDeseq2HFDCTR_RNA(curidx) >= fcThreshold) &...
+                           (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA(curidx) <= fdrThreshold));
+
+    changingGenesDeseq2DOWN(i) = nnz( (edgeRTable_filtered.fcDeseq2HFDCTR_RNA(curidx) <= -fcThreshold) &...
+                           (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA(curidx) <= fdrThreshold));
+
+    % deseq2 and edgeR
+    changingGenesEdgeRDeseq2UP(i) = nnz( (edgeRTable_filtered.fcHFDCTR_RNA(curidx) >= fcThreshold) &...
+                           (edgeRTable_filtered.fdrHFDCTR_RNA(curidx) <= fdrThreshold) & ...
+                           (edgeRTable_filtered.fcDeseq2HFDCTR_RNA(curidx) >= fcThreshold) &...
+                           (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA(curidx) <= fdrThreshold));
+
+    changingGenesEdgeRDeseq2DOWN(i) = nnz( (edgeRTable_filtered.fcHFDCTR_RNA(curidx) <= -fcThreshold) &...
+                           (edgeRTable_filtered.fdrHFDCTR_RNA(curidx) <= fdrThreshold) & ...
+                            (edgeRTable_filtered.fcDeseq2HFDCTR_RNA(curidx) <= -fcThreshold) &...
+                           (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA(curidx) <= fdrThreshold));
+
     % total unfiltered number of genes
     curidx = cellfun(@(x) isequal(x,edgeRFileNames_abbr{i}),...
                             edgeRTable_filtered.abbrSpecies);
@@ -183,6 +213,27 @@ orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
     [figureFolder ...
     'fig_1e_bar_fraction_changing_genes_per_species_clustergram_order.pdf'])
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% plot deseq2 and edgeR comparison
+sortidx = fliplr([3 13 14 9 10 1 8 11 12 5 4 7 6 2]);
+figure
+barh((-[changingGenesDOWN(sortidx) changingGenesDeseq2DOWN(sortidx) changingGenesEdgeRDeseq2DOWN(sortidx)])./...
+      ([changingGenesTotalNum(sortidx) changingGenesTotalNum(sortidx) changingGenesTotalNum(sortidx)]))
+hold on
+barh([changingGenesUP(sortidx) changingGenesDeseq2UP(sortidx) changingGenesEdgeRDeseq2UP(sortidx)]./...
+    [changingGenesTotalNum(sortidx) changingGenesTotalNum(sortidx) changingGenesTotalNum(sortidx)])
+set(gca, 'YTick', 1:length(sortidx))
+set(gca, 'YTickLabel', edgeRFileNames_abbr(sortidx))
+xlabel('Fraction of changing genes (DOWN/UP)')
+xlim([-0.1 0.1])
+ylim([0.5 length(sortidx)+0.5])
+legend({"EdgeR Down", "Deseq2 Down", "Both Down", "EdgeR UP", "Deseq2 UP", "Both Up"})
+orient landscape
+print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+    [figureFolder ...
+    'fig_1e_bar_fraction_changing_genes_per_species_clustergram_order_edgeRdeseq.pdf'])
+%%%%%%%%%%%%%%%%%%%%%%%%
 
 % plot fraction of changing genes in the order of phylum
 %sortidx = fliplr([12 10 3 9 14 1 8 4 2 6 7 5 13 11]);
@@ -239,13 +290,23 @@ for ptw_i = 1:3
         end
         % calculate the enrichment score for each pathway for each group
         if isequal(changedir, 'UP')
+            % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
+            %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+            % select genes changing both in edgeR and deseq2
             changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
-                             (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                             (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                             (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
+                             (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
             changing_fc = sort(unique(edgeRTable_filtered.fcHFDCTR_RNA(changing_group)),...
                             'descend');
         else
+            % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
+            %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+            % select genes changing both in edgeR and deseq2
             changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
-                             (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                              (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                              (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
+                              (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
             changing_fc = sort(unique(edgeRTable_filtered.fcHFDCTR_RNA(changing_group)),...
                             'ascend');
         end    
@@ -266,11 +327,21 @@ for ptw_i = 1:3
             %tic
             for fdrthres = length(changing_fdr):-1:1
                 if isequal(changedir, 'UP')
+                    %changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
+                    %                 (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
+                    % both edgeR and deseq2
                     changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
-                                     (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
+                                     (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres)) &...
+                                     (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
+                                     (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=changing_fdr(fdrthres));
                 else
+                    % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
+                    %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
+                    % both edgeR and deseq2
                     changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
-                                     (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
+                                     (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres)) &...
+                                     (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
+                                     (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=changing_fdr(fdrthres));
                 end
                 % this is n - size of the group
                 group_size = sum(changing_group);
@@ -302,11 +373,21 @@ for ptw_i = 1:3
             end
             for fcthres = length(changing_fc):-1:1
                 if isequal(changedir, 'UP')
+                    % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=changing_fc(fcthres)) &...
+                    %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                    % both edgeR and deseq2
                     changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=changing_fc(fcthres)) &...
-                                     (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                     (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                     (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=changing_fc(fcthres)) &...
+                                     (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
                 else
+                    % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=changing_fc(fcthres)) &...
+                    %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                    % both edgeR and deseq2
                     changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=changing_fc(fcthres)) &...
-                                     (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                     (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                     (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=changing_fc(fcthres)) &...
+                                     (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
                 end
                 % this is n - size of the group
                 group_size = sum(changing_group);
@@ -401,13 +482,23 @@ for ptw_i = 1:3
         for abbr_i = 1:length(edgeRFileNames_abbr)
             % calculate the enrichment score for each pathway for each group
             if isequal(changedir, 'UP')
+                % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
+                %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                % both edgeR and deseq2
                 changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
-                                 (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                 (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                 (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
+                                 (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
                 changing_fc = sort(unique(edgeRTable_filtered.fcHFDCTR_RNA(changing_group)),...
                             'descend');
             else
+                % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
+                %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                % both edgeR and deseq2
                 changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
                                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                 (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
+                                 (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
                 changing_fc = sort(unique(edgeRTable_filtered.fcHFDCTR_RNA(changing_group)),...
                             'ascend');
             end    
@@ -432,11 +523,21 @@ for ptw_i = 1:3
                 %tic
                 for fdrthres = length(changing_fdr):-1:1
                     if isequal(changedir, 'UP')
+                        % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
+                        %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                        % both edgeR and deseq2
                         changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
-                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                         (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
+                                         (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
                     else
+                        % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
+                        %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
+                        % both edgeR and deseq2
                         changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
-                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
+                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres)) & ...
+                                         (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
+                                         (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=changing_fdr(fdrthres));
                     end
                     changing_group = changing_group & species_genes;
                     % this is n - size of the group
@@ -467,11 +568,21 @@ for ptw_i = 1:3
                 end
                 for fcthres = length(changing_fdr):-1:1
                     if isequal(changedir, 'UP')
+                        % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
+                        %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                        % both edgeR and deseq2
                         changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
-                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                         (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
+                                         (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
                     else
+                        % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
+                        %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
+                        % both edgeR and deseq2
                         changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
-                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
+                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres)) &...
+                                         (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
+                                         (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=changing_fdr(fdrthres));
                     end
                     changing_group = changing_group & species_genes;
                     % this is n - size of the group
@@ -605,13 +716,13 @@ for ptw_i = 1:3
 
     % save to file
     writetable(enrichmentTable_DOWN_perspecies,...
-               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_per_species.csv']);
+               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_per_species.csv']);
     writetable(enrichmentTable_UP_perspecies,...
-               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_per_species.csv']);
+               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_per_species.csv']);
     writetable(enrichmentTable_DOWN,...
-               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_total.csv']);
+               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_total.csv']);
     writetable(enrichmentTable_UP,...
-               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_total.csv']);
+               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_total.csv']);
            
 end
 
@@ -833,9 +944,9 @@ for ptw_i = 1:3
 
     % save to file
     writetable(pathwayNchangingGenes_DOWN_perspecies,...
-               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog.csv']);
+               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq.csv']);
     writetable(pathwayNchangingGenes_UP_perspecies,...
-               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog.csv']);
+               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq.csv']);
            
 end
 
@@ -844,13 +955,13 @@ end
 % plot enrichment results
 % get enrichment results
 enrichmentFileName = 'ptwenr_recalc_KEGG_';
-enrichmentTable_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_per_species.csv']);
-enrichmentTable_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_per_species.csv']);
-enrichmentTable_KEGG_DOWN = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_total.csv']);
-enrichmentTable_KEGG_UP = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_total.csv']);
+enrichmentTable_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_per_species.csv']);
+enrichmentTable_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_per_species.csv']);
+enrichmentTable_KEGG_DOWN = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_total.csv']);
+enrichmentTable_KEGG_UP = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_total.csv']);
 enrichmentFileName = 'ptwNchangingGenes_KEGG_';
-pathwayNchangingGenes_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog.csv']);
-pathwayNchangingGenes_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog.csv']);
+pathwayNchangingGenes_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq.csv']);
+pathwayNchangingGenes_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq.csv']);
 edgeRFileNames_abbr = pathwayNchangingGenes_KEGG_DOWN_perspecies.Properties.VariableNames';
 edgeRFileNames_abbr(cellfun(@(x) contains(x, 'pathway') | contains(x, 'Total'), edgeRFileNames_abbr))=[];
 
@@ -963,9 +1074,9 @@ fig = cgo{1}.plot;
 orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
     [ figureFolder, ...
-    'fig_1f_clustergram_ptwenr_KEGGDOWN_eggnog_updfilter_ANY_FDR0_1_ngenes3_perspeciesNgenes_noSum.pdf']);
+    'fig_1f_clustergram_ptwenr_KEGGDOWN_eggnog_edgerdeseq_updfilter_ANY_FDR0_1_ngenes3_perspeciesNgenes_noSum.pdf']);
 fig = cgo{2}.plot;
 orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
     [ figureFolder, ...
-    'fig_1f_clustergram_ptwenr_KEGGUP_eggnog_updfilter_ANY_FDR0_1_ngenes3_perspeciesNgenes_noSum.pdf']);
+    'fig_1f_clustergram_ptwenr_KEGGUP_eggnog_edgerdeseq_updfilter_ANY_FDR0_1_ngenes3_perspeciesNgenes_noSum.pdf']);
