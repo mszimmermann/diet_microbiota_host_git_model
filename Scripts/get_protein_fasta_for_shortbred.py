@@ -52,11 +52,17 @@ for i in range(len(protein_names)):
     if type(curec)==float: # if curec is not string set it to empty string
         curec=''
     curseq = '>'+gene_locustag[i] + ' ' + curec + ' ' + curseq[1:-1]
+    curseq_lines = curseq.splitlines()
+    curseq_id = curseq_lines[0]
+    curseq_seq = ''.join(curseq_lines[1:])
     if i==0:
         with open(proteinfilename, 'w') as f: #it is first file, rewrite previous
-            f.write(curseq) 
+            f.write(curseq_id)
+            f.write(curseq_seq)
+            f.write('\n')
     else: #it is not first file, append
         with open(proteinfilename, 'a') as f:
-            f.write(curseq) # write sequence without last EOL symbol
-        
+            f.write(curseq_id) # write sequence without last EOL symbol
+            f.write(curseq_seq)
+            f.write('\n')
 #############################################
