@@ -334,13 +334,15 @@ for ptw_i = 1%:3
             bestScore = 2;
             %tic
             % save enrichment results at each threshold to file
-            if (ptw_i==1)
-                enrichmentTable_pathway_file = ['./ProcessedData/enrichments/',...
-                                   strrep(strrep(strrep(strrep(pathwayNames{iPw}, ':', '_'),'/','_'),' ', '_'),'.','_'),...
-                                   '_', changedir];
-             
-                enrichmentTable_pathway = zeros(length(changing_fdr), 7);
-            end
+            % comment the section since decided to use one threshold
+            % instead of sliding window
+            % if (ptw_i==1)
+            %     enrichmentTable_pathway_file = ['./ProcessedData/enrichments/',...
+            %                        strrep(strrep(strrep(strrep(pathwayNames{iPw}, ':', '_'),'/','_'),' ', '_'),'.','_'),...
+            %                        '_', changedir];
+            % 
+            %     enrichmentTable_pathway = zeros(length(changing_fdr), 7);
+            % end
             for fdrthres = length(changing_fdr):-1:1
                 if isequal(changedir, 'UP')
                     %changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
@@ -400,13 +402,15 @@ for ptw_i = 1%:3
                     break
                 end
             end
-            if (ptw_i==1)
-                enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
-                {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
-                writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FDR.csv']);
-                % set the table back to 0 for fc recordings
-                enrichmentTable_pathway = zeros(length(changing_fc), 7);
-            end
+            % comment the section since decided to use one threshold
+            % instead of sliding window
+            % if (ptw_i==1)
+            %     enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
+            %     {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
+            %     writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FDR.csv']);
+            %     % set the table back to 0 for fc recordings
+            %     enrichmentTable_pathway = zeros(length(changing_fc), 7);
+            % end
             for fcthres = length(changing_fc):-1:1
                 if isequal(changedir, 'UP')
                     % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=changing_fc(fcthres)) &...
@@ -654,13 +658,15 @@ for ptw_i = 1%:3
                         break;
                     end
                 end
-                if (ptw_i==1)
-                    enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
-                    {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
-                    writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FDR.csv']);
-                    % set the table back to 0 for fc recordings
-                    enrichmentTable_pathway = zeros(length(changing_fc), 7);
-                end
+                % comment the section since decided to use one threshold
+                % instead of sliding window
+                % if (ptw_i==1)
+                %     enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
+                %     {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
+                %     writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FDR.csv']);
+                %     % set the table back to 0 for fc recordings
+                %     enrichmentTable_pathway = zeros(length(changing_fc), 7);
+                % end
 
                 for fcthres = length(changing_fc):-1:1
                     if isequal(changedir, 'UP')
@@ -719,11 +725,13 @@ for ptw_i = 1%:3
                 end
                 %fprintf('Pathway %d of %d\n', iPw, length(pathwayNames));
                 %toc
-                if (ptw_i==1)
-                    enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
-                    {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
-                    writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FC.csv']);
-                end
+                % comment the section since decided to use one threshold
+                % instead of sliding window
+                % if (ptw_i==1)
+                %     enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
+                %     {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
+                %     writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FC.csv']);
+                % end
             end
             % multiple hypothesis adjustment
             padj = my_bhfdr(cell2mat(enrichmentTable(:,(abbr_i-1)*ncol+1)));
