@@ -254,7 +254,7 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % pathway enrichment analysis for all genes simultaneously
 % kegg pathway enrichment
-for ptw_i = 1:3
+for ptw_i = 1%:3
     switch ptw_i
         case 1
             pathwayNames = keggPathways; % goPathwaysNumbers;% ecPathways;% 
@@ -312,10 +312,18 @@ for ptw_i = 1:3
         end    
         changing_fdr = sort(unique(edgeRTable_filtered.fdrHFDCTR_RNA(changing_group)),...
                             'ascend');
+        % set fdr and fc thresholds to fixed values
+        changing_fdr = fdrThreshold;
+        changing_fc = fcThreshold*(isequal(changedir, 'UP')-isequal(changedir, 'DOWN'));
+        
         % this is N - total number of genes
         nDetectedGenes = length(changing_group);
         % comparison of very small numbers
         scoreround = 1000000000;
+        % record pathway FDR for each gene FC and FDR threshold
+        changing_fc_pathway_pval = zeros(length(changing_fc), length(pathwayNames));
+        changing_fdr_pathway_pval = zeros(length(changing_fdr), length(pathwayNames));
+        
         for iPw = 1:length(pathwayNames)
             pw_genes = zeros(size(changing_group,1),1);
             cur_pathway_genes = pathway_genes.GeneIDXfiltered{iPw};
@@ -325,6 +333,14 @@ for ptw_i = 1:3
                 
             bestScore = 2;
             %tic
+            % save enrichment results at each threshold to file
+            if (ptw_i==1)
+                enrichmentTable_pathway_file = ['./ProcessedData/enrichments/',...
+                                   strrep(strrep(strrep(strrep(pathwayNames{iPw}, ':', '_'),'/','_'),' ', '_'),'.','_'),...
+                                   '_', changedir];
+             
+                enrichmentTable_pathway = zeros(length(changing_fdr), 7);
+            end
             for fdrthres = length(changing_fdr):-1:1
                 if isequal(changedir, 'UP')
                     %changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
@@ -366,10 +382,30 @@ for ptw_i = 1:3
                     enrichmentTable{iPw, 9} = fcThreshold*(isequal(changedir, 'UP')-(1-isequal(changedir, 'UP')));
                     bestScore=score;
                 end
+                % save all stats info for each threshold
+                if (ptw_i==1)
+                    enrichmentTable_pathway(fdrthres, 1) = score;
+                    enrichmentTable_pathway(fdrthres, 2) =  genesFound;
+                    enrichmentTable_pathway(fdrthres, 3) =  group_size;
+                    enrichmentTable_pathway(fdrthres, 4) = nPwDetectedGenes;
+                    enrichmentTable_pathway(fdrthres, 5) = nDetectedGenes;
+                    enrichmentTable_pathway(fdrthres, 6) = changing_fdr(fdrthres);
+                    enrichmentTable_pathway(fdrthres, 7) = fcThreshold*(isequal(changedir, 'UP')-(1-isequal(changedir, 'UP')));
+                
+                    % save score to table for fcs
+                    changing_fdr_pathway_pval(fdrthres, iPw) = score;
+                end
                 % if there are no genes in the changing group, break
                 if genesFound==0
                     break
                 end
+            end
+            if (ptw_i==1)
+                enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
+                {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
+                writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FDR.csv']);
+                % set the table back to 0 for fc recordings
+                enrichmentTable_pathway = zeros(length(changing_fc), 7);
             end
             for fcthres = length(changing_fc):-1:1
                 if isequal(changedir, 'UP')
@@ -412,6 +448,19 @@ for ptw_i = 1:3
                     enrichmentTable{iPw, 9} = changing_fc(fcthres);
                     bestScore=score;
                 end
+                % save all stats info for each threshold
+                if (ptw_i==1)
+                    enrichmentTable_pathway(fcthres, 1) = score;
+                    enrichmentTable_pathway(fcthres, 2) =  genesFound;
+                    enrichmentTable_pathway(fcthres, 3) =  group_size;
+                    enrichmentTable_pathway(fcthres, 4) = nPwDetectedGenes;
+                    enrichmentTable_pathway(fcthres, 5) = nDetectedGenes;
+                    enrichmentTable_pathway(fcthres, 6) = fdrThreshold;
+                    enrichmentTable_pathway(fcthres, 7) = changing_fc(fcthres);
+
+                    % save score to table for fcs
+                    changing_fc_pathway_pval(fdrthres, iPw) = score;
+                end
                 % if there are no genes in the changing group, break
                 if genesFound==0
                     break
@@ -419,8 +468,12 @@ for ptw_i = 1:3
             end
             %fprintf('Pathway %d of %d\n', iPw, length(pathwayNames));
             %toc
+            if (ptw_i==1)
+                enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
+                {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
+                writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FC.csv']);
+            end
         end
-
         % multiple hypothesis adjustment
         padj = my_bhfdr(cell2mat(enrichmentTable(:,1)));
         for i=1:length(padj)
@@ -432,8 +485,16 @@ for ptw_i = 1:3
                 switch changedir
                     case 'DOWN'
                         enrichmentTable_KEGG_DOWN = enrichmentTable;
+                        % save score to table for fcs
+                        changing_fdr_pathway_pval_DOWN = changing_fdr_pathway_pval;
+                        changing_fc_pathway_pval_DOWN = changing_fc_pathway_pval;
+                        
                     case 'UP'
                         enrichmentTable_KEGG_UP = enrichmentTable;
+                        % save score to table for fcs
+                        changing_fdr_pathway_pval_UP = changing_fdr_pathway_pval;
+                        changing_fc_pathway_pval_UP = changing_fc_pathway_pval;
+                        
                 end
             case 2
                 switch changedir
@@ -473,6 +534,8 @@ for ptw_i = 1:3
                         enrichmentTable_PGF_UP = enrichmentTable;
                 end
         end
+%    end
+%end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % pathway enrichment analysis per species
@@ -481,6 +544,10 @@ for ptw_i = 1:3
      
         for abbr_i = 1:length(edgeRFileNames_abbr)
             % calculate the enrichment score for each pathway for each group
+            
+            % select genes of one species
+            species_genes = ismember(edgeRTable_filtered.abbrSpecies, edgeRFileNames_abbr{abbr_i});
+            
             if isequal(changedir, 'UP')
                 % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
                 %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
@@ -489,6 +556,7 @@ for ptw_i = 1:3
                                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
                                  (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
                                  (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
+                changing_group = changing_group & species_genes;
                 changing_fc = sort(unique(edgeRTable_filtered.fcHFDCTR_RNA(changing_group)),...
                             'descend');
             else
@@ -496,18 +564,19 @@ for ptw_i = 1:3
                 %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
                 % both edgeR and deseq2
                 changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
-                                 (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                 (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
                                  (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
                                  (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
+                changing_group = changing_group & species_genes;
                 changing_fc = sort(unique(edgeRTable_filtered.fcHFDCTR_RNA(changing_group)),...
                             'ascend');
             end    
-            % select genes of one species
-            species_genes = ismember(edgeRTable_filtered.abbrSpecies, edgeRFileNames_abbr{abbr_i});
-            changing_group = changing_group & species_genes;
 
             changing_fdr = sort(unique(edgeRTable_filtered.fdrHFDCTR_RNA(changing_group)),...
                                 'ascend');
+            % fix FDR and FC threshold to one value
+            changing_fdr = fdrThreshold;
+            changing_fc = fcThreshold*(isequal(changedir, 'UP')-isequal(changedir, 'DOWN'));
             % this is N - total number of genes
             nDetectedGenes = nnz(species_genes);
             % comparison of very small numbers
@@ -521,15 +590,24 @@ for ptw_i = 1:3
                 
                 bestScore = 2;
                 %tic
+                if (ptw_i==1)
+                    enrichmentTable_pathway_file = ['./ProcessedData/enrichments/',...
+                                       edgeRFileNames_abbr{abbr_i},'_',...
+                                       strrep(strrep(strrep(strrep(pathwayNames{iPw}, ':', '_'),'/','_'),' ', '_'),'.','_'),...
+                                       '_', changedir];
+                 
+                    enrichmentTable_pathway = zeros(length(changing_fdr), 7);
+                end
+
                 for fdrthres = length(changing_fdr):-1:1
                     if isequal(changedir, 'UP')
                         % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
                         %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
                         % both edgeR and deseq2
                         changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
-                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres)) &...
                                          (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
-                                         (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
+                                         (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=changing_fdr(fdrthres));
                     else
                         % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
                         %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
@@ -561,28 +639,46 @@ for ptw_i = 1:3
                         enrichmentTable{iPw, (abbr_i-1)*ncol+8} = fcThreshold*(isequal(changedir, 'UP')-(1-isequal(changedir, 'UP')));
                         bestScore=score;
                     end
+                    % save all stats info for each threshold
+                    if (ptw_i==1)
+                        enrichmentTable_pathway(fdrthres, 1) = score;
+                        enrichmentTable_pathway(fdrthres, 2) =  genesFound;
+                        enrichmentTable_pathway(fdrthres, 3) =  group_size;
+                        enrichmentTable_pathway(fdrthres, 4) = nPwDetectedGenes;
+                        enrichmentTable_pathway(fdrthres, 5) = nDetectedGenes;
+                        enrichmentTable_pathway(fdrthres, 6) = changing_fdr(fdrthres);
+                        enrichmentTable_pathway(fdrthres, 7) = fcThreshold*(isequal(changedir, 'UP')-(1-isequal(changedir, 'UP')));
+                    end
                     % if there are no genes in the changing group, break
                     if genesFound==0
                         break;
                     end
                 end
-                for fcthres = length(changing_fdr):-1:1
+                if (ptw_i==1)
+                    enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
+                    {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
+                    writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FDR.csv']);
+                    % set the table back to 0 for fc recordings
+                    enrichmentTable_pathway = zeros(length(changing_fc), 7);
+                end
+
+                for fcthres = length(changing_fc):-1:1
                     if isequal(changedir, 'UP')
                         % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
                         %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
                         % both edgeR and deseq2
-                        changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
+                        changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=changing_fc(fcthres)) &...
                                          (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
-                                         (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
+                                         (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=changing_fc(fcthres)) &...
                                          (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
                     else
                         % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
                         %                  (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres));
                         % both edgeR and deseq2
-                        changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
-                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=changing_fdr(fdrthres)) &...
-                                         (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
-                                         (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=changing_fdr(fdrthres));
+                        changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=changing_fc(fcthres)) &...
+                                         (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                         (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=changing_fc(fcthres)) &...
+                                         (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
                     end
                     changing_group = changing_group & species_genes;
                     % this is n - size of the group
@@ -606,6 +702,16 @@ for ptw_i = 1:3
                         enrichmentTable{iPw, (abbr_i-1)*ncol+8} = changing_fc(fcthres);
                         bestScore=score;
                     end
+                    % save all stats info for each threshold
+                    if (ptw_i==1)
+                        enrichmentTable_pathway(fcthres, 1) = score;
+                        enrichmentTable_pathway(fcthres, 2) =  genesFound;
+                        enrichmentTable_pathway(fcthres, 3) =  group_size;
+                        enrichmentTable_pathway(fcthres, 4) = nPwDetectedGenes;
+                        enrichmentTable_pathway(fcthres, 5) = nDetectedGenes;
+                        enrichmentTable_pathway(fcthres, 6) = fdrThreshold;
+                        enrichmentTable_pathway(fcthres, 7) = changing_fc(fcthres);
+                    end
                     % if there are no genes in the changing group, break
                     if genesFound==0
                         break;
@@ -613,8 +719,12 @@ for ptw_i = 1:3
                 end
                 %fprintf('Pathway %d of %d\n', iPw, length(pathwayNames));
                 %toc
+                if (ptw_i==1)
+                    enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
+                    {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
+                    writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FC.csv']);
+                end
             end
-
             % multiple hypothesis adjustment
             padj = my_bhfdr(cell2mat(enrichmentTable(:,(abbr_i-1)*ncol+1)));
             for i=1:length(padj)
@@ -671,6 +781,41 @@ for ptw_i = 1:3
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% test how many pathways fit each threshold
+changing_fdr_DOWN = changing_fdr_pathway_pval_DOWN;
+changing_fdr_DOWN(changing_fdr_DOWN==0)=1;
+for i=1:size(changing_fdr_DOWN,1)
+    changing_fdr_DOWN(i,:) = my_bhfdr(changing_fdr_DOWN(i,:));
+end
+max(sum(changing_fdr_DOWN<=0.05,2))
+sum(sum(changing_fdr_DOWN<=0.05,1)>0)
+
+changing_fdr_UP = changing_fdr_pathway_pval_UP;
+changing_fdr_UP(changing_fdr_UP==0)=1;
+for i=1:size(changing_fdr_UP,1)
+    changing_fdr_UP(i,:) = my_bhfdr(changing_fdr_UP(i,:));
+end
+max(sum(changing_fdr_UP<=0.05,2))
+sum(sum(changing_fdr_UP<=0.05,1)>0)
+
+changing_fc_DOWN = changing_fc_pathway_pval_DOWN;
+changing_fc_DOWN(changing_fc_DOWN==0)=1;
+for i=1:size(changing_fc_DOWN,1)
+    changing_fc_DOWN(i,:) = my_bhfdr(changing_fc_DOWN(i,:));
+end
+max(sum(changing_fc_DOWN<=0.05,2))
+sum(sum(changing_fc_DOWN<=0.05,1)>0)
+
+changing_fc_UP = changing_fc_pathway_pval_UP;
+changing_fc_UP(changing_fc_UP==0)=1;
+for i=1:size(changing_fc_UP,1)
+    changing_fc_UP(i,:) = my_bhfdr(changing_fc_UP(i,:));
+end
+max(sum(changing_fc_UP<=0.05,2))
+sum(sum(changing_fc_UP<=0.05,1)>0)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save enrichment tables to file
 enrichmentColumns = {'pvalue', 'FDR',...
                      'n_pw_changin', 'n_changing', 'n_pw', 'n_total',...
@@ -684,7 +829,7 @@ enrichmentColumns_species = strcat(edgeRFileNames_abbr(kron(1:length(edgeRFileNa
 enrichmentColumns = [{'pathwayID'}, enrichmentColumns];
 enrichmentColumns_species = [{'pathwayID'}, enrichmentColumns_species];
 
-for ptw_i = 1:3
+for ptw_i = 1%:3
     switch ptw_i
             case 1
                 enrichmentTable_DOWN_perspecies = enrichmentTable_KEGG_DOWN_perspecies;
@@ -716,13 +861,13 @@ for ptw_i = 1:3
 
     % save to file
     writetable(enrichmentTable_DOWN_perspecies,...
-               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_per_species.csv']);
+               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_FDR005_FC05_per_species.csv']);
     writetable(enrichmentTable_UP_perspecies,...
-               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_per_species.csv']);
+               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_FDR005_FC05_per_species.csv']);
     writetable(enrichmentTable_DOWN,...
-               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_total.csv']);
+               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_FDR005_FC05_total.csv']);
     writetable(enrichmentTable_UP,...
-               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_total.csv']);
+               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_FDR005_FC05_total.csv']);
            
 end
 
@@ -730,7 +875,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % calculate total number of changing genes per pathway (with the same
 % threshold)
-for ptw_i = 1:3
+for ptw_i = 1%:3
     switch ptw_i
         case 1
             pathwayNames = keggPathways; 
@@ -764,11 +909,17 @@ for ptw_i = 1:3
         end
         % calculate the enrichment score for each pathway for each group
         if isequal(changedir, 'UP')
+            % edgeR and Deseq2
             changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
-                             (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                             (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                             (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
+                             (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
         else
+            % edgeR and Deseq2
             changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
-                             (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                             (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                             (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
+                             (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
         end    
         
         for iPw = 1:length(pathwayNames)
@@ -834,11 +985,17 @@ for ptw_i = 1:3
         for abbr_i = 1:length(edgeRFileNames_abbr)
             % calculate the enrichment score for each pathway for each group
             if isequal(changedir, 'UP')
+                % edgeR and Deseq2
                 changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
-                                 (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                 (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                 (edgeRTable_filtered.fcDeseq2HFDCTR_RNA>=fcThreshold) &...
+                                 (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
             else
+                % edgeR and Deseq2
                 changing_group = (edgeRTable_filtered.fcHFDCTR_RNA<=-fcThreshold) &...
-                                 (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold);
+                                 (edgeRTable_filtered.fdrHFDCTR_RNA<=fdrThreshold) &...
+                                 (edgeRTable_filtered.fcDeseq2HFDCTR_RNA<=-fcThreshold) &...
+                                 (edgeRTable_filtered.fdrDeseq2HFDCTR_RNA<=fdrThreshold);
             end    
             % select genes of one species
             species_genes = ismember(edgeRTable_filtered.abbrSpecies, edgeRFileNames_abbr{abbr_i});
@@ -909,7 +1066,7 @@ end
 % save number of genes per pathway to file
 pathwayNgenesColumns_species = [{'pathwayID'}, {'Total'}, edgeRFileNames_abbr'];
 
-for ptw_i = 1:3
+for ptw_i = 1%:3
     switch ptw_i
             case 1
                 pathwayNchangingGenes_DOWN_perspecies = [pathwayNchagingGenes_KEGG_DOWN,...
@@ -944,9 +1101,9 @@ for ptw_i = 1:3
 
     % save to file
     writetable(pathwayNchangingGenes_DOWN_perspecies,...
-               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq.csv']);
+               [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_FDR005_FC05.csv']);
     writetable(pathwayNchangingGenes_UP_perspecies,...
-               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq.csv']);
+               [outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_FDR005_FC05.csv']);
            
 end
 
@@ -955,13 +1112,13 @@ end
 % plot enrichment results
 % get enrichment results
 enrichmentFileName = 'ptwenr_recalc_KEGG_';
-enrichmentTable_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_per_species.csv']);
-enrichmentTable_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_per_species.csv']);
-enrichmentTable_KEGG_DOWN = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_total.csv']);
-enrichmentTable_KEGG_UP = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_total.csv']);
+enrichmentTable_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_FDR005_FC05_per_species.csv']);
+enrichmentTable_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_FDR005_FC05_per_species.csv']);
+enrichmentTable_KEGG_DOWN = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_FDR005_FC05_total.csv']);
+enrichmentTable_KEGG_UP = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_FDR005_FC05_total.csv']);
 enrichmentFileName = 'ptwNchangingGenes_KEGG_';
-pathwayNchangingGenes_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq.csv']);
-pathwayNchangingGenes_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq.csv']);
+pathwayNchangingGenes_KEGG_DOWN_perspecies = readtable([outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_FDR005_FC05.csv']);
+pathwayNchangingGenes_KEGG_UP_perspecies = readtable([outputFolder, enrichmentFileName, 'UP_updfiltered_eggnog_edgerdeseq_FDR005_FC05.csv']);
 edgeRFileNames_abbr = pathwayNchangingGenes_KEGG_DOWN_perspecies.Properties.VariableNames';
 edgeRFileNames_abbr(cellfun(@(x) contains(x, 'pathway') | contains(x, 'Total'), edgeRFileNames_abbr))=[];
 
@@ -1074,9 +1231,9 @@ fig = cgo{1}.plot;
 orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
     [ figureFolder, ...
-    'fig_1f_clustergram_ptwenr_KEGGDOWN_eggnog_edgerdeseq_updfilter_ANY_FDR0_1_ngenes3_perspeciesNgenes_noSum.pdf']);
+    'fig_1f_clustergram_ptwenr_KEGGDOWN_eggnog_edgerdeseq_FDR005_FC05_updfilter_ANY_FDR0_1_ngenes3_perspeciesNgenes_noSum.pdf']);
 fig = cgo{2}.plot;
 orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
     [ figureFolder, ...
-    'fig_1f_clustergram_ptwenr_KEGGUP_eggnog_edgerdeseq_updfilter_ANY_FDR0_1_ngenes3_perspeciesNgenes_noSum.pdf']);
+    'fig_1f_clustergram_ptwenr_KEGGUP_eggnog_edgerdeseq_FDR005_FC05_updfilter_ANY_FDR0_1_ngenes3_perspeciesNgenes_noSum.pdf']);
