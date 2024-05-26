@@ -19,6 +19,41 @@ met_gene_table = readtable([outputFolder, ...
 % get EC table
 met_ec_table = readtable([outputFolder, ...
     'table_DNA_kegg_RNA_sub_prod_products_bestcorr_EC_pos.csv'], 'delim', ',');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% get information on correlation coefficients and p-values
+%RNA
+kegg_RNA_sub_prod_products_bestcorr_pos = readtable([outputFolder,...
+    'table_kegg_RNA_sub_prod_products_bestcorr_pos.csv']);
+kegg_RNA_sub_prod_products_bestcorrP_pos = readtable([outputFolder,...
+    'table_kegg_RNA_sub_prod_products_bestcorrP_pos.csv']);
+%DNA
+kegg_DNA_sub_prod_products_bestcorr_pos = readtable([outputFolder,...
+    'table_kegg_DNA_sub_prod_products_bestcorr_pos.csv']);
+kegg_DNA_sub_prod_products_bestcorrP_pos = readtable([outputFolder,...
+    'table_DNA_kegg_sub_prod_products_bestcorrP_pos.csv']);
+
+% get names of products
+kegg_sub_prod_products_unique = kegg_RNA_sub_prod_products_bestcorr_pos{:,1};
+% get only numbers of corr and corrP 
+kegg_sub_prod_products_bestcorr_pos = kegg_RNA_sub_prod_products_bestcorr_pos{:,2:end};
+kegg_sub_prod_products_bestcorrP_pos = kegg_RNA_sub_prod_products_bestcorrP_pos{:,2:end};
+plotdataRNA = kegg_sub_prod_products_bestcorr_pos.*...
+             (kegg_sub_prod_products_bestcorrP_pos<0.1);
+%exlcude to ofrequent products
+exclude_products = {'C00022', 'C00041'};%, 'C00245'};
+%get numbers dor DNA and DNAP
+kegg_DNA_sub_prod_products_bestcorr_pos = kegg_DNA_sub_prod_products_bestcorr_pos{:,2:end};
+kegg_DNA_sub_prod_products_bestcorrP_pos = kegg_DNA_sub_prod_products_bestcorrP_pos{:,2:end};
+plotdataDNA = kegg_DNA_sub_prod_products_bestcorr_pos.*...
+             (kegg_DNA_sub_prod_products_bestcorrP_pos<0.1);
+keep_pairs = ((sum(plotdataRNA>0,2)>0) | (sum(plotdataDNA>0,2)>0) &...
+    ~ismember(kegg_sub_prod_products_unique, exclude_products));
+
+% leave only correlating pairs for further analysis
+met_ec_table = met_ec_table(keep_pairs,:);
+met_gene_table = met_gene_table(keep_pairs,:);
+
 % get gene annotation
 % detect import options to change some of the variable to strings
 %annfileName = [inputFolderSeq, 'countsMatrix_annTable_filtered.csv'];
@@ -88,4 +123,4 @@ selected_genes_ann = geneAnnotationTable(selected_genes_idx,:);
 gene_list_ann = [selected_ec_ann; selected_genes_ann];
  
 %writetable(gene_list_ann, [resultsFolder, 'selected_genes_gitann.csv']);
-writetable(gene_list_ann, [resultsFolder, 'selected_genes_from_ec_ann.csv']);
+writetable(gene_list_ann, [resultsFolder, 'selected_genes_from_ec_ann_only_pos_product_corr.csv']);
