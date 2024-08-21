@@ -41,7 +41,12 @@ for i=1:length(mousecols)
     mousecolsdiet(i) = mouseInfo.Diet(ismember(mouseInfo.Mouse_number, mousecols{i}));
 end
 
-clustmat = cellfun(@(x) str2double(x), table2cell(mergeddietmetagenomeabundancetable(:,dataidx)));
+if isnumeric(mergeddietmetagenomeabundancetable{:,dataidx})
+    clustmat = table2array(mergeddietmetagenomeabundancetable(:,dataidx));
+else
+
+    clustmat = cellfun(@(x) str2double(x), table2cell(mergeddietmetagenomeabundancetable(:,dataidx)));
+end
 clustCols = mousecols;
 clustRows = cellstr(mergeddietmetagenomeabundancetable.ID);
 
@@ -61,7 +66,7 @@ for i=1:length(clustRowNames)
     curabbr = strsplit(clustRowNames{i}, '_');
     clustRowAbbr{i} = [curabbr{1}(1), curabbr{2}(1:3)];
 end
-clustdist = 'euclidean';%'cityblock';%'correlation';%'spearman';%'hamming';%
+clustdist = 'correlation';%'cityblock';%'euclidean';%'spearman';%'hamming';%
 
 clustmat_mean = [mean(clustmat(:,1:5),2), mean(clustmat(:,6:10),2)];
 
@@ -96,11 +101,21 @@ cgo=clustergram(clustergrammat,...'DisplayRange', truncVal,...
              'ColumnLabels', clustCols,...
              'Symmetric', 1,...
              'ColumnPdist', clustdist, 'RowPdist', clustdist,...
-             'Colormap', bone);
-         
+             'Colormap', slanCM('vik'));
+% using new divergent colormap slanCM('vik') from 
+% Zhaoxu Liu / slandarer (2024). 200 colormap (https://www.mathworks.com/matlabcentral/fileexchange/120088-200-colormap), MATLAB Central File Exchange. Accessed 21. August 2024. 
+
+% solution to turn on colormap programmatically from https://stackoverflow.com/questions/20648627/turn-on-colorbar-programmatically-in-clustergram
+cbButton = findall(gcf,'tag','HMInsertColorbar');
+ccb = get(cbButton,'ClickedCallback');
+set(cbButton,'State','on')
+ccb{1}(cbButton,[],ccb{2})
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% plot figure from clustergram
 fig = cgo.plot;
-%C = findall(gcf,'type','ColorBar');                         
-%C.Label.String = 'Relative species abundance';
+C = findall(gcf,'type','ColorBar');                         
+C.Label.String = 'Relative species abundance';
     
 set(0,'ShowHiddenHandles','on')
 % Get all handles from root
@@ -114,7 +129,7 @@ orient landscape
 
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder, ...
-    'fig_1d_clustergram_DC_DNA_humann2_metaphlan_selected_filterd.pdf'])
+    'fig_1d_clustergram_DC_DNA_humann2_metaphlan_selected_filterd_vikcmap_distanceCorr.pdf'])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 otuMAT = clustmat;
