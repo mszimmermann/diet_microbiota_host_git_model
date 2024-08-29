@@ -134,8 +134,18 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % select conditions for clustering
-conditionsArray = {'HFD', 'CTR', 'HFD', 'CTR';
-                   'GF', 'GF', 'DC', 'DC'};
+conditionsArray = cell(2, length(sampleDiet_unique)*length(sampleType_unique));
+%conditionsArray = {'HFD', 'CTR', 'HFD', 'CTR';
+%                   'GF', 'GF', 'DC', 'DC'};
+i=1;
+for diet_i = 1:length(sampleDiet_unique)
+    for type_i = 1:length(sampleType_unique)
+        conditionsArray{1,i} = sampleDiet_unique{diet_i};
+        conditionsArray{2,i} = sampleType_unique{type_i};
+        i = i+1;
+    end
+end
+
 % find optimal value of K
 kmeansEva_cell = cell(size(conditionsArray,2),1);
 idx=1;
@@ -329,11 +339,11 @@ for diet_i = 1:length(sampleDiet_unique)
             set(gca, 'XTick', 1:size(curmeans,2))
             set(gca, 'XTickLabel', kmeanConditions)
         end
-        suptitle(['Metabolite profiles of ' selectMouse ' group under ' selectDiet ' diet'])
+        title(['Metabolite profiles of ' selectMouse ' group under ' selectDiet ' diet'])
         orient landscape
-        print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
-            [figureFolder,...
-            'fig2d_kmeans_profiled_6_' selectMouse '_' selectDiet '_GI_profiles_updated_filter_100repeat.pdf'])
+ %       print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+ %           [figureFolder,...
+ %           'fig2d_kmeans_profiled_6_' selectMouse '_' selectDiet '_GI_profiles_updated_filter_100repeat.pdf'])
         idx = idx+1;
     end
 end
@@ -569,7 +579,6 @@ for j=1:length(kmeansTables_cell)
     end                          
 end
 
-selectpathways = sum(fdrMet<0.1,2)>0;
 
 % GI clusters
 ncluster_total = 6;
@@ -602,6 +611,15 @@ aa = aa';
 colLabels = strcat(aa(:),'-serum-', bb(:));
 clusterColLabels = [clusterColLabels; colLabels];
 
+
+% leave only GF and DC GI tract
+numMet = numMet(:, [7:18 25:36]);
+pMet = pMet(:, [7:18 25:36]); 
+fdrMet = fdrMet(:,[7:18 25:36]);
+clusterColLabels = clusterColLabels([7:18 25:36]);
+
+selectpathways = sum(fdrMet<0.1,2)>0;
+
 selectclusters = 1:48;
 switch plotclusterFlag
     case 0
@@ -615,26 +633,70 @@ switch plotclusterFlag
         selectclusters = 1:24;
         plotted_clusters = '_GIT_clusters_';
 end
-displaymat = pMet(selectpathways,selectclusters);
+displaymat = numMet(selectpathways,selectclusters);
+
+displaymat = zscore(displaymat, dim, 2);
+%displaymat = pMet(selectpathways,selectclusters);
 %displaymat = fdrMet(selectpathways,:);
 
-displaymat(displaymat>0.5)=1;
+%displaymat(displaymat>0.5)=1;
+displaymat(displaymat>30)=30;
 
 rowLabels = cellfun(@(x) x{1}, kmeansTables_cell{1}(selectpathways,1), 'unif', 0);
 
 cgo = clustergram(displaymat, ...
             'RowLabels', rowLabels,...
             'ColumnLabels', clusterColLabels(selectclusters),...
-            'ColumnPDist', 'euclidean',...
-            'RowPDist', 'euclidean',...
+            'ColumnPDist', 'correlation',...'euclidean',...
+            'RowPDist', 'correlation',... 'euclidean',...
             'Symmetric', 0,...
-            'DisplayRange', 1,...
-            'Colormap', flipud(bone));
+            'DisplayRange', 3,...
+            'Colormap', slanCM('greys'));%flipud(bone));
+
+
+% solution to turn on colormap programmatically from https://stackoverflow.com/questions/20648627/turn-on-colorbar-programmatically-in-clustergram
+% combined with solution from https://de.mathworks.com/matlabcentral/answers/305274-reduce-font-size-of-column-labels-in-clustergram?#answer_533054
+%cgfig = findall(0,'type','figure', 'tag', 'Clustergram'); % Figure handle
+%cgax = findobj(cgfig, 'type','axes','tag','HeatMapAxes'); % main axis handle
+
+cbButton = findall(0,'tag','HMInsertColorbar');
+ccb = get(cbButton,'ClickedCallback');
+set(cbButton,'State','on')
+ccb{1}(cbButton,[],ccb{2})
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Manually add colorbar to clustergram and print to figure
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fig = cgo.plot;
 orient landscape
+
+% Annotate clustergram with FDR values
+%resort FDR values based on clustergram ordering
+[~, ~, orderrow] = intersect(cgo.RowLabels, rowLabels, 'stable');
+[~, ~, ordercol] = intersect(cgo.ColumnLabels, clusterColLabels(selectclusters), 'stable');
+clusterFDR = fdrMet(selectpathways,selectclusters);
+clusterFDR = clusterFDR(orderrow, ordercol); 
+clustcoord = fig.Position;
+clustercoordstep_x = clustcoord(3)/size(clusterFDR,2);
+clustercoordstep_y = clustcoord(4)/size(clusterFDR,1);
+% add offset to get to the heatmap position
+clustcoord(1) = clustcoord(1)-0.01;
+clustcoord(2) = clustcoord(2)-0.04;
+
+for i=1:size(clusterFDR,1)
+    for j=1:size(clusterFDR,2)
+    
+        curcolor = 'green';
+        if clusterFDR(i,j)<0.1
+            curcolor = 'red';
+        end
+        annotation(gcf, 'textbox', [clustcoord(1)+(i-1)*clustercoordstep_x,...
+                                    clustcoord(2)+(j-1)*clustercoordstep_y,...
+                                    0.1 0.1],...
+            'String', {'*'},...
+            'LineStyle', 'none', 'Color', curcolor, 'FontSize', 20)
+    end
+end
 
 if plotclusterFlag == 6
     print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
