@@ -174,19 +174,34 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% mycolors = [ 0    0.4492    0.6953;...
+%     0.8242    0.3750    0.1523;...
+%     0.7969    0.8867    0.9375;...
+%     0.9609    0.8711    0.8281];
 mycolors = [ 0    0.4492    0.6953;...
-    0.8242    0.3750    0.1523;...
-    0.7969    0.8867    0.9375;...
-    0.9609    0.8711    0.8281];
-
+    0.8242    0.3750    0.1523];
+mylinestyles = {':', '-', '--'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot eval silhouette
 figure
 hold on
 for i=1:length(kmeansEva_cell)
+    if isequal(conditionsArray{1,i}, sampleDiet_unique{1})
+        curcolor = mycolors(1,:);
+    else
+        curcolor = mycolors(2,:);
+    end
+    if isequal(conditionsArray{2,i}, sampleType_unique{1})
+        curstyle = mylinestyles{1};
+    elseif isequal(conditionsArray{2,i}, sampleType_unique{2})
+        curstyle = mylinestyles{2};
+    else
+        curstyle = mylinestyles{3};
+    end
+
     plot(kmeansEva_cell{i}.InspectedK,...
          kmeansEva_cell{i}.CriterionValues,...
-         'Color', mycolors(i,:), 'LineWidth', 2)
+         'Color', curcolor, 'LineStyle', curstyle,  'LineWidth', 2)
 end
 xlim([1 30])
 set(gca, 'XTick', 1:30)
@@ -409,11 +424,12 @@ write(annotationTable,...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % calculate number of filtered metabolites
-annotationTable = readtable([inputFolder,...
+annotationTable = readtable([outputFolder,...
     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv']);
 
 % select columns from annotationTable with cluster info
-annColumns = annotationTable.Properties.VariableNames;
+annColumns = annotationTable.Properties.VariableNames';
+annColumnsTEST = annotationTableTEST.Properties.VariableNames';
 clusterColumns = annColumns(cellfun(@(x) contains(x,'spatial_'), annColumns));
 for i=1:length(clusterColumns)
     curcol = strsplit(clusterColumns{i}, '_');
@@ -541,14 +557,15 @@ writetable(annotationTable,...
 
 
 annotationTableSpatialClusters = readtable(...
-    [inputFolder,...
+    [outputFolder,...
     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_HMDBsubclass.csv']);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot pathway enrichment results
 plot_hmdb = 3;%1-Class 2-Superclass 3-SubClass
-plotclusterFlag = 6;%0-all, 1-serum and liver, 6-only GI
+plotclusterFlag = 0;%0-all, 1-serum and liver, 6-only GI
+plotCVRflag = 1; 
 
 switch plot_hmdb
     case 1
@@ -613,31 +630,45 @@ clusterColLabels = [clusterColLabels; colLabels];
 
 
 % leave only GF and DC GI tract
-numMet = numMet(:, [7:18 25:36]);
-pMet = pMet(:, [7:18 25:36]); 
-fdrMet = fdrMet(:,[7:18 25:36]);
-clusterColLabels = clusterColLabels([7:18 25:36]);
+curselect = 1:length(clusterColLabels);%[7:18 25:36];%[1:12 19:30];%
+
+numMet = numMet(:, curselect);
+pMet = pMet(:, curselect); 
+fdrMet = fdrMet(:,curselect);
+clusterColLabels = clusterColLabels(curselect);
 
 selectpathways = sum(fdrMet<0.1,2)>0;
 
-selectclusters = 1:48;
+selectclusters = 1:length(clusterColLabels);
+
 switch plotclusterFlag
     case 0
         % plot all clusters
-        selectclusters = 1:48;
+        %selectclusters = 1:48;
         plotted_clusters = '_all_clusters_';
     case 1
-        selectclusters = 25:48;
+        selectclusters = cellfun(@(x) contains(x, '-serum-') | ...
+                            contains(x, '-liver-'),  clusterColLabels);
         plotted_clusters = '_Liver_Serum_clusters_';
     case 6
-        selectclusters = 1:24;
+        selectclusters = ~cellfun(@(x) contains(x, '-serum-') | ...
+                            contains(x, '-liver-'),  clusterColLabels);
         plotted_clusters = '_GIT_clusters_';
 end
-displaymat = numMet(selectpathways,selectclusters);
+if ~plotCVRflag
+    selectclusters = selectclusters & ~cellfun(@(x) contains(x, 'CVR'), clusterColLabels);
+end
 
-displaymat = zscore(displaymat, dim, 2);
+displaymat = numMet(selectpathways,selectclusters);
+%displaymat = zscore(displaymat, dim, 2);
+%normalize by max in each category
+for i=1:size(displaymat,1)
+    displaymat(i,:) = displaymat(i,:)/max(displaymat(i,:));
+end
+
 %displaymat = pMet(selectpathways,selectclusters);
 %displaymat = fdrMet(selectpathways,:);
+displayvalues = '_nummet_';
 
 %displaymat(displaymat>0.5)=1;
 displaymat(displaymat>30)=30;
@@ -676,9 +707,17 @@ orient landscape
 [~, ~, ordercol] = intersect(cgo.ColumnLabels, clusterColLabels(selectclusters), 'stable');
 clusterFDR = fdrMet(selectpathways,selectclusters);
 clusterFDR = clusterFDR(orderrow, ordercol); 
+% round to two decimals
+clusterFDR = round(clusterFDR*100)/100;
+
+% adding pause to get the correct figure positions from here https://de.mathworks.com/matlabcentral/answers/454417-figure-position-property-returning-incorrect-values
+pause(0.01); % correct the drawing process---
 clustcoord = fig.Position;
-clustercoordstep_x = clustcoord(3)/size(clusterFDR,2);
-clustercoordstep_y = clustcoord(4)/size(clusterFDR,1);
+
+% offsets in the next lines are pure heuristics to plot FDR values on top of the heatmap, 
+% and might need to be adapted manually in trial and error if displayed wrongly
+clustercoordstep_x = clustcoord(3)/(size(clusterFDR,1)-0.7);
+clustercoordstep_y = clustcoord(4)/(size(clusterFDR,2)+1);
 % add offset to get to the heatmap position
 clustcoord(1) = clustcoord(1)-0.01;
 clustcoord(2) = clustcoord(2)-0.04;
@@ -687,24 +726,32 @@ for i=1:size(clusterFDR,1)
     for j=1:size(clusterFDR,2)
     
         curcolor = 'green';
-        if clusterFDR(i,j)<0.1
-            curcolor = 'red';
+        if clusterFDR(i,j)<=0.1
+            curcolor = 'white';
+        
+            annotation(gcf, 'textbox', [clustcoord(1)+(j-1)*clustercoordstep_y,...
+                                        clustcoord(2)+(i-1)*clustercoordstep_x,...
+                                        0.1 0.1],...
+                        'String', {'*'},...
+                        'LineStyle', 'none', 'Color', curcolor, 'FontSize', 20)
         end
-        annotation(gcf, 'textbox', [clustcoord(1)+(i-1)*clustercoordstep_x,...
-                                    clustcoord(2)+(j-1)*clustercoordstep_y,...
-                                    0.1 0.1],...
-            'String', {'*'},...
-            'LineStyle', 'none', 'Color', curcolor, 'FontSize', 20)
     end
 end
 
+% add title to colobar
+C = findall(gcf,'type','ColorBar');                         
+C.Label.String = 'Relative number of metabolites';
+
+
 if plotclusterFlag == 6
     print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
-        [figureFolder, 'fig2e_', printFileName, plotted_clusters, '.pdf'])
+        [figureFolder, 'fig2e_', printFileName, plotted_clusters, displayvalues, '.pdf'])
+    saveas(fig, [figureFolder, 'fig2e_', printFileName, plotted_clusters, displayvalues, '.png']);
 else
     print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
-        [figureFolder, 'fig_sup_', printFileName, plotted_clusters, '.pdf'])
-end    
+        [figureFolder, 'fig_sup_', printFileName, plotted_clusters, displayvalues, '.pdf'])
+     saveas(fig, [figureFolder, 'fig_sup_', printFileName, plotted_clusters, displayvalues, '.png'])
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save hmdb pw enrichment to file
 % create names for joint table columns
