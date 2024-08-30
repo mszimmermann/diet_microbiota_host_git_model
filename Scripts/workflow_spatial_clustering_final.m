@@ -564,8 +564,8 @@ annotationTableSpatialClusters = readtable(...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot pathway enrichment results
 plot_hmdb = 3;%1-Class 2-Superclass 3-SubClass
-plotclusterFlag = 0;%0-all, 1-serum and liver, 6-only GI
-plotCVRflag = 1; 
+plotclusterFlag = 6;%0-all, 1-serum and liver, 6-only GI
+plotCVRflag = 0; 
 
 switch plot_hmdb
     case 1
@@ -637,7 +637,6 @@ pMet = pMet(:, curselect);
 fdrMet = fdrMet(:,curselect);
 clusterColLabels = clusterColLabels(curselect);
 
-selectpathways = sum(fdrMet<0.1,2)>0;
 
 selectclusters = 1:length(clusterColLabels);
 
@@ -659,7 +658,9 @@ if ~plotCVRflag
     selectclusters = selectclusters & ~cellfun(@(x) contains(x, 'CVR'), clusterColLabels);
 end
 
+selectpathways = sum(fdrMet(:, selectclusters)<0.1,2)>0;
 displaymat = numMet(selectpathways,selectclusters);
+
 %displaymat = zscore(displaymat, dim, 2);
 %normalize by max in each category
 for i=1:size(displaymat,1)
