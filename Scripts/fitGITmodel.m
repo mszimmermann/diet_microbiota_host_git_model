@@ -58,6 +58,10 @@ testx = zeros(size(A,2),nrepeat);
 testCorrRev = zeros(1,nrepeat);
 testCorrRevSI = zeros(1,nrepeat);
 testCorrRevLI = zeros(1,nrepeat);
+testx_shuffled = zeros(size(A,2),nrepeat); % keep shuffled coefs as well
+if ncond==2 
+    testx_shuffled = zeros(size(A,2)*2-1,nrepeat); % duplicate coefs dependent on diet if there is only one diet
+end
 testCorrRev_shuffled = zeros(1,nrepeat);
 % store restored data for each solution in a matrix
 testdataR = zeros(numel(kmeanMatrix_joint), nrepeat);
@@ -91,7 +95,7 @@ if size(A,2)<=size(A,1)
         % number of equations
         options = optimoptions(@lsqlin,'Display', 'off',...
             'Algorithm','interior-point','MaxIterations',1500);
-        % mulriply solution x to 1000 to avoid numerical issues
+        % multiply solution x to 1000 to avoid numerical issues
         [Ra,rb] = calculateRAmatrix_final(x*1000);
         dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
         dataR = reshape(dataR,[],4)';
@@ -117,6 +121,7 @@ if size(A,2)<=size(A,1)
                                     zeros(1,size(Ra_shuffled,2)), [], [], options);
             dataR_shuffled = reshape(dataR_shuffled,[],4)';
 
+            testx_shuffled(:, testx_idx) = x_shuffled;
             testCorrRev_shuffled(testx_idx) = corr(kmeanMatrix_joint_orig(:), ...
                 dataR_shuffled(:));
         end
@@ -181,6 +186,7 @@ gitfit.testdataR = testdataR;
 gitfit.testCorrRev = testCorrRev;
 gitfit.testCorrRevSI = testCorrRevSI;
 gitfit.testCorrRevLI = testCorrRevLI;
+gitfit.testx_shuffled = testx_shuffled;
 gitfit.testCorrRev_shuffled = testCorrRev_shuffled;
 
 % save coefvalues returned by the calculate A matrix function
