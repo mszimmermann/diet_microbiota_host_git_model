@@ -1,16 +1,15 @@
 
 addpath(genpath('.\'));
-% load data from Meier et al and reformat for the model
-figureFolder = '.\Figures\';
-outputFolder = '.\ProcessedData\';
-inputFolder = '.\InputData\';
+add_global_and_file_dependencies
 
-fileName = '2023_Meier_NatMet_42255_2023_802_MOESM3_ESM.xlsx';
+% load data from Meier et al and reformat for the model
+
+fileName = '.\InputData\public_data\2023_Meier_NatMet_42255_2023_802_MOESM3_ESM.xlsx';
  
- meier_data = readtable([inputFolder, fileName],...
+ meier_data = readtable(fileName,...
                         'Sheet', 'intensities');
  %meier_data = readtable(fileName, 'Sheet', 'concentration');
- % select only cecum measurements
+ % select only colonic measurements (c-colonic, m-mucosal)
  select_content = ismember(meier_data.habitat, 'c'); 
  meier_matrix = meier_data{select_content, 5:end}';
  meier_mets = meier_data.Properties.VariableNames(5:end)';
@@ -40,12 +39,13 @@ fileName = '2023_Meier_NatMet_42255_2023_802_MOESM3_ESM.xlsx';
  set(gca, 'XTick', 1:length(meier_location))
  set(gca, 'XTickLabel', meier_location)
 
-% define colors for different nouse groups and tissue names
-mycolors = [204 227 240;...%light blue
+% define colors for different mouse groups and tissue names
+mycolors = [0 115 178; %dark blue for both 204 227 240;...%light blue
             0 115 178]/256;%dark blue
+mylinestyle = {'--', '-'};
 git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
-meier_figure_file_name = 'Figures_final\Meier_data_plots_smooth_by_sum.ps';
+meier_figure_file_name = 'Figures\figSX_Meier_data_plots_smooth_by_sum.ps';
 
 % smooth first metabolite to create placeholder matrices
 [smoothloc, smoothcond, smoothrep, smoothdata] = ...
@@ -78,7 +78,7 @@ for met_i=1:length(meier_mets)
              curdata = meier_matrix(met_i, ...
                  ismember(meier_condition, meier_condition_unique{cond_i}));
              curloc = meier_location(ismember(meier_condition, meier_condition_unique{cond_i}));
-             scatter(curloc,...
+             lg1(cond_i) = scatter(curloc,...
                  curdata, 'filled');
              title('Raw intensities')
 
@@ -88,7 +88,7 @@ for met_i=1:length(meier_mets)
              curdata = meier_matrix_norm(met_i, ...
                  ismember(meier_condition, meier_condition_unique{cond_i}));
              curloc = meier_location(ismember(meier_condition, meier_condition_unique{cond_i}));
-             scatter(curloc,...
+             lg2(cond_i) = scatter(curloc,...
                  curdata, 'filled');
              title('Quantile-normalized')
 
@@ -107,7 +107,8 @@ for met_i=1:length(meier_mets)
                 kmeanMatrix(tissue_i) = nanmean(curdata(curloc==tissue_i));
                 kstdMatrix(tissue_i) = nanstd(curdata(curloc==tissue_i));
              end
-             plot(1:length(unique(curloc)), kmeanMatrix,...
+             lg3(cond_i) = plot(1:length(unique(curloc)), kmeanMatrix,...
+                   mylinestyle{cond_i},...
                   'LineWidth', 2, 'Color', mycolors(cond_i,:));
               errorbar(1:length(unique(curloc)), kmeanMatrix, kstdMatrix,...
                   '.','LineWidth', 2, 'Color', mycolors(cond_i,:)) 
@@ -132,7 +133,8 @@ for met_i=1:length(meier_mets)
                 kmeanMatrix(tissue_i) = nanmean(curdata(curloc==tissue_i));
                 kstdMatrix(tissue_i) = nanstd(curdata(curloc==tissue_i));
              end
-             lg1(cond_i) = plot(1:length(unique(smoothloc)), kmeanMatrix,...
+             lg4(cond_i) = plot(1:length(unique(smoothloc)), kmeanMatrix,...
+                   mylinestyle{cond_i},...
                   'LineWidth', 2, 'Color', mycolors(cond_i,:));
              errorbar(1:length(unique(smoothloc)), kmeanMatrix, kstdMatrix,...
                   '.','LineWidth', 2, 'Color', mycolors(cond_i,:)) 
@@ -142,9 +144,12 @@ for met_i=1:length(meier_mets)
             xlim([1,length(git_labels)])
             title('Normalized to max')
          end
-         suptitle(meier_mets{met_i});
+         sgtitle(meier_mets{met_i});
          legend(lg1,meier_condition_unique, 'location', 'eastoutside');
-         print(gcf, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
+         legend(lg2,meier_condition_unique, 'location', 'eastoutside');
+         legend(lg3,meier_condition_unique, 'location', 'eastoutside');
+         legend(lg4,meier_condition_unique, 'location', 'eastoutside');
+         print(gcf, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
              meier_figure_file_name);
      end
      % save smoothed data
@@ -181,20 +186,16 @@ meanConditions = [strcat(meier_smooth_mean_condition, '_Chow1');
 meanMatrix = [meier_smooth_mean meier_smooth_mean];
 meanMatrix_mets = meier_mets;
 
-mycolors = [0 115 178;... %dark blue
-            204 227 240;...%light blue
-            211 96 39;... %dark orange
-            246 223 212]/256;%light orange
+% prepare labels for plotting
 [bb,aa] = ndgrid(sampleType_unique, sampleDiet_unique); 
 condLabels = strcat(aa(:),'-', bb(:));
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% calculate the mean normalized value across replicates
 
 fileNameFigure = [figureFolder...
-    'fig_meierInt_diag_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
+    'figSX_meierInt_diag_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
 
 diag_plot_flag = 0; % diagnostic plotting flag
 if diag_plot_flag
@@ -261,313 +262,90 @@ for met_i = 1:length(selected_mets)
 
                 orient landscape
                 %print to figure
-                print(fig, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
+                print(fig, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
                         fileNameFigure);
                 clf('reset')
             end    
         end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% print best solutions to files
+filename = [outputFolder ...
+            'table_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
+% create met_info object needed for the printing function
+met_info = struct;
+met_info.CompoundID = meier_mets;
+met_info.CompoundName = meier_mets;          
+% print solutions to files
+print_bestsol_to_files(met_info, met_bestsols, filename);
+% test reading from file
+%[met_info_bestsols_read, met_bestsols_IP_read] = read_bestsol_from_file(filename, 'IP');
+%[met_info_bestsols_read, met_bestsols_LIwtPCC_read] = read_bestsol_from_file(filename, 'LI_PCC_within_high_total');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% print all solutions to files
+filename = [outputFolder ...
+            'table_model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
+% print solutions to files
+print_allsols_to_files(met_info, met_gitfits, filename);
+% test reading from file
+%[met_info_read, met_gitfits_read] = read_allsols_from_files(filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% combine IP with LI PCC within high total PCC solutions
+corrthreshold = 0.7; % threshold above which to combine solutions
+filename = [outputFolder ...
+            'table_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
+sel_crit1 = 'IP';
+sel_crit2 = 'LI_PCC_within_high_total';
+[met_info_combined, met_bestsol_combined] = ...
+                combine_bestsols_from_file(filename, sel_crit1, sel_crit2,...
+                                           corrthreshold);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation of restored and original data
 % calculate differentce in corr distrbutions
 filename = [figureFolder,...
-    'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_meier'];
+    'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_meier_all_', sel_crit1, '_', sel_crit2];
 plot_gitfit_model_corr(met_gitfits, filename)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% select LI within best total solution
-x_selected = zeros(size(met_bestsols{1}.x,1), length(met_bestsols));
-x_data_corr = zeros(1, length(met_bestsols));
-x_data_corr_SI = zeros(1, length(met_bestsols));
-x_data_corr_LI = zeros(1, length(met_bestsols));
-x_data_corr_mean = zeros(1, length(met_bestsols));
-
-for i=1:length(met_bestsols)
-    picksol = ismember(met_bestsols{i}.selection_criterion,...
-                                {'LI PCC within high total'});
-    if size(met_bestsols{i}.x,2)==length(picksol)
-        x_selected(:,i) = met_bestsols{i}.x(:,picksol);
-        x_data_corr(i) = met_bestsols{i}.x_sel_CorrRev(picksol);
-        x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
-        x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
-        x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
-    else
-        % there was no total PCC above thresold to select LI PCC,
-        % get the best possible total PCC
-        picksol = ismember(met_bestsols{i}.selection_criterion,...
-                                {'total PCC'});
-        picksol = picksol(1:size(met_bestsols{i}.x,2));
-        x_selected(:,i) = met_bestsols{i}.x(:,picksol);
-        x_data_corr(i) = met_bestsols{i}.x_sel_CorrRev(picksol);
-        x_data_corr_SI(i) = met_bestsols{i}.x_sel_CorrRevSI(picksol);
-        x_data_corr_LI(i) = met_bestsols{i}.x_sel_CorrRevLI(picksol);
-        x_data_corr_mean(i) = mean([x_data_corr(i) x_data_corr_SI(i) x_data_corr_LI(i)]);
-    end        
-end
-
-
-% nrand=100;
-% % call calculateAmatrix_final with zero matrices of correct size
-% % to get coefvalues output, which is used to allocate variables further
-% [~, coefvalues] = calculateAmatrix_final(zeros(length(condLabels),...
-%                                 length(git_labels)));
-% 
-% % allocate variables for model prediction results
-% x_met_mean = zeros(length(coefvalues),length(selected_mets));
-% x_met_std = zeros(length(coefvalues),length(selected_mets));
-% x_met_smooth = zeros(length(coefvalues),length(selected_mets));
-% 
-% % allocate variables for correlation calculated from values restored with
-% % reverse problem with original and randomly shuffled parameters
-% x_data_corr = zeros(length(selected_mets),1);
-% x_resid = zeros(length(selected_mets),1);
-% x_data_corr_shuffled = zeros(length(selected_mets),1);
-% 
-% % calculate reverse A matrix with zero matrix of the right size to allocate
-% % variables according to Ra size
-% [Ra] = calculateRAmatrix_final(zeros(size(coefvalues)));
-% x_rdata = zeros(size(Ra,2),length(selected_mets));
-% x_rdata_shuffled = zeros(size(Ra,2),length(selected_mets));
-% 
-% minval = 0.01;
-% 
-% fprintf('Starting parameter estimation for %d metabolites\n',length(selected_mets));
-% 
-% for met_i = 1:length(selected_mets)
-%    
-%         cmpd_interest_idx = selected_mets(met_i);
-%         % calculate mean profiles            
-%         idx=1;
-%         kmeanMatrix_joint = zeros(4,6);
-%         for diet_i = 1:length(sampleDiet_unique)
-%             for type_i = 1:length(sampleType_unique)
-%                 selectDiet = sampleDiet_unique{diet_i};
-%                 selectMouse = sampleType_unique{type_i};
-%                 kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & ...
-%                                         contains(x,selectDiet),meanConditions));
-%                 kmeanMatrix = kmeanMatrix(cmpd_interest_idx,1:6);
-%                 kmeanMatrix_joint(idx,:) = kmeanMatrix;
-%                 idx = idx+1;
-%             end
-%         end
-%         % normalize by max intensity
-%         kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
-%         kmeanMatrix_joint(isnan(kmeanMatrix_joint))=0;
-%         % replace small values with noise
-%         kmeanMatrix_joint_orig = kmeanMatrix_joint;
-%         kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
-%         kmeanMatrix_joint(kmeanMatrix_joint<minval)+rand(nnz(kmeanMatrix_joint<minval),1)*minval;
-% 
-%         % calculate fluxes for average profile
-%         Aorig = calculateAmatrix_final(kmeanMatrix_joint_orig);
-%         [A,coefvalues] = calculateAmatrix_final(kmeanMatrix_joint);
-%         A(Aorig(:,1)==0,:)=[];
-%         b = zeros(size(A,1),1);
-%         options = optimoptions(@lsqlin,'Display', 'off');
-% 
-%         xlowerlim = zeros(size(A,2),1);
-%         xlowerlim(2:end)=-Inf;
-% 
-%         %%%%%%%%%%%%%%%%%%%%%%%%%
-%         %set bact to zero
-%         xupperlim = Inf*ones(size(A,2),1);
-%         %%%%%%%%%%%%%%%%%%%%%%%%%
-%         % check if A is empty an if yes move to the next metabolite
-%         if isempty(A)
-%             continue;
-%         end
-% 
-%         [x, xres] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, [], options);
-%         x_met_smooth(:, met_i) = x;
-%         x_resid(met_i) = xres;
-% 
-% 
-%     [Ra,rb] = calculateRAmatrix_final(x*1000);
-%     dataR = lsqlin(Ra,rb,[],[],[],[],zeros(1,size(Ra,2)), [], [], options);
-%     % save reconstructed data
-%     x_rdata(:,met_i) = dataR;
-% 
-%     %rsshape to matrix form
-%     dataR = reshape(dataR,[],4)';
-% 
-%     x_data_corr(met_i) = corr(kmeanMatrix_joint_orig(:), dataR(:));
-% 
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     % calculate reverse problem for shuffled x
-%     x_shuffled = x(randperm(length(x)));
-%     [Ra_shuffled,rb_shuffled] = calculateRAmatrix_final(x_shuffled*1000);
-%     dataR_shuffled = lsqlin(Ra_shuffled,rb_shuffled,[],[],[],[],...
-%                             zeros(1,size(Ra_shuffled,2)), [], [], options);
-%     % save reconstructed data
-%     x_rdata_shuffled(:,met_i) = dataR_shuffled;
-% 
-%     %rsshape to matrix form
-%     dataR_shuffled = reshape(dataR_shuffled,[],4)';
-% 
-%     x_data_corr_shuffled(met_i) = corr(kmeanMatrix_joint_orig(:), dataR_shuffled(:));
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% end
-% 
-% % get the original metabolomics data as vectors to calculate correlations
-% % between original and restored measurements
-% kmean_vector_joint_orig = zeros(size(Ra,2),length(selected_mets));
-% kmean_vector_joint = zeros(size(Ra,2),length(selected_mets));
-% for met_i = 1:length(selected_mets)
-%    
-%     cmpd_interest_idx = selected_mets(met_i);
-%     % calculate mean profiles            
-%     idx=1;
-%     kmeanMatrix_joint = zeros(4,6);
-%     for diet_i = 1:length(sampleDiet_unique)
-%         for type_i = 1:length(sampleType_unique)
-%             selectDiet = sampleDiet_unique{diet_i};
-%             selectMouse = sampleType_unique{type_i};
-%             kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
-%             % get serum and liver data
-%             kmeanMatrix = kmeanMatrix(cmpd_interest_idx,1:6);
-%             kmeanMatrix_joint(idx,:) = kmeanMatrix;
-%             idx = idx+1;
-%         end
-%     end
-%     % normalize by max intensity
-%     kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
-%     % replace small values with noise
-%     kmeanMatrix_joint_orig = kmeanMatrix_joint;
-%     kmeanMatrix_joint(kmeanMatrix_joint<minval)=...
-%     kmeanMatrix_joint(kmeanMatrix_joint<minval)+rand(nnz(kmeanMatrix_joint<minval),1)*minval;
-%     
-%     kmean_vector_joint_orig(:, met_i) = kmeanMatrix_joint_orig(:);
-%     kmean_vector_joint(:, met_i) = kmeanMatrix_joint(:);
-% end
-% 
-% % calculate Spearman correlations
-% x_corr_Spearman = zeros(size(x_data_corr));
-% corr_Mouse = zeros(length(x_data_corr),4);
-% corr_Mouse_Spearman = zeros(length(x_data_corr),4);
-% 
-% for i = 1:length(x_data_corr)
-%     dataR = reshape(x_rdata(:,i),[],4)';
-%     dataOrig = reshape(kmean_vector_joint_orig(:,i),4,[]);
-% 
-%     x_corr_Spearman(i) = corr(dataOrig(:), dataR(:), 'type', 'Spearman');
-%     corr_Mouse(i,:) = diag(corr(dataOrig', dataR'));
-%     corr_Mouse_Spearman(i,:) = diag(corr(dataOrig', dataR', 'type', 'Spearman'));
-% 
-% end
+% plot correlation of restored and original data for the best solution
+% calculate differentce in corr distrbutions
+filename = [figureFolder,...
+    'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_meier_best_combined_', sel_crit1, '_', sel_crit2];
+plot_bestfit_model_corr(met_bestsol_combined, met_gitfits, filename)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
          
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot data and restored intensities and model coefficients
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% define colora and GIT section names for plotting
-mycolors = [0 115 178;... %dark blue
-            204 227 240;...%light blue
-            211 96 39;... %dark orange
-            246 223 212]/256;%light orange
-git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plotting file name
-fileNameprofiles = 'fig_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_MeierDataNORMsmoothbysum.ps';
-          
-curData_cols = reshape(meanConditions, 6, 4);
-compoundsInterest = 1:length(meanMatrix_mets);
-
-fig = figure('units','normalized','outerposition',[0 0 1 1]);
-
-fprintf('Plotting profiles for %d metabolites\n',length(compoundsInterest));
-for cpdix=1:length(compoundsInterest)
-    
-    testidx = compoundsInterest(cpdix);
-
-    spx=1;
-    spy=3;
-    spidx = 1;
-    coloridx = 1;
-    idx=1;
-    curmat = zeros(4,6);
-    cur_data = reshape(kmean_vector_joint_orig(:,testidx)', 4, 6)';
-    %cur_data = reshape(meanMatrix(testidx,:), 6, 4);
-    cur_rdata = reshape(x_rdata(:,testidx)', 6, 4);
-    
-    %normalize rdata to max
-    cur_rdata = (cur_rdata-0.8);
-    cur_rdata = cur_rdata/max(max(cur_rdata));
-    
-    legend_entries = cell(4,1);
-    for i = 1:size(cur_data,2)
-
-        subplot(spx,spy,idx)
-        hold on
-        h(i) = plot(cur_data(:,i),...
-             'LineWidth', 2,...
-             'Color', mycolors(i,:));
-        ylabel('Original normbymax')
-
-        subplot(spx,spy,idx+1);
-        hold on
-        plot((cur_rdata(:,i)),...
-                 'LineWidth', 2,...
-                 'Color', mycolors(i,:));
-        ylabel('Restored normbymax')
-
-    end
-    title(sprintf('%s PCC=%.2f',...
-                  meanMatrix_mets{testidx},...
-                        x_data_corr(testidx)),...
-                        'Interpreter', 'none');
-
-    legend(h, curData_cols(1,:),...
-             'Interpreter', 'none');%, 'Location', 'bestoutside');
-    
-    subplot(spx,spy,idx+2);
-    
-    curcoefs = x_met_smooth(2:end, testidx);
-    barh(curcoefs./max(abs(curcoefs)))
-    set(gca, 'YTick', 1:length(curcoefs));
-    set(gca, 'YTickLabel', coefvalues(2:end));
-    set(gca, 'YDir','reverse')
-    ylim([0.5 length(curcoefs)+0.5])
-    xlim([-1 1]);
-    axis square
-    
-    for spi = 1:(spx*spy)-1
-        subplot(spx,spy,spi)
-        set(gca, 'XTick', 1:6)
-        xlim([1 6])
-        %ylim([0 1])
-        set(gca, 'XTick', 1:length(git_labels))
-        set(gca, 'XTickLabel', git_labels)
-        
-        axis square
-    end
-%     spt = suptitle({sprintf('MZ=%.3f',testmz(idx,1)),...
-%                                         testannID{1},...
-%                                         testann{1}});
-%     set(spt,'FontSize',8,'FontWeight','normal')
-    orient landscape
-    %print to figure
-    print(gcf, '-painters', '-dpsc2', '-r600', '-append', '-bestfit',...
-            fileNameprofiles);%[figureFolder,...
-            % fileNameprofiles])
-    clf('reset')
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fileNameprofiles = [figureFolder, 'fig_profiles_combined_', sel_crit1, '_', sel_crit2,...
+                        '_modelSMOOTH_2LIcoefHost_1LIbact_MeierDataNORMsmoothbysum.ps'];
+     
+gitfit_bestsol_combined_plot(met_info_combined, met_bestsol_combined,...
+    fileNameprofiles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % cluster only metabolites with corr>0.7
 % uncomment if using whole metabolite table
-clustidx = 1:size(x_selected,2); % for testing purposed plot all 
-clustdata = x_selected(2:end,clustidx);
-clustrows = met_bestsols{1}.coefvalues(2:end);
+clustidx = 1:size(met_bestsol_combined.x,1); % for testing purposed plot all 
+clustdata = met_bestsol_combined.x(clustidx,2:end)';
+clustrows = met_bestsol_combined.coefvalues(2:end);
+clustcols = met_info_combined.CompoundName; 
 % filter by resiprocal corr
-clustcorr = x_data_corr(clustidx);
+clustcorr = met_bestsol_combined.x_sel_CorrRev(clustidx);
+clustcorrLI = met_bestsol_combined.x_sel_CorrRevLI(clustidx);
 clustdata = clustdata(:,clustcorr>=0.7);
 clustidx = clustidx(clustcorr>=0.7);
+clustcorrLI = clustcorrLI(clustcorr>=0.7);
+clustcols = clustcols(clustcorr>=0.7);
 
 for i=1:size(clustdata,2)
     clustdata(:,i) = clustdata(:,i)/max(abs(clustdata(:,i)));
@@ -575,150 +353,37 @@ end
 clustnan = isnan(sum(clustdata,1));
 clustdata(:,clustnan) = [];
 clustidx(clustnan)=[];
+% for high bacterial coefs, add additional filter for LI corr
+remove_sols = (abs(clustdata(4,:))>=0.5)' & (clustcorrLI<0.7);
+clustdata(:,remove_sols) = [];
+clustidx(remove_sols)=[];
+clustcols(remove_sols)=[];
 
 clustdist ='cityblock';%'correlation';%'euclidean';%
 cgo = clustergram(clustdata,...
             'RowLabels', clustrows,...
-            'ColumnLabels', clustidx,...
+            'ColumnLabels', clustcols,...
             'ColumnPdist',clustdist,...
             'RowPdist', clustdist,...
             'DisplayRange', 1,...
             'colormap', redbluecmap);
-% at this point colorbar and print to figure have to be done manually in
-% the clustergram window
-% print to figure
+
+% add colorbar
+cbButton = findall(0,'tag','HMInsertColorbar');
+ccb = get(cbButton,'ClickedCallback');
+set(cbButton,'State','on')
+ccb{1}(cbButton,[],ccb{2})
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Manually add colorbar to clustergram and print to figure
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fig = cgo.plot;
-
 orient landscape
-print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
-    [figureFolder,...
-    'fig_clustergram_2LIhos1LIbact_model_coefs_MeierData_Rmodel_LIwithinTotcorr_0_7_smoothbysum'])
 
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
+         [figureFolder,...
+    'fig_clustergram_2LIhos1LIbact_model_coefs_MeierData_combined',...
+    sel_crit1, '_', sel_crit2, 'strictbactclass_0_7_smoothbysum'])
+  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% print best solutions to files
-filename = [outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
-% create met_info object needed for the printing function
-met_info = struct;
-met_info.CompoundID = meier_mets;
-met_info.CompoundName = meier_mets;          
-% print solutions to files
-print_bestsol_to_files(met_info, met_bestsols, filename);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% print all solutions to files
-filename = [outputFolder ...
-            'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
-% print solutions to files
-print_allsols_to_files(met_info, met_gitfits, filename);
-% test reading from file
-[met_info_read, met_gitfits_read] = read_allsols_from_files(filename);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % save model results to file - raw coefficients
-% 
-% fid = fopen([outputFolder ...
-%             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
-%              %'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-% fprintf(fid, 'CompoundName\tReciprocalCorr');
-% for i=1:length(coefvalues)
-%     fprintf(fid, '\t%s', coefvalues{i});
-% end
-% fprintf(fid, '\n');
-% for i=1:size(x_met_smooth,2)
-%     fprintf(fid, '%s', meier_mets{i});
-%     fprintf(fid, '\t%.3f', x_data_corr(i));
-%     for j=1:size(x_met_smooth,1)
-%         fprintf(fid, '\t%e', x_met_smooth(j,i));
-%     end
-%     fprintf(fid, '\n');
-% end
-% fclose(fid);
-% 
-% % save model results to file - normalized by max coefficient
-% fid = fopen([outputFolder...
-%     'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
-%     %'model_results_SMOOTH_normbyabsmax_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-% fprintf(fid, 'CompoundName\tReciprocalCorr');
-% for i=1:length(coefvalues)
-%     fprintf(fid, '\t%s', coefvalues{i});
-% end
-% fprintf(fid, '\n');
-% for i=1:size(x_met_smooth,2)
-%     fprintf(fid, '%s', meier_mets{i});
-%     fprintf(fid, '\t%.3f', x_data_corr(i));
-%     for j=1:size(x_met_smooth,1)
-%         fprintf(fid, '\t%.3f', x_met_smooth(j,i)./max(abs(x_met_smooth(:,i))));
-%     end
-%     fprintf(fid, '\n');
-% end
-% fclose(fid);
-% 
-% % save model results to file - metabolism_coefficients_only
-% fid = fopen([outputFolder...
-%     'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_MeierData_smoothbysum.csv'], 'w');
-%     %'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_allions.csv'], 'w');
-% fprintf(fid, 'CompoundName\tReciprocalCorr');
-% for i=2:length(coefvalues)
-%     fprintf(fid, '\t%s', coefvalues{i});
-% end
-% fprintf(fid, '\n');
-% for i=1:size(x_met_smooth,2)
-%     fprintf(fid, '%s', meier_mets{i});
-%     fprintf(fid, '\t%.3f', x_data_corr(i));
-%     for j=2:size(x_met_smooth,1)
-%         fprintf(fid, '\t%.3f', x_met_smooth(j,i)./max(abs(x_met_smooth(2:end,i))));
-%     end
-%     fprintf(fid, '\n');
-% end
-% fclose(fid);
-%     
-% % save model results to file - reciprocal data restoration
-% fid = fopen([outputFolder...
-%     'model_results_SMOOTH_normbyabsmax_reciprocal_problem_MeierData_smoothbysum.csv'], 'w');
-%     %'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv'], 'w');
-% columnNames = cell(size(x_rdata,1),1);
-% idx=1;
-% for diet_i = 1:length(sampleDiet_unique)
-%     for type_i = 1:length(sampleType_unique)
-%         for tiss_i = 1:length(git_labels)
-%                 selectDiet = sampleDiet_unique{diet_i};
-%                 selectMouse = sampleType_unique{type_i};
-%                 selectTissue = git_labels{tiss_i};
-%                 columnNames{idx} = [selectDiet '_' selectMouse '_' selectTissue];
-%                 idx = idx+1;
-%         end
-%     end
-% end
-%          
-% fprintf(fid, 'CompoundName\tReciprocalCorr\tRandomCorr');
-% for i=1:length(columnNames)
-%     fprintf(fid, '\t%s', columnNames{i});
-% end
-% for i=1:length(columnNames)
-%     fprintf(fid, '\tRecip_%s', columnNames{i});
-% end
-% for i=1:length(columnNames)
-%     fprintf(fid, '\tRandom_%s', columnNames{i});
-% end
-% fprintf(fid, '\n');
-% for i=1:size(x_rdata,2)
-%     fprintf(fid, '%s', meier_mets{i});
-%     fprintf(fid, '\t%.3f', x_data_corr(i));
-%     fprintf(fid, '\t%.3f', x_data_corr_shuffled(i));
-%     for j=1:size(kmean_vector_joint_orig(:,i),1)
-%         fprintf(fid, '\t%.3f', kmean_vector_joint_orig(j,i));
-%     end
-%     for j=1:size(x_rdata(:,i),1)
-%         fprintf(fid, '\t%.3f', x_rdata(j,i));
-%     end
-%     for j=1:size(x_rdata_shuffled(:,i),1)
-%         fprintf(fid, '\t%.3f', x_rdata_shuffled(j,i));
-%     end
-%     fprintf(fid, '\n');
-% end
-% fclose(fid);
-
