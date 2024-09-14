@@ -1,5 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function [meanMatrix, meanMatrix_mets, meanData_columns,meanMatrix_STD] = ...
+    prepare_drug_data_for_modeling(outputFolder, figureFolder,...
+                                   printflag,use_volume_flag)
+% printflag indicates whether to print data to figure
+
 % prepare data from BRV paper for modeling
 % table can be downloaded from https://www.science.org/doi/full/10.1126/science.aat9931
 dataFolder = '.\ProcessedData\public_data\';
@@ -7,9 +12,13 @@ dataFilenames = 'aat9931_tables_s1-26.xlsx';
 dataSheetnames = {'Table S4';'Table S17'};
 
 meanData_cell = cell(size(dataSheetnames));
+meanDataSTD_cell = cell(size(dataSheetnames));
 meanMets_cell = cell(size(dataSheetnames));
 Mean_tissues = {'Mean_SI','Mean_SII','Mean_SIII',...
                  'Mean_Cecum', 'Mean_Colon', 'Mean_Feces'};
+STD_tissues = {'STD_SI','STD_SII','STD_SIII',...
+                 'STD_Cecum', 'STD_Colon', 'STD_Feces'};
+% CV stands for any kind of colonized mice in this case
 meanData_columns = [strcat('CV_Chow_', Mean_tissues)...
                     strcat('GF_Chow_', Mean_tissues)];
 
@@ -76,6 +85,9 @@ for ds_i = 1:length(dataSheetnames)
     meanTable_data = zeros(length(Measured_mets_unique) * length(t_time_unique)*...
                            size(t_sample_type_unique,2),...
                            length(Mean_tissues)*2);
+    meanTable_dataSTD = zeros(length(Measured_mets_unique) * length(t_time_unique)*...
+                           size(t_sample_type_unique,2),...
+                           length(Mean_tissues)*2);
     meanTable_mets = cell(length(Measured_mets_unique) * length(t_time_unique)*...
                            size(t_sample_type_unique,2));                   
     idx=1;
@@ -87,13 +99,26 @@ for ds_i = 1:length(dataSheetnames)
                     ismember(t.Sample_Type, t_sample_type_unique{1,type_i}),...
                     Mean_tissues};
                 curdataCV = cellfun(@(x) str2double(x), curdataCV);
+                curdataCV_STD = t{ismember(Measured_mets, Measured_mets_unique{met_i}) &...
+                    (t.Sample_Time == t_time_unique(time_i)) &...
+                    ismember(t.Sample_Type, t_sample_type_unique{1,type_i}),...
+                    STD_tissues};
+                curdataCV_STD = cellfun(@(x) str2double(x), curdataCV_STD);
+                
                 curdataGF = t{ismember(Measured_mets, Measured_mets_unique{met_i}) &...
                     (t.Sample_Time == t_time_unique(time_i)) &...
                     ismember(t.Sample_Type, t_sample_type_unique{2,type_i}),...
                     Mean_tissues};
                 curdataGF = cellfun(@(x) str2double(x), curdataGF);
+                curdataGF_STD = t{ismember(Measured_mets, Measured_mets_unique{met_i}) &...
+                    (t.Sample_Time == t_time_unique(time_i)) &...
+                    ismember(t.Sample_Type, t_sample_type_unique{2,type_i}),...
+                    STD_tissues};
+                curdataGF_STD = cellfun(@(x) str2double(x), curdataGF_STD);
+
                 if ~isempty(curdataCV)
                     meanTable_data(idx,:) = [curdataCV curdataGF];
+                    meanTable_dataSTD(idx,:) = [curdataCV_STD curdataGF_STD];
                     meanTable_mets{idx} = strcat(Measured_mets_unique{met_i}, '_',...
                         num2str(t_time_unique(time_i)),'_',...
                         t_sample_type_unique{1,type_i});
@@ -103,19 +128,122 @@ for ds_i = 1:length(dataSheetnames)
         end
     end
     meanTable_data(idx:end,:) = [];
+    meanTable_dataSTD(idx:end,:) = [];
     meanTable_mets(idx:end) = [];
     
-    % remove T0 and t12 metabolites
-    t0t12metabolites = cellfun(@(x) contains(x, '_0_') | ...
-                                    contains(x, '_12'), meanTable_mets);
+    % remove T12 metabolites
+    t0t12metabolites = cellfun(@(x) contains(x, '_12'), meanTable_mets);
     meanTable_data(t0t12metabolites,:) = [];
+    meanTable_dataSTD(t0t12metabolites,:) = [];
+    
     meanTable_mets(t0t12metabolites) = [];
     
     % save dataset to cell
     meanData_cell{ds_i} = meanTable_data;
+    meanDataSTD_cell{ds_i} = meanTable_dataSTD;
     meanMets_cell{ds_i} = meanTable_mets;
 end
 
+% join both datasets in one matrix
+meanMatrix = vertcat(meanData_cell{:});
+meanMatrix_STD = vertcat(meanDataSTD_cell{:});
+meanMatrix_mets = horzcat(meanMets_cell{:})';
+
+if use_volume_flag
+    applyVolumes = repmat([0.3 0.3 0.3 3 3 3 0.3 0.3 0.3 3 3 3], ...
+                            length(meanMatrix_mets), 1);
+    % correct volumes for CV mice
+    for i=1:length(meanMatrix_mets)
+        if contains(meanMatrix_mets{i}, '_CV')
+            applyVolumes(i,1:6) = [0.3 0.3 0.3 0.3 0.3 0.3];
+        end
+    end
+    meanMatrix = meanMatrix .* applyVolumes;
+    meanMatrix_STD = meanMatrix_STD .* applyVolumes;
+end
+
+if (printflag==1)
+    % print table to file
+    meanData_table = array2table([meanMatrix meanMatrix_STD],...
+        'RowNames', meanMatrix_mets,...
+        'VariableNames', [strcat(meanData_columns, '_MEAN') strcat(meanData_columns, '_STD')]);
+    writetable(meanData_table, ...
+        [outputFolder, 'mean_drug_data_for_modelling'],...
+        "WriteRowNames",true);
+    % print figures to file
+    timepoints = zeros(size(meanMatrix_mets));
+    metnames = cell(size(meanMatrix_mets));
+
+    for i=1:length(meanMatrix_mets)
+        cursplit = strsplit(meanMatrix_mets{i}, '_');
+        timepoints(i) = str2double(cursplit{end-1});
+        % combine metabolite name with condition
+        metnames{i} = strjoin(cursplit([1:length(cursplit)-2, length(cursplit)]),'-');
+    end
+
+    % get tissue names
+    tissues = cellfun(@(x) strsplit(x, '_'), meanData_columns, 'unif', 0);
+    tissues = cellfun(@(x) x{end}, tissues, 'unif', 0);
+    % plot kinetic and tissue-distributed data for each metabolite
+    metnames_unique = unique(metnames);
+    columnsGF = cellfun(@(x) contains(x, 'GF'), meanData_columns);
+    
+    for i=1:length(metnames_unique)
+        curdata = meanMatrix(ismember(metnames, metnames_unique{i}),:);
+        curdataSTD = meanMatrix_STD(ismember(metnames, metnames_unique{i}),:);
+        curtime = timepoints(ismember(metnames, metnames_unique{i}));
+        
+        fig = figure('units','normalized','outerposition',[0 0 1 1]);
+       
+        % plot original kinetic profiles
+        for j=1:nnz(columnsGF)
+            subplot(2, nnz(columnsGF), j)
+            plot(curtime, curdata(:,j), 'k');
+            hold on
+            plot(curtime, curdata(:, nnz(columnsGF)+j), 'k--')
+            errorbar(curtime, curdata(:,j), curdataSTD(:,j), 'k.')
+            errorbar(curtime, curdata(:, nnz(columnsGF)+j), curdataSTD(:, nnz(columnsGF)+j), 'k.')
+            title(tissues{j})
+            xticks(curtime)
+            xlabel('Time, h')
+            axis square
+            ylim([0 (max(max(curdata(:,[j nnz(columnsGF)+j]))) +...
+                          max(max(curdataSTD(:,[j nnz(columnsGF)+j]))) )])
+        end
+        legend({'Colonized', 'GF'})
+        % plot metabolites per time point across tissues
+        for j=1:length(curtime)
+            subplot(2, nnz(columnsGF), nnz(columnsGF)+j)
+            plot(1:nnz(columnsGF), curdata(j,~columnsGF), 'k')
+            hold on
+            plot(1:nnz(columnsGF), curdata(j, columnsGF), 'k--')
+            errorbar(1:nnz(columnsGF), curdata(j,~columnsGF),...
+                curdataSTD(j, ~columnsGF), '.k')
+            errorbar(1:nnz(columnsGF), curdata(j, columnsGF),...
+                curdataSTD(j, columnsGF), 'k.')
+            title(sprintf('Time %d h', curtime(j)))
+            ylim([0 max(max(curdata(j,:))) + max(max(curdataSTD(j,:)))])
+            xticks(1:nnz(columnsGF))
+            xticklabels(tissues(~columnsGF))
+            xlim([1, nnz(columnsGF)])
+            axis square
+        end
+        legend({'Colonized', 'GF'})
+        sgtitle(metnames_unique{i})
+
+        % print to file
+        print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
+            [figureFolder, 'figSX_plots_drug_data_for_modelling_',...
+            metnames_unique{i}, 'volumeflag_', num2str(use_volume_flag)]);
+ 
+    end
+end
+
+% remove t- metabolite sas it does not make sense to model them
+ t0t12metabolites = cellfun(@(x) contains(x, '_0_'), meanMatrix_mets);
+ meanMatrix(t0t12metabolites,:) = [];
+ meanMatrix_STD(t0t12metabolites,:) = [];
+ meanMatrix_mets(t0t12metabolites) = [];
 
 % cell(length(modelfilenames),1);
 % t_mets = cell(length(modelfilenames),1);
