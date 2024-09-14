@@ -23,28 +23,29 @@ add_global_and_file_dependencies
 % 'Fig4a_histogram_corr_model_2LIcoefHost1LIcoefbact_reversedata_annotated'])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
 % run script prepare_drug_data_for_modeling.m first t get the data
-prepare_drug_data_for_modeling;
+% use volume flag
+use_volume_flag = 1;
+% get drug data for modelling
+print_drug_data_flag = 1;
+[meanMatrix, meanMatrix_mets, meanData_columns] = prepare_drug_data_for_modeling(outputFolder, figureFolder,...
+    print_drug_data_flag, use_volume_flag);
+%use_volume_flag = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% try to cluster ions based on their GI profiles
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% note that for this analysis sampleType equals 'CV' means colonized mice
+% regardless of colonization type
 sampleType_unique = {'CV', 'GF'};
+% since in drug data there is one diet condition, decided to duplicate the
+% matrix to not have to change modelling procedure 
 sampleDiet_unique = {'Chow1', 'Chow2'};
 
 meanConditions = [cellfun(@(x) strrep(x, 'Chow', 'Chow1'), meanData_columns, 'unif', 0),...
                   cellfun(@(x) strrep(x, 'Chow', 'Chow2'), meanData_columns, 'unif', 0)];
               
-meanMatrix = vertcat(meanData_cell{:});
 % duplicate since we have only one diet
 meanMatrix = [meanMatrix meanMatrix];
-meanMatrix_mets = horzcat(meanMets_cell{:})';
-
-% mycolors = [0 115 178;... %dark blue
-%             204 227 240;...%light blue
-%             211 96 39;... %dark orange
-%             246 223 212]/256;%light orange
-% [bb,aa] = ndgrid(sampleType_unique, sampleDiet_unique); 
-% condLabels = strcat(aa(:),'-', bb(:));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -52,42 +53,6 @@ meanMatrix_mets = horzcat(meanMets_cell{:})';
 selected_mets = 1:length(meanMatrix_mets);
 % define tissue order
 sampleTissue_unique = {'SI', 'SII', 'SIII', 'Cecum', 'Colon', 'Feces'};
-%nrand=100;
-% call calculateAmatrix_final with zero matrices of correct size
-% to get coefvalues output, which is used to allocate variables further
-%[~, coefvalues] = calculateAmatrix_final(zeros(length(condLabels), length(sampleTissue_unique)));
-
-% % allocate variables for model prediction results
-% x_met_mean = zeros(length(coefvalues),length(selected_mets));
-% x_met_std = zeros(length(coefvalues),length(selected_mets));
-% x_met_smooth = zeros(length(coefvalues),length(selected_mets));
-% 
-% % allocate variables for correlation calculated from values restored with
-% % reverse problem with original and randomly shuffled parameters
-% x_data_corr = zeros(length(selected_mets),1);
-% x_resid = zeros(length(selected_mets),1);
-% x_data_corr_shuffled = zeros(length(selected_mets),1);
-% 
-% % save Rsquared of total
-% % calculate corr and Rsquared of SI and LI separately
-% x_data_Rsq = zeros(length(selected_mets),1);
-% x_data_Rsq_shuffled = zeros(length(selected_mets),1);
-% x_data_Rsq_SI = zeros(length(selected_mets),1);
-% x_data_Rsq_SI_shuffled = zeros(length(selected_mets),1);
-% x_data_Rsq_LI = zeros(length(selected_mets),1);
-% x_data_Rsq_LI_shuffled = zeros(length(selected_mets),1);
-% x_data_corr_SI = zeros(length(selected_mets),1);
-% x_data_corr_SI_shuffled = zeros(length(selected_mets),1);
-% x_data_corr_LI = zeros(length(selected_mets),1);
-% x_data_corr_LI_shuffled = zeros(length(selected_mets),1);
-
-% calculate reverse A matrix with zero matrix of the right size to allocate
-% variables according to Ra size
-% [Ra] = calculateRAmatrix_final(zeros(size(coefvalues)));
-% x_rdata = zeros(size(Ra,2),length(selected_mets));
-% x_rdata_shuffled = zeros(size(Ra,2),length(selected_mets));
-
-%minval = 0.01;
 
 fprintf('Starting parameter estimation for %d metabolites\n',length(selected_mets));
 
@@ -96,8 +61,6 @@ volumeMatrix_CVR = repmat([0.3 0.3 0.3 0.3 0.3 0.3;...
 volumeMatrix_GF = repmat([0.3 0.3 0.3 3 3 3], 4, 1);
 
 
-% use volume flag
-use_volume_flag = 1;
 if use_volume_flag
 %     fileNameFigure = [figureFolder...
 %         'fig_2023_drugdiag_volume_profiles_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
@@ -123,11 +86,11 @@ for met_i = 1:length(selected_mets)
    
         cmpd_interest_idx = selected_mets(met_i);
         % set volume to CV or GF/WT
-        if contains(meanMatrix_mets{cmpd_interest_idx}, '_CV')
-            volumeMatrix = volumeMatrix_CVR;
-        else
-            volumeMatrix = volumeMatrix_GF;
-        end
+        % if contains(meanMatrix_mets{cmpd_interest_idx}, '_CV')
+        %     volumeMatrix = volumeMatrix_CVR;
+        % else
+        %     volumeMatrix = volumeMatrix_GF;
+        % end
         % calculate mean profiles            
         idx=1;
         kmeanMatrix_joint = zeros(4,6);
@@ -149,10 +112,10 @@ for met_i = 1:length(selected_mets)
             end
         end
         
-        if use_volume_flag
-            % multiply by volume to get amounts
-            kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
-        end
+        % if use_volume_flag
+        %    % multiply by volume to get amounts
+        %    kmeanMatrix_joint = kmeanMatrix_joint.*volumeMatrix; 
+        % end
         % normalize by max intensity
         kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
         kmeanMatrix_joint(isnan(kmeanMatrix_joint))=0;
@@ -186,8 +149,10 @@ assess_model_for_drugs(meanMatrix_mets, met_bestsols, figureFolder)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % perform model assessment based on known drug metabolite classes
 % for each drug separately
+strictclass_flag = 1; %whether consider LI PCC as well when calling microbial metabolites
 [sol_types, met_names_predicted] = ...
-    assess_model_for_drugs_per_drug(meanMatrix_mets, met_bestsols, figureFolder);
+    assess_model_for_drugs_per_drug(meanMatrix_mets, met_bestsols, strictclass_flag,...
+    figureFolder, outputFolder);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation of restored and original data
@@ -230,7 +195,7 @@ plot_gitfit_model_corr(met_gitfits, filename)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % print best solutions to files
 filename = [outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_drugs_202403'];
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_drugs_202409'];
 % create met_info object needed for the printing function
 met_info.CompoundID = meanMatrix_mets;
 met_info.CompoundName = meanMatrix_mets;          

@@ -14,7 +14,7 @@ corrthreshold = 0.7;
 classthreshold = 0.7;
 % make a flag for positive or negative class additional requirement of 
 % LI PCC passing the threshold as well
-flag_strictclass = 1;
+flag_strictclass = 0;
 
 solution_types = met_bestsols{1}.selection_criterion;
 classification_reports = cell(length(solution_types)+1,1);
