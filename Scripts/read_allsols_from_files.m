@@ -82,8 +82,62 @@ else
         gitfits{i}.testCorrRevLI = testCorrRevLI;
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+% read random coefficients from file name
+curfilenameR = [filename...
+               '_random_coefs.csv'];
+soldataR = readtable(curfilenameR,...
+    'ReadVariableNames',1, 'HeaderLines',0);
+
+% check that the metabolites are the same in soldata and soldataR
+if ~isequal(soldata.CompoundID, soldataR.CompoundID)
+    fprintf(['Warning: metabolite IDs do not match between:\n%s\nand\n%s\n'...
+             'omit loading reciprocal data\n'], curfilename, curfilenameR)
+else
+    
+    % get solution correlation info and solution as matrix
+    columnNames = soldataR.Properties.VariableNames;
+    columnNames_coefs = columnNames(datastartidx:end);
+    % save the filed names in the same way as in bestsol
+    testx_shuffled = soldataR{:,columnNames_coefs};
+    
+    coefvalues = reshape(columnNames_coefs,[],nsols);
+    coefvalues = coefvalues(:,1)';
+    coefvalues_shuffled = cellfun(@(x) x(1:strfind(x, '_')-1), coefvalues, 'unif',0);
+    
+    %add fields to the array of gitfits
+    for i=1:size(testx_shuffled,1)
+        gitfits{i}.testx_shuffled = reshape(testx_shuffled(i,:), [], 100);
+        gitfits{i}.coefvalues_shuffled = coefvalues_shuffled;
+    end
+end
         
-        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+% read correlations with restored data based on random coefficients from file name
+curfilenameR = [filename...
+               '_random_coef_correv.csv'];
+soldataR = readtable(curfilenameR,...
+    'ReadVariableNames',1, 'HeaderLines',0);
+
+% check that the metabolites are the same in soldata and soldataR
+if ~isequal(soldata.CompoundID, soldataR.CompoundID)
+    fprintf(['Warning: metabolite IDs do not match between:\n%s\nand\n%s\n'...
+             'omit loading reciprocal data\n'], curfilename, curfilenameR)
+else
+    
+    % get solution correlation info and solution as matrix
+    columnNames = soldataR.Properties.VariableNames;
+    columnNames_coefs = columnNames(datastartidx:end);
+    % save the file names in the same way as in bestsol
+    testx_shuffled_correv = soldataR{:,columnNames_coefs};
+    
+    %add fields to the array of gitfits
+    for i=1:size(testx_shuffled,1)
+        gitfits{i}.testCorrRev_shuffled = testx_shuffled_correv(i,:);
+    end
+end
+              
         
         
         

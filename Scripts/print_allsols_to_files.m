@@ -120,3 +120,103 @@ for i=1:length(gitfits)
     fprintf(fid, '\n');
 end
 fclose(fid);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% save model results to file - random coefficients (for comparison)
+
+% save each type of selected solution to a separate file
+curfilename = [filename...
+               '_random_coef_correv.csv'];
+fid = fopen(curfilename, 'w');
+fprintf(fid,'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters');
+% create column names
+columnnames = arrayfun(@(x) sprintf('randomCorr_%03d',x), (1:length(gitfits{1}.testCorrRev_shuffled)), 'unif', 0);
+                                 
+for i=1:length(columnnames)
+    fprintf(fid, '\t%s', columnnames{i});
+end
+fprintf(fid, '\n');
+for i=1:length(gitfits)
+    fprintf(fid, '%.3f\t%3f',   met_info.MZ(i),...
+                                met_info.RT(i));
+    fprintf(fid, '\t%s\t%s\t%d',met_info.CompoundID{i},...
+                                met_info.CompoundName{i},...
+                                met_info.MetaboliteFilter(i));
+    fprintf(fid, '\t%d', met_info.gut_filter(i));
+
+
+    if ~isempty(gitfits{i})
+        testx = gitfits{i}.testCorrRev_shuffled;
+        for j=1:length(testx)
+            fprintf(fid, '\t%e', testx(j));
+        end
+    else
+        for j=1:numel(gitfits{1}.testCorrRev_shuffled)
+            fprintf(fid, '\t0');
+        end
+    end
+        
+    fprintf(fid, '\n');
+end
+fclose(fid);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+% save random coefficients as well
+curfilename = [filename...
+               '_random_coefs.csv'];
+fid = fopen(curfilename, 'w');
+fprintf(fid,'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters');
+% create column names
+if length(gitfits{1}.testx_shuffled) > length(gitfits{1}.coefvalues)
+    % coef names should be doubled because there was only one diet
+    % condition
+    coefvalues_expanded = {gitfits{1}.coefvalues{1},...
+                           gitfits{1}.coefvalues{2}, [gitfits{1}.coefvalues{2} '2'],...
+                           gitfits{1}.coefvalues{3}, [gitfits{1}.coefvalues{3} '2'],...
+                           gitfits{1}.coefvalues{4}, [gitfits{1}.coefvalues{4} '2'],...
+                           gitfits{1}.coefvalues{5}, [gitfits{1}.coefvalues{5} '2']};
+    columnnames = strcat(repmat(coefvalues_expanded, 1, size(gitfits{1}.testx_shuffled,2)),...
+        '_',...
+        arrayfun(@(x) sprintf('%03d',x), reshape(repmat((1:size(gitfits{1}.testx_shuffled,2))',...
+                                             1,length(coefvalues_expanded))',...
+                                      1,[]),...
+                              'unif',0));                       
+else
+    columnnames = strcat(repmat(gitfits{1}.coefvalues, 1, size(gitfits{1}.testx_shuffled,2)),...
+        '_',...
+        arrayfun(@(x) sprintf('%03d',x), reshape(repmat((1:size(gitfits{1}.testx_shuffled,2))',...
+                                             1,length(gitfits{1}.coefvalues))',...
+                                      1,[]),...
+                              'unif',0));
+end                             
+for i=1:length(columnnames)
+    fprintf(fid, '\t%s', columnnames{i});
+end
+fprintf(fid, '\n');
+for i=1:length(gitfits)
+    fprintf(fid, '%.3f\t%3f',   met_info.MZ(i),...
+                                met_info.RT(i));
+    fprintf(fid, '\t%s\t%s\t%d',met_info.CompoundID{i},...
+                                met_info.CompoundName{i},...
+                                met_info.MetaboliteFilter(i));
+    fprintf(fid, '\t%d', met_info.gut_filter(i));
+
+
+    if ~isempty(gitfits{i})
+        testx = gitfits{i}.testx_shuffled;
+        testx = reshape(testx, [],1);
+        for j=1:length(testx)
+            fprintf(fid, '\t%e', testx(j));
+        end
+    else
+        for j=1:numel(gitfits{1}.testx)
+            fprintf(fid, '\t0');
+        end
+    end
+        
+    fprintf(fid, '\n');
+end
+fclose(fid);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    

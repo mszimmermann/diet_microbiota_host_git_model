@@ -1,4 +1,7 @@
 function [met_info, met_bestsol] = read_bestsol_from_file(filename, sel_crit)
+% sel_crit can take the following arguments:
+% 'IP' 'total_PCC' 'SI_PCC' 'LI_PCC' 'sum_PCC'
+% 'SI_PCC_within_high_total' 'LI_PCC_within_high_total'
 
 % read specific solution type
 curfilename = [filename...
