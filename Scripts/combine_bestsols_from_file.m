@@ -1,7 +1,8 @@
 function [met_info_combined, met_bestsol_combined] = ...
-                combine_bestsols_from_file(filename, sel_crit1, sel_crit2)
+                combine_bestsols_from_file(filename, sel_crit1, sel_crit2,...
+                                           corrthreshold)
 % corr threshold for reliable solutions
-corrthreshold = 0.7;
+% corrthreshold = 0.7;
 % combine solutions from criteria sel_crit1 and sel_crit2
 [met_info1, met_bestsol1] = read_bestsol_from_file(filename,...
                                                 sel_crit1);
