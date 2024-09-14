@@ -1,11 +1,12 @@
-function plot_gitfit_model_corr(met_gitfits, filename)
+function plot_bestfit_model_corr(met_bestfit, met_gitfits, filename)
 
 % plot correlation of restored and original data
 % and save plot to file filename
+% between best solution and random solutions
 
 % calculate difference in corr distrbutions
 % get best correlation for each solution
-x_data_corr = cellfun(@(y)max(y.testCorrRev),met_gitfits);
+x_data_corr = met_bestfit.x_sel_CorrRev;
 % get best correlation for each random solution
 x_data_corr_shuffled_best = cellfun(@(y)max(y.testCorrRev_shuffled),met_gitfits);
 

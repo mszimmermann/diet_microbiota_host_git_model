@@ -160,4 +160,4 @@ end
 %     max(abs(gitfit.testx(:,gitfit.testCorrRev>0.7)));
 % boxplot(testx_norm', 'PlotStyle','compact')
 
-suptitle(strrep(metname,'_','-'));
+sgtitle(strrep(metname,'_','-'));
