@@ -5,23 +5,42 @@ function print_allsols_to_files(met_info, gitfits, filename)
 
 % check whether met_info contains MZ and RT fiels
 % if not (e.g. drug info) set them to 0
-if isfield(met_info, 'MZ') == 0
-    met_info.MZ = zeros(size(gitfits,1),1);
-end
-if isfield(met_info, 'RT') == 0
-    met_info.RT = zeros(size(gitfits,1),1);
-end
-
-% check whether met_info contains MetaboliteFilter - flag indicating
-% annotation filtering
-if isfield(met_info, 'MetaboliteFilter') == 0
-    met_info.MetaboliteFilter = ones(size(gitfits,1),1);
-end
-
-% check whether met_info contains gut_filter - flag indicating
-% whether metabolites were detected in the GIT
-if isfield(met_info, 'gut_filter') == 0
-    met_info.gut_filter = ones(size(gitfits,1),1);
+if isstruct(met_info)
+    if isfield(met_info, 'MZ') == 0
+        met_info.MZ = zeros(size(met_bestsols,1),1);
+    end
+    if isfield(met_info, 'RT') == 0
+        met_info.RT = zeros(size(met_bestsols,1),1);
+    end
+    % check whether met_info contains MetaboliteFilter - flag indicating
+    % annotation filtering
+    if isfield(met_info, 'MetaboliteFilter') == 0
+        met_info.MetaboliteFilter = ones(size(met_bestsols,1),1);
+    end
+    
+    % check whether met_info contains gut_filter - flag indicating
+    % whether metabolites were detected in the GIT
+    if isfield(met_info, 'gut_filter') == 0
+        met_info.gut_filter = ones(size(met_bestsols,1),1);
+    end
+elseif istable(met_info)
+    if ~ismember('MZ', met_info.Properties.VariableNames)
+        met_info.MZ = zeros(size(met_bestsols,1),1);
+    end
+    if ~ismember('RT', met_info.Properties.VariableNames)
+        met_info.RT = zeros(size(met_bestsols,1),1);
+    end
+     % check whether met_info contains MetaboliteFilter - flag indicating
+    % annotation filtering
+    if ~ismember('MetaboliteFilter', met_info.Properties.VariableNames)
+        met_info.MetaboliteFilter = ones(size(met_bestsols,1),1);
+    end
+    
+    % check whether met_info contains gut_filter - flag indicating
+    % whether metabolites were detected in the GIT
+    if ~ismember('gut_filter', met_info.Properties.VariableNames)
+        met_info.gut_filter = ones(size(met_bestsols,1),1);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
