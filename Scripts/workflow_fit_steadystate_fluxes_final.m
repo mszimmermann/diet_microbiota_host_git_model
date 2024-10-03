@@ -254,7 +254,35 @@ print_allsols_to_files(met_info, met_gitfits, filename);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+% add mz and rt to the tables which were missing due to a mistake in the
+% print function
+modelFileFolder = '.\ProcessedData\output\model_results_no_mzrt\';
+modelFiles = dir(modelFileFolder);
+modelFileNames = cell(size(modelFiles,1),1);
+for i=1:length(modelFiles)
+    modelFileNames{i} = modelFiles(i).name;
+end
+% leave only model files
+modelFileNames = modelFileNames(cellfun(@(x) contains(x,'model_results'),modelFileNames));
 
+for i=1:length(modelFileNames)
+    currentData = readtable([modelFileFolder modelFileNames{i}]);
+    %check if MZ column is indeed empty
+    if sum(currentData.MZ)==0
+        %compare compound IDs between currentData and annotation
+        % check if each ID is the same
+        if (sum(arrayfun(@(x) isequal(currentData.CompoundID{x}, ...
+                annotationTableSpatialClusters.CompoundID{x}), ...
+                1:size(currentData,1))) == size(currentData,1))
+            currentData.MZ = annotationTableSpatialClusters.MZ;
+            currentData.RT = annotationTableSpatialClusters.RT;
+            writetable(currentData, [outputFolder, modelFileNames{i}])
+            fprintf('Updated %s\n', modelFileNames{i});
+        else
+            fprintf('warning: MZ and RT could not be matched, file %s not updated', modelFileNames{i});
+        end
+    end
+end
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % define which metabolites to model

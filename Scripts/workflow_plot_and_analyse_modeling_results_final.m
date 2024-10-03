@@ -27,17 +27,35 @@ annotationTableSpatialClusters = readtable([outputFolder ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % modelingResults = readtable([resultsFolder ...
 %             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
-modelingResults = readtable([outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions_with_CVR.csv']);
-x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
+% modelingResults = readtable([outputFolder ...
+%             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions_with_CVR.csv']);
+% x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
+% % get correlations calculated with reverse problem
+% if isnumeric(modelingResults.ReciprocalCorr(1))
+%     x_data_corr = modelingResults.ReciprocalCorr;
+% else
+%     % it is not numeric, probably contains NaN - convert to numeric
+%     x_data_corr = cellfun(@(x) str2double(x), modelingResults.ReciprocalCorr);
+% end
+% coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+filename = [outputFolder ...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_bestDC'];
+corrthreshold = 0.7;
+% try combining solutions
+sel_crit1 = 'IP';
+sel_crit2 = 'LI_PCC_within_high_total';
+
+[met_info_combined, met_bestsol_combined] = ...
+                combine_bestsols_from_file(filename, ...
+                sel_crit1, sel_crit2,...
+                corrthreshold);
+% get model coefficients
+x_met_smooth = met_bestsol_combined.x;
 % get correlations calculated with reverse problem
-if isnumeric(modelingResults.ReciprocalCorr(1))
-    x_data_corr = modelingResults.ReciprocalCorr;
-else
-    % it is not numeric, probably contains NaN - convert to numeric
-    x_data_corr = cellfun(@(x) str2double(x), modelingResults.ReciprocalCorr);
-end
-coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
+x_data_corr = met_bestsol_combined.x_sel_CorrRev;
+coefvalues = met_bestsol_combined.coefvalues;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -70,15 +88,30 @@ cgo = clustergram(clustdata,...
             'RowPdist', clustdist,...
             'DisplayRange', 1,...
             'colormap', redbluecmap);
-% at this point colorbar and print to figure have to be done manually in
-% the clustergram window
-% print to figure
-fig = cgo.plot;
+% solution to turn on colormap programmatically from https://stackoverflow.com/questions/20648627/turn-on-colorbar-programmatically-in-clustergram
+% combined with solution from https://de.mathworks.com/matlabcentral/answers/305274-reduce-font-size-of-column-labels-in-clustergram?#answer_533054
+%cgfig = findall(0,'type','figure', 'tag', 'Clustergram'); % Figure handle
+%cgax = findobj(cgfig, 'type','axes','tag','HeatMapAxes'); % main axis handle
 
+cbButton = findall(0,'tag','HMInsertColorbar');
+ccb = get(cbButton,'ClickedCallback');
+set(cbButton,'State','on')
+ccb{1}(cbButton,[],ccb{2})
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Manually add colorbar to clustergram and print to figure
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fig = cgo.plot;
 orient landscape
-print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+% add title to colobar
+C = findall(gcf,'type','ColorBar');                         
+C.Label.String = 'Relative model coefficient value';
+
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
     [figureFolder,...
-    'fig4b_clustergram_2LIhos1LIbact_model_coefs_annotated_ions_in_GIT_Rmodel_corr_0_7'])
+    'fig4b_clustergram_2LIhos1LIbact_model_coefs_annotated_ions_in_GIT_Rmodel_combined_'...
+    sel_crit1, '_', sel_crit2,'corr_0_7'])
+
 
       
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
