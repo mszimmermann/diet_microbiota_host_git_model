@@ -582,16 +582,21 @@ end
 showclust = 4;
 ncluster = 12;
 numMet = zeros(size(kmeansTables_cell{1},1), ncluster*showclust);
+groupSize = zeros(size(kmeansTables_cell{1},1), ncluster*showclust);
 pMet = zeros(size(kmeansTables_cell{1},1), ncluster*showclust); 
 fdrMet = zeros(size(kmeansTables_cell{1},1), ncluster*showclust);
 idx = 1;
 for j=1:length(kmeansTables_cell)
     ncluster = (size(kmeansTables_cell{j},2)-1)/3;
     for i=1:ncluster
-        numMet(:,idx) = cellfun(@(x) str2double(x(2:strfind(x,',')-1)),...
-                                     kmeansTables_cell{j}(:,4+(i-1)*3));
         pMet(:,idx) = cell2mat(kmeansTables_cell{j}(:,2+(i-1)*3));
         fdrMet(:,idx) = cell2mat(kmeansTables_cell{j}(:,3+(i-1)*3));
+        for k=1:size(kmeansTables_cell{j},1)
+            curstat = kmeansTables_cell{j}{k,4+(i-1)*3};
+            curstat = strsplit(curstat(2:end-1), ',');
+            numMet(k,idx) = str2double(curstat{1});
+            groupSize(k,idx) = str2double(curstat{2});
+        end
         idx = idx+1;
     end                          
 end
@@ -659,7 +664,11 @@ if ~plotCVRflag
 end
 
 selectpathways = sum(fdrMet(:, selectclusters)<0.1,2)>0;
-displaymat = numMet(selectpathways,selectclusters);
+%displaymat = numMet(selectpathways,selectclusters);
+%normalize number of metabolites per cluster size
+displaymat = numMet(selectpathways,selectclusters)./...
+             groupSize(selectpathways,selectclusters);
+
 
 %displaymat = zscore(displaymat, dim, 2);
 %normalize by max in each category
@@ -669,12 +678,17 @@ end
 
 %displaymat = pMet(selectpathways,selectclusters);
 %displaymat = fdrMet(selectpathways,:);
-displayvalues = '_nummet_';
+%displayvalues = '_nummet_';
+displayvalues = '_fractmetperclustsize_';
 
 %displaymat(displaymat>0.5)=1;
 displaymat(displaymat>30)=30;
 
-rowLabels = cellfun(@(x) x{1}, kmeansTables_cell{1}(selectpathways,1), 'unif', 0);
+if iscell(kmeansTables_cell{1}{1,1})
+    rowLabels = cellfun(@(x) x{1}, kmeansTables_cell{1}(selectpathways,1), 'unif', 0);
+else
+    rowLabels = kmeansTables_cell{1}(selectpathways,1);
+end
 
 cgo = clustergram(displaymat, ...
             'RowLabels', rowLabels,...
@@ -785,6 +799,52 @@ for hmdbtype = 1:3
 end
 clear kmeansTables kmeansTables_cell kmeansTables_current kmeansTables_table
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% read hmdb pw enrichment to file
+% create names for joint table columns
+for hmdbtype = 1:3
+    switch hmdbtype
+        case 1
+            curvarName = 'HMDBclass';
+        case 2
+            curvarName = 'HMDBsubclass';
+        case 3
+            curvarName = 'HMDBsuperclass';
+    end
+    kmeansTables_table = readtable( [outputFolder,...
+               'ptwenr_', curvarName, '_kmeans_clustering_spatial_all_hmdbv4.csv']);
+ 
+    switch hmdbtype
+        case 1
+            kmeansTables_hmdbClass = cell(length(clusterColumns),1);
+            idx=1;
+            for i=2:3:length(kmeansTables_table.Properties.VariableNames)-1
+                kmeansTables_hmdbClass{idx} = [table2cell(kmeansTables_table(:,1)),...
+                    table2cell(kmeansTables_table(:,i:i+2))];
+                idx=idx+1;
+            end
+        case 2
+            kmeansTables_hmdbSubClass = cell(length(clusterColumns),1);
+            idx=1;
+            for i=2:3:length(kmeansTables_table.Properties.VariableNames)-1
+                kmeansTables_hmdbSubClass{idx} = [table2cell(kmeansTables_table(:,1)),...
+                    table2cell(kmeansTables_table(:,i:i+2))];
+                idx=idx+1;
+            end
+        case 3
+            kmeansTables_hmdbSuperClass = cell(length(clusterColumns),1);
+            idx=1;
+            for i=2:3:length(kmeansTables_table.Properties.VariableNames)-1
+                kmeansTables_hmdbSuperClass{idx} = [table2cell(kmeansTables_table(:,1)),...
+                    table2cell(kmeansTables_table(:,i:i+2))];
+                idx=idx+1;
+            end
+    end
+end
+clear kmeansTables_table
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save mean values per tissue to file
