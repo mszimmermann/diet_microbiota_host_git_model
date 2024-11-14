@@ -4,6 +4,13 @@ function plot_bestfit_model_corr(met_bestfit, met_gitfits, filename)
 % and save plot to file filename
 % between best solution and random solutions
 
+% remove gitfits that have NaN in correlation (method not applicablt to the
+% datapoint)
+isnan_gitfit = cellfun(@(y)isnan(max(y.testCorrRev)),met_gitfits) | isnan(met_bestfit.x_sel_CorrRev);
+
+met_gitfits = met_gitfits(~isnan_gitfit);
+met_bestfit = filter_bestsols_by_index(met_bestfit, ~isnan_gitfit);
+
 % calculate difference in corr distrbutions
 % get best correlation for each solution
 x_data_corr = met_bestfit.x_sel_CorrRev;
@@ -36,6 +43,7 @@ legend({'Random coefficients', 'Model coefficients', 'PCC=0.7'},...
 pval = signrank(x_data_corr_shuffled,...
                 x_data_corr);
 % print Wilcoxon signed rank test o-value on the plot
+text(-0.9, 0.8*max(h.Values), sprintf('n solutions = %d', length(met_gitfits)))
 text(-0.9, 0.7*max(h.Values), sprintf('signrank p = %.2e', pval))
 text(-0.9, 0.6*max(h.Values), sprintf('ranksum p = %.2e', p_corr_diff))
 text(-0.9, 0.5*max(h.Values), sprintf('median(model) = %.2f', median(x_data_corr)))
@@ -70,6 +78,7 @@ legend({'Best random coefficients', 'Model coefficients', 'PCC=0.7'},...
 pval = signrank(x_data_corr_shuffled_best,...
                 x_data_corr);
 % print Wilcoxon signed rank test o-value on the plot
+text(-0.9, 0.8*max(h.Values), sprintf('n solutions = %d', length(met_gitfits)))
 text(-0.9, 0.7*max(h.Values), sprintf('signrank p = %.2e', pval))
 text(-0.9, 0.6*max(h.Values), sprintf('ranksum p = %.2e', p_corr_diff))
 text(-0.9, 0.5*max(h.Values), sprintf('median(model) = %.2f', median(x_data_corr)))

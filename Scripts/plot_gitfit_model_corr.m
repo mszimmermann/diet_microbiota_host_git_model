@@ -3,6 +3,11 @@ function plot_gitfit_model_corr(met_gitfits, filename)
 % plot correlation of restored and original data
 % and save plot to file filename
 
+% remove gitfits that have NaN in correlation (method not applicablt to the
+% datapoint)
+isnan_gitfit = cellfun(@(y)isnan(max(y.testCorrRev)),met_gitfits);
+met_gitfits = met_gitfits(~isnan_gitfit);
+
 % calculate difference in corr distrbutions
 % get best correlation for each solution
 x_data_corr = cellfun(@(y)max(y.testCorrRev),met_gitfits);
@@ -15,7 +20,7 @@ x_data_corr_shuffled = cellfun(@(y) y.testCorrRev_shuffled(randi(length(y.testCo
 % compare corr distributions
 p_corr_diff = ranksum(x_data_corr_shuffled, x_data_corr);
 figure
-nbins=10;
+nbins=20;
 % pearson corr all 
 histogram(x_data_corr_shuffled, nbins);
 hold on
@@ -35,6 +40,7 @@ legend({'Random coefficients', 'Model coefficients', 'PCC=0.7'},...
 pval = signrank(x_data_corr_shuffled,...
                 x_data_corr);
 % print Wilcoxon signed rank test o-value on the plot
+text(-0.9, 0.8*max(h.Values), sprintf('n solutions = %d', length(met_gitfits)))
 text(-0.9, 0.7*max(h.Values), sprintf('signrank p = %.2e', pval))
 text(-0.9, 0.6*max(h.Values), sprintf('ranksum p = %.2e', p_corr_diff))
 text(-0.9, 0.5*max(h.Values), sprintf('median(model) = %.2f', median(x_data_corr)))
@@ -49,7 +55,7 @@ print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
 % compare corr distributions
 p_corr_diff = ranksum(x_data_corr_shuffled_best, x_data_corr);
 figure
-nbins=10;
+nbins=20;
 % pearson corr all 
 histogram(x_data_corr_shuffled_best, nbins);
 hold on
@@ -69,6 +75,7 @@ legend({'Best random coefficients', 'Model coefficients', 'PCC=0.7'},...
 pval = signrank(x_data_corr_shuffled_best,...
                 x_data_corr);
 % print Wilcoxon signed rank test o-value on the plot
+text(-0.9, 0.8*max(h.Values), sprintf('n solutions = %d', length(met_gitfits)))
 text(-0.9, 0.7*max(h.Values), sprintf('signrank p = %.2e', pval))
 text(-0.9, 0.6*max(h.Values), sprintf('ranksum p = %.2e', p_corr_diff))
 text(-0.9, 0.5*max(h.Values), sprintf('median(model) = %.2f', median(x_data_corr)))
