@@ -24,6 +24,13 @@ add_global_and_file_dependencies
 %    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
 annotationTableSpatialClusters = readtable([outputFolder ...
     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR.csv']);
+% get clustering info
+% select columns from annotationTable with cluster info
+annColumns = annotationTableSpatialClusters.Properties.VariableNames;
+clusterColumns = annColumns(cellfun(@(x) contains(x,'spatial_clust100'), annColumns));
+[~, clusteridx] = intersect(annColumns, clusterColumns, 'stable');
+spatialClusters = table2array(annotationTableSpatialClusters(:, clusteridx));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % modelingResults = readtable([resultsFolder ...
 %             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
@@ -56,6 +63,32 @@ x_met_smooth = met_bestsol_combined.x;
 % get correlations calculated with reverse problem
 x_data_corr = met_bestsol_combined.x_sel_CorrRev;
 coefvalues = met_bestsol_combined.coefvalues;
+
+% get all solutions from file
+filename = [outputFolder ...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allDC'];
+[met_info_read, met_gitfits_read] = read_allsols_from_files(filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot correlation of restored and original data
+% calculate differentce in corr distrbutions
+selected_mets = find((sum(spatialClusters,2)>0) &...
+                     (annotationTableSpatialClusters.MetaboliteFilter==1));
+
+filename = [figureFolder,...
+    'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_DCgitann_all_', sel_crit1, '_', sel_crit2];
+plot_gitfit_model_corr(met_gitfits_read(selected_mets), filename)
+
+% plot correlation of restored and original data for the best solution
+% calculate differentce in corr distrbutions
+filename = [figureFolder,...
+    'Fig4a_histogram_MAXcorr_model_2LIcoefHost1LIcoefbact_DCgitann_best_combined_', sel_crit1, '_', sel_crit2];
+plot_bestfit_model_corr(filter_bestsols_by_index(met_bestsol_combined, selected_mets),...
+                        met_gitfits_read(selected_mets), filename)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
