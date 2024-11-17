@@ -5,6 +5,11 @@ addpath(genpath('.\'));
 add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Data requirements: 
+% metabolite annotation with mapping to metabolites from the Meier et al 2023 study
+%'metabolites_allions_combined_formulas_with_metabolite_filters_meier.csv
+% modelling outputs
+% 'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_bestDC'
+% 'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_bestCVR'
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Output:
@@ -18,184 +23,114 @@ add_global_and_file_dependencies
 annotationTableMeier = readtable([inputFolder ...
     'metabolites_allions_combined_formulas_with_metabolite_filters_meier.csv']);
 
-select_mets = cellfun(@(x) ~isempty(x), annotationTableMeier.Meier_compound);
-%select_mets = annotationTableMeier.MetaboliteFilter==1;
-% git_mets = (annotationTableSpatialClusters.spatial_clust100_CTR_DC + ...
-%             annotationTableSpatialClusters.spatial_clust100_CTR_GF + ...
-%             annotationTableSpatialClusters.spatial_clust100_HFD_DC + ...
-%             annotationTableSpatialClusters.spatial_clust100_HFD_GF)>0;
-% select_mets = (annotationTableSpatialClusters.MetaboliteFilter==1) &...
-%                (git_mets>0);
-
-met_info=[];
-met_info.MZ =annotationTableMeier.MZ(select_mets);
-met_info.RT =annotationTableMeier.RT(select_mets);
-met_info.CompoundID = annotationTableMeier.CompoundID(select_mets);
-met_info.CompoundName = annotationTableMeier.Meier_compound(select_mets);
-% remove spaces and capitalize first letters
-for i=1:length(met_info.CompoundName)
-    str=lower(met_info.CompoundName{i});
-    idx=regexp([' ' str],'(?<=\s+)\S','start')-1;
-    str(idx)=upper(str(idx));
-    str = strrep(str, ' ','');
-    str = strrep(str, '-','_');
-    met_info.CompoundName{i} = str;
-end
-
-
-
-% read CVR results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% read CVR modelling results
 filename = [outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allCVR'];
-sel_crit = 'LI PCC within high total';%'total PCC';%'IP';%
-[met_info_cvr, met_bestsol_cvr] = read_bestsol_from_file(filename,...
-                                                sel_crit);
-met_bestsol_cvr.modelname = ['CVR_' sel_crit];
-
-% read CVR results
-filename = [outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allDC'];
-sel_crit = 'total PCC';%'IP';%'LI PCC within high total';%'IP';%
-[met_info_cvr, met_bestsol_cvr] = read_bestsol_from_file(filename,...
-                                                sel_crit);
-met_bestsol_cvr.modelname = ['DC_' sel_crit];
-
-% keep only selected metabolites
-met_bestsol_cvr.x_sel_CorrRev(~select_mets)=[];
-met_bestsol_cvr.x_sel_CorrRevLI(~select_mets)=[];
-met_bestsol_cvr.x_sel_CorrRevSI(~select_mets)=[];
-met_bestsol_cvr.x_sel_CorrRevMean(~select_mets)=[];
-met_bestsol_cvr.x(~select_mets,:)=[];
-met_bestsol_cvr.kmeanMatrix_joint_orig(~select_mets,:)=[];
-met_bestsol_cvr.x_sel_dataR(~select_mets,:)=[];
-% also in met_info
-met_info_cvr.MZ(~select_mets)=[];
-met_info_cvr.RT(~select_mets)=[];
-met_info_cvr.CompoundID(~select_mets)=[];
-met_info_cvr.CompoundName(~select_mets)=[];
-met_info_cvr.MetaboliteFilter(~select_mets)=[];
-met_info_cvr.SumGITclusters(~select_mets)=[];
-
-[confmat, classlabels] = compare_two_model_results(met_info_dc, met_bestsol_dc,...
-                          met_info_cvr, met_bestsol_cvr,...
-                          figureFolder);
-
-
-                      
-        x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
-coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
-
-met_bestsol_DC.coefvalues = coefvalues;
-met_bestsol_DC.x = x_met_smooth(select_mets,:);
-%met_bestsol_DC.ReciprocalCorr = modelingResults.ReciprocalCorr(select_mets);
-met_bestsol_DC.x_sel_CorrRev = cellfun(@(x) str2double(x),...
-    modelingResults.ReciprocalCorr(select_mets));
-met_bestsol_DC.x_sel_CorrRevSI = modelingResults.ReciprocalCorr(select_mets);
-met_bestsol_DC.x_sel_CorrRevLI = modelingResults.ReciprocalCorr(select_mets);
-met_bestsol_DC.modelname = 'Old_IP_DC';
-met_bestsol_DC.selection_criterion = 'IP';
-
-
-modelingResults = readtable([outputFolder...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions_with_CVR.csv']);
-x_met_smooth_CVR = modelingResults{:, width(modelingResults)-8:end};
-coefvalues_CVR = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
-
-met_bestsol_CVR.coefvalues = coefvalues_CVR;
-met_bestsol_CVR.x = x_met_smooth_CVR(select_mets,:);
-met_bestsol_CVR.x_sel_CorrRev = modelingResults.ReciprocalCorr(select_mets);
-met_bestsol_CVR.x_sel_CorrRevSI = modelingResults.ReciprocalCorr(select_mets);
-met_bestsol_CVR.x_sel_CorrRevLI = modelingResults.ReciprocalCorr(select_mets);
-met_bestsol_CVR.modelname = 'Old_IP_CVR';
-met_bestsol_CVR.selection_criterion = 'IP';
-
-% load data and restored data from file
-% save model results to file - reciprocal data restoration
-modelData = readtable([resultsFolder...
-    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv']);
-modelData_data = modelData(:, 9:end);
-modelData_orig = modelData_data{:, cellfun(@(x) ~(contains(x, 'Recip') |...
-                                             contains(x, 'Random') ),...
-                                             modelData_data.Properties.VariableNames)};
-modelData_orig_cols = modelData_data.Properties.VariableNames(cellfun(@(x) ~(contains(x, 'Recip') |...
-                                             contains(x, 'Random') ),...
-                                             modelData_data.Properties.VariableNames));
-modelData_recip = modelData_data{:, cellfun(@(x) contains(x, 'Recip'),...
-                                             modelData_data.Properties.VariableNames)};
-% get correlations calculated with reverse problem
-if isnumeric(modelData.ReciprocalCorr(1))
-    x_data_corr = modelData.ReciprocalCorr;
-else
-    % it is not numeric, probably contains NaN - convert to numeric
-    x_data_corr = cellfun(@(x) str2double(x), modelData.ReciprocalCorr);
-end
-
-met_bestsol_DC.kmeanMatrix_joint_names = modelData_data.Properties.VariableNames(1:24);
-met_bestsol_DC.kmeanMatrix_joint_orig = modelData_data{select_mets, 1:24};
-met_bestsol_DC.x_sel_dataR = modelData_data{select_mets, 25:48};
-%%%%%%%%%%%%%%%%%%
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% compare Meier and DC/CVR
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% read DC results
-filename = [outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allCVR'];
-sel_crit = 'IP';%'total PCC';%'LI PCC within high total';%
-[met_info_dc, met_bestsol_dc] = read_bestsol_from_file(filename,...
-                                                sel_crit);
-% combine IP and LI within PCC criteria
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_bestCVR'];
+corrthreshold = 0.7;
+% try combining solutions
 sel_crit1 = 'IP';
-sel_crit2 = 'LI PCC within high total';%
-[met_info_dc_combined, met_bestsol_dc_combined] = ...
-                combine_bestsols_from_file(filename, sel_crit1, sel_crit2);
-met_bestsol_dc_combined.modelname = 'CVR_IP_LIPCCwT';%
+sel_crit2 = 'LI_PCC_within_high_total';
 
-% set compound name to Meier
-met_info_dc.CompoundName = annotationTableMeier.Meier_compound;
-met_bestsol_dc.modelname = ['CVR_' sel_crit];
+[met_info_combined_CVR, met_bestsol_combined_CVR] = ...
+                combine_bestsols_from_file(filename, ...
+                sel_crit1, sel_crit2,...
+                corrthreshold);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% read DC modelling results
+filename = [outputFolder ...
+            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_bestDC'];
+corrthreshold = 0.7;
+% try combining solutions
+sel_crit1 = 'IP';
+sel_crit2 = 'LI_PCC_within_high_total';
+
+[met_info_combined_DC, met_bestsol_combined_DC] = ...
+                combine_bestsols_from_file(filename, ...
+                sel_crit1, sel_crit2,...
+                corrthreshold);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% check why GIT clusers and met filter ==1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+% compare all ions
+select_mets = 1:size(annotationTableMeier,1);
+
 % keep only selected metabolites
-met_bestsol_dc.x_sel_CorrRev(~select_mets)=[];
-met_bestsol_dc.x_sel_CorrRevLI(~select_mets)=[];
-met_bestsol_dc.x_sel_CorrRevSI(~select_mets)=[];
-met_bestsol_dc.x_sel_CorrRevMean(~select_mets)=[];
-met_bestsol_dc.x(~select_mets,:)=[];
-met_bestsol_dc.kmeanMatrix_joint_orig(~select_mets,:)=[];
-met_bestsol_dc.x_sel_dataR(~select_mets,:)=[];
+met_bestsol_combined_DC_filtered = filter_bestsols_by_index(met_bestsol_combined_DC, select_mets);
+met_bestsol_combined_CVR_filtered = filter_bestsols_by_index(met_bestsol_combined_CVR, select_mets);
+
 % also in met_info
-met_info_dc.MZ(~select_mets)=[];
-met_info_dc.RT(~select_mets)=[];
-met_info_dc.CompoundID(~select_mets)=[];
-met_info_dc.CompoundName(~select_mets)=[];
-met_info_dc.MetaboliteFilter(~select_mets)=[];
-met_info_dc.SumGITclusters(~select_mets)=[];
-% remove spaces and capitalize first letters
-for i=1:length(met_info_dc.CompoundName)
-    str=lower(met_info_dc.CompoundName{i});
-    idx=regexp([' ' str],'(?<=\s+)\S','start')-1;
-    str(idx)=upper(str(idx));
-    str = strrep(str, ' ','');
-    str = strrep(str, '-','_');
-    met_info_dc.CompoundName{i} = str;
-end
+met_info_combined_DC_filtered = filter_metinfo_by_index(met_info_combined_DC, select_mets);
+met_info_combined_CVR_filtered = filter_metinfo_by_index(met_info_combined_CVR, select_mets);
+
+% add model names for plotting and saving to file
+met_bestsol_combined_DC_filtered.modelname = 'bestsol_combined_DC_allions';
+met_bestsol_combined_CVR_filtered.modelname = 'bestsol_combined_CVR_allions';
+
+[confmatDCCVRallions, classlabelsDCCVRallions] = compare_two_model_results(...
+                          met_info_combined_DC_filtered,...
+                          met_bestsol_combined_DC_filtered,...
+                          met_info_combined_CVR_filtered,...
+                          met_bestsol_combined_CVR_filtered,...
+                          figureFolder, 1,... %flag strictclass
+                          1); %compare by mzrt and not compound name
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% compare only annotated ions
+select_mets = annotationTableMeier.MetaboliteFilter==1;
+
+% keep only selected metabolites
+met_bestsol_combined_DC_filtered = filter_bestsols_by_index(met_bestsol_combined_DC, select_mets);
+met_bestsol_combined_CVR_filtered = filter_bestsols_by_index(met_bestsol_combined_CVR, select_mets);
+
+% also in met_info
+met_info_combined_DC_filtered = filter_metinfo_by_index(met_info_combined_DC, select_mets);
+met_info_combined_CVR_filtered = filter_metinfo_by_index(met_info_combined_CVR, select_mets);
+
+% add model names for plotting and saving to file
+met_bestsol_combined_DC_filtered.modelname = 'bestsol_combined_DC_annmets';
+met_bestsol_combined_CVR_filtered.modelname = 'bestsol_combined_CVR_annmets';
+
+[confmatDCCVRannmets, classlabelsDCCVRannmets] = compare_two_model_results(...
+                          met_info_combined_DC_filtered,...
+                          met_bestsol_combined_DC_filtered,...
+                          met_info_combined_CVR_filtered,...
+                          met_bestsol_combined_CVR_filtered,...
+                          figureFolder, 1,... %flag strictclass
+                          0); %compare by mzrt and not compound name
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read meier modelling results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% combine IP with LI PCC within high total PCC solutions
+inputfilename = [outputFolder ...
+            'table_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier'];
+[met_info_meier, met_bestsol_meier] = ...
+                combine_bestsols_from_file(inputfilename, sel_crit1, sel_crit2,...
+                                           corrthreshold);
+
+% select metabolites that map to Meier et al metabolites in the annotation table
+select_mets = cellfun(@(x) ~isempty(x), annotationTableMeier.Meier_compound);
+
+met_info_intersect_meier=[];
+met_info_intersect_meier.MZ =annotationTableMeier.MZ(select_mets);
+met_info_intersect_meier.RT =annotationTableMeier.RT(select_mets);
+met_info_intersect_meier.CompoundID = annotationTableMeier.CompoundID(select_mets);
+met_info_intersect_meier.CompoundName = annotationTableMeier.Meier_compound(select_mets);
+% remove spaces and capitalize first letters
+for i=1:length(met_info_intersect_meier.CompoundName)
+    str=lower(met_info_intersect_meier.CompoundName{i});
+    idx=regexp([' ' str],'(?<=\s+)\S','start')-1;
+    str(idx)=upper(str(idx));
+    str = strrep(str, ' ','');
+    str = strrep(str, '-','_');
+    met_info_intersect_meier.CompoundName{i} = str;
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-filename = '.\ProcessedData\model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_Meier';
-sel_crit = 'IP';%'LI PCC within high total';%
-[met_info_meier, met_bestsol_meier] = read_bestsol_from_file(filename,...
-                                                sel_crit);
-                                            
-% combine IP and LI within PCC criteria
-sel_crit1 = 'IP';
-sel_crit2 = 'LI PCC within high total';%
-[met_info_meier_combined, met_bestsol_meier_combined] = ...
-                combine_bestsols_from_file(filename, sel_crit1, sel_crit2);
-met_bestsol_meier_combined.modelname = 'Meier_IP_LIPCCwT';%
-            
+         
 %edit meier names to remove x in front of metabolites
 for i=1:length(met_info_meier.CompoundName)
     curname = met_info_meier.CompoundName{i};
@@ -206,13 +141,62 @@ for i=1:length(met_info_meier.CompoundName)
         end
     end
 end
-met_bestsol_meier.modelname = 'Meier_IP';%'Meier_LIPCCwT';%
+met_bestsol_meier.modelname = 'Meier_LIPCCwIP';
 
-[confmat, classlabels] = compare_two_model_results(met_info_dc, met_bestsol_dc,...
-                          met_info_meier, met_bestsol_meier,...
-                          figureFolder,0);
+% leave only those Meier metabolites that are overlapping with this study
+[~, ~, selectidx] = intersect(cellfun(@(x) lower(x), met_info_intersect_meier.CompoundName, 'unif',0),...
+    cellfun(@(x) lower(x), met_info_meier.CompoundName, 'unif', 0),'stable');
 
-[confmat, classlabels] = compare_two_model_results(met_info_dc, met_bestsol_dc_combined,...
-                          met_info_meier, met_bestsol_meier_combined,...
-                          figureFolder,1);
+met_bestsol_meier = filter_bestsols_by_index(met_bestsol_meier, selectidx);
+met_info_meier = filter_metinfo_by_index(met_info_meier, selectidx);
 
+% keep only selected metabolites
+met_bestsol_combined_DC_filtered = filter_bestsols_by_index(met_bestsol_combined_DC, select_mets);
+met_bestsol_combined_CVR_filtered = filter_bestsols_by_index(met_bestsol_combined_CVR, select_mets);
+
+% also in met_info
+met_info_combined_DC_filtered = filter_metinfo_by_index(met_info_combined_DC, select_mets);
+met_info_combined_CVR_filtered = filter_metinfo_by_index(met_info_combined_CVR, select_mets);
+
+% add model names for plotting and saving to file
+met_bestsol_combined_DC_filtered.modelname = 'bestsol_combined_DC_meiermets';
+met_bestsol_combined_CVR_filtered.modelname = 'bestsol_combined_CVR_meiermets';
+
+
+[confmatDCMeier, classlabelsDCMeier] = compare_two_model_results(...
+    met_info_intersect_meier, met_bestsol_combined_DC_filtered,...
+    met_info_intersect_meier, met_bestsol_meier,...
+    figureFolder,1,0);
+
+[confmatCVRMeier, classlabelsCVRMeier] = compare_two_model_results(...
+    met_info_intersect_meier, met_bestsol_combined_CVR_filtered,...
+    met_info_intersect_meier, met_bestsol_meier,...
+    figureFolder,1,0);
+
+% [confmatDCMeier, classlabelsDCMeier] = compare_two_model_results(...
+%     met_info_intersect_meier, met_bestsol_combined_DC_filtered,...
+%     met_info_intersect_meier, met_bestsol_meier,...
+%     figureFolder,0,0);
+% 
+% [confmatCVRMeier, classlabelsCVRMeier] = compare_two_model_results(...
+%     met_info_intersect_meier, met_bestsol_combined_CVR_filtered,...
+%     met_info_intersect_meier, met_bestsol_meier,...
+%     figureFolder,0,0);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% calculate agreement between diets as accuracy / F1 score
+                      
+classification_report_DC_CV_allions = create_classification_report(...
+    confmatDCCVRallions{1,1}, classlabelsDCCVRallions);
+
+classification_report_DC_CV_annmets = create_classification_report(...
+    confmatDCCVRannmets{1,1}, classlabelsDCCVRallions);
+
+classification_report_DC_Meier_HCD = create_classification_report(...
+    confmatDCMeier{1,1}, classlabelsDCMeier);
+
+classification_report_DC_Meier_HFD = create_classification_report(...
+    confmatDCMeier{2,1}, classlabelsDCMeier);
+
+classification_report_CV_Meier = create_classification_report(...
+    confmatDCCVRannmets{1,1}, classlabelsDCCVRallions);

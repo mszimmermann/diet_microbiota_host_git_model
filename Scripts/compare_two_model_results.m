@@ -1,9 +1,17 @@
-function [confmat, classlabels] = compare_two_model_results(met_names1, met_bestsols1,...
+function [confmat_array, classlabels] = compare_two_model_results(met_names1, met_bestsols1,...
                                    met_names2, met_bestsols2,...
-                                   figureFolder, flag_strictclass)
+                                   figureFolder, flag_strictclass,...
+                                   compare_mzrt)
 % assess two modelling results (e.g. to two datasets,
 % or two models to the same dataset)
 % figureFolder is the folder to store plots
+% flag_strictclass indicates whether filter microbial substrates and
+% producst by correlation in th elowe intestine sections
+% compare_mzrt indicates whether to compare metaboite names or mz+rt
+
+if nargin<7
+    compare_mzrt=0;
+end
 
 % use classification criteria to 
 % substrate (-1)
@@ -21,8 +29,19 @@ classthreshold = 0.5;%1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % intersect modelled metabolite names
-[met_names, idx1, idx2] = intersect(lower(met_names1.CompoundName),...
+if compare_mzrt
+    mzrt1 = arrayfun(@(x) [num2str(met_names1.MZ(x)), '_',...
+                           num2str(met_names1.RT(x))],...
+                           1:length(met_names1.MZ), 'unif', 0);
+    mzrt2 = arrayfun(@(x) [num2str(met_names2.MZ(x)), '_',...
+                           num2str(met_names2.RT(x))],...
+                           1:length(met_names2.MZ), 'unif', 0);
+    [met_names, idx1, idx2] = intersect(mzrt1, mzrt2);
+
+else
+    [met_names, idx1, idx2] = intersect(lower(met_names1.CompoundName),...
                                     lower(met_names2.CompoundName));
+end
 % set classes for each model
 % get classification by each model
 model1_classes = zeros(length(met_names),1);
@@ -90,46 +109,69 @@ model2_classes(model2_classes>=classthreshold)=1;
 model2_classes((model2_classes>-classthreshold) &...
               (model2_classes<classthreshold))=0;
 
-          
-model1_classes = model1_classes(:,1);
+% compare all versus all classes of the models
+confmat_array = cell(size(model1_classes,2), size(model2_classes,2));
 
-if flag_strictclass
-    % keep only positions that pass the LI corr threshold
-    % for nozero classes
-    unreliable_classes = ((model1_classes~=0) & (model1_corrLI<corrthresholdLI)) |...
-                         ((model2_classes~=0) & (model2_corrLI<corrthresholdLI));
-    model1_classes(unreliable_classes)=[];
-    model1_corrLI(unreliable_classes)=[];
-    model1_corr(unreliable_classes)=[];
-    model2_classes(unreliable_classes)=[];
-    model2_corrLI(unreliable_classes)=[];
-    model2_corr(unreliable_classes)=[];
-end
+for class_i = 1:size(model1_classes,2)
+    for class_j = 1:size(model2_classes,2)
+
+        cur_class1 = model1_classes(:,class_i);
+        cur_class2 = model2_classes(:,class_j);
+
+        if flag_strictclass
+            % keep only positions that pass the LI corr threshold
+            % for nozero classes
+            unreliable_classes = ((cur_class1~=0) & (model1_corrLI<corrthresholdLI)) |...
+                                 ((cur_class2~=0) & (model2_corrLI<corrthresholdLI));
+            cur_class1(unreliable_classes)=[];
+            %model1_corrLI(unreliable_classes)=[];
+            %model1_corr(unreliable_classes)=[];
+            cur_class2(unreliable_classes)=[];
+            %model2_corrLI(unreliable_classes)=[];
+            %model2_corr(unreliable_classes)=[];
+        end
+            
+                  
+        % get the confusion matrix
+        [confmat, classlabels] = confusionmat(cur_class1,...
+                                              cur_class2);
+                                          
+        % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % plot confusion matrix
+        fig = figure;%('units','normalized','outerposition',[0 0 1 1]);
+        set(fig,'defaultTextInterpreter','none')
+        
+        heatmap(confmat, ...
+                'YDisplayLabels', classlabels,...
+                'XDisplayLabels', classlabels)
+        xlabel([met_bestsols2.modelname ' class ' num2str(class_i)])
+        ylabel([met_bestsols1.modelname ' class ' num2str(class_j)])
+        
+        % round color limit to the left two digits of the decimal point
+        maxcol = round(max(median(confmat)),-2);
+        if maxcol==0
+            maxcol = round(max(max(confmat)),-1);
+        end
+
+        clim([0 maxcol])
+
+        sgtitle('Confusion matrix')
+        orient landscape
+        
+        print(fig, '-vector', '-dpdf', '-r600', '-bestfit',...
+            [figureFolder, 'figSX_confmat_'...
+            met_bestsols2.modelname, '_vs_',...
+            met_bestsols1.modelname,...
+            '_class', strrep(num2str(classthreshold),'.','_'),...
+            '_corr', strrep(num2str(corrthreshold),'.','_'),...
+            '_strictclass', num2str(flag_strictclass),...
+            'classes_', num2str(class_i),'_vs_', num2str(class_j),...
+            '_mzrt', num2str(compare_mzrt)])
     
-          
-% get the confusion matrix
-[confmat, classlabels] = confusionmat(model1_classes(:,1),...
-                                      model2_classes(:,1));
-                                  
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% plot confusion matrix
-fig = figure;%('units','normalized','outerposition',[0 0 1 1]);
+    confmat_array{class_i, class_j} = confmat;
 
-heatmap(confmat, ...
-        'YDisplayLabels', classlabels,...
-        'XDisplayLabels', classlabels)
-xlabel([met_bestsols2.modelname ' class'])
-ylabel([met_bestsols1.modelname ' class'])
-suptitle('Confusion matrix')
-orient landscape
-
-print(fig, '-painters', '-dpdf', '-r600', '-bestfit',...
-    [figureFolder, 'figSX_confusion_matrix_'...
-    met_bestsols2.modelname, '_vs_',...
-    met_bestsols1.modelname,...
-    '_class', strrep(num2str(classthreshold),'.','_'),...
-    '_corr', strrep(num2str(corrthreshold),'.','_'),...
-    '_strictclass', num2str(flag_strictclass)])
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get the confusion matrix for metabolite sources
