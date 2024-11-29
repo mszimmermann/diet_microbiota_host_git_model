@@ -1722,6 +1722,9 @@ met_enz_enzyme(met_enz_idx:end) = [];
 % plot correlations per metabolite
 figure
 scatter(met_enz_PCCdc, met_enz_PCCcvr, 'filled')
+mdl = fitlm(met_enz_PCCdc, met_enz_PCCcvr); % fit linear model
+hold on
+plot([-1 1], [-1 1]*mdl.Coefficients.Estimate(2)+mdl.Coefficients.Estimate(1), 'k--')
 xlim([-1 1])
 ylim([-1 1])
 axis square
