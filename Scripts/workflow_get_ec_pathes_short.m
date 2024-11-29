@@ -20,22 +20,28 @@ kegg_rxn_ec_subprod = readtable([resultsFolder,...
     'table_kegg_rxn_ec_substrate_product.csv']);
 kegg_rxn_ec_subprod = table2cell(kegg_rxn_ec_subprod);
 
-[fid, errmsg] = fopen([resultsFolder,...
-    'table_shortestMatrix_paths_filtered.csv'], 'r');
-tline = fgetl(fid);
-maxlen = 0;
-while ischar(tline)
-    linelen = length(strsplit(tline, ','));
-    if linelen>maxlen
-        maxlen=linelen;
-    end
-    tline = fgetl(fid);
-end
-fclose(fid);
+% [fid, errmsg] = fopen([resultsFolder,...
+%     'table_shortestMatrix_paths_filtered.csv'], 'r');
+% tline = fgetl(fid);
+% maxlen = 0;
+% while ischar(tline)
+%     linelen = length(strsplit(tline, ','));
+%     if linelen>maxlen
+%         maxlen=linelen;
+%     end
+%     tline = fgetl(fid);
+% end
+% fclose(fid);
 
-
-[fid, errmsg] = fopen([resultsFolder,...
-    'table_shortestMatrix_paths_filtered.csv'], 'r');
+strict_class = 0;
+% [fid, errmsg] = fopen([resultsFolder,...
+%     'table_shortestMatrix_paths_filtered.csv'], 'r');
+[fid, errmsg] = fopen([outputFolder, filesep, ...
+    'table_shortestMatrix_paths_filtered_combined_IP_LI_PCC_within_high_total_strictclass'...
+    num2str(strict_class) '.csv'],...
+    'r');
+% scan all the length including zeros/empty values as each line has
+% variable length corresponding to the path length
 shortestMatrix_cluster_paths = textscan( fid,'%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d' ...
             ,   'CollectOutput' ,   true    ...
             ,   'Delimiter'     , ',' ...
@@ -44,6 +50,8 @@ shortestMatrix_cluster_paths = textscan( fid,'%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d
 shortestMatrix_cluster_paths = shortestMatrix_cluster_paths{1};
 shortestMatrix_cluster_paths_row_column = shortestMatrix_cluster_paths(:,1:2);
 shortestMatrix_cluster_paths = shortestMatrix_cluster_paths(:,3:end);
+
+
 
 rnxCompounds = readtable([resultsFolder, 'table_RXNCompounds.csv']);
 rnxCompounds = table2cell(rnxCompounds);
@@ -102,4 +110,6 @@ shortesMatrix_table = table(shortestMatrix_substrates_filtered,...
                              shortestMatrix_enzymes_filtered,...
                              'VariableNames',...
                              {'Substrate','Product','Compound_path', 'EC_path'});
-writetable(shortesMatrix_table, [outputFolder, 'shortest_paths_upto_length_4.csv']);                         
+%writetable(shortesMatrix_table, [outputFolder, 'shortest_paths_upto_length_4.csv']);                         
+writetable(shortesMatrix_table, [outputFolder, 'shortest_paths_combined_IP_LI_PCC_within_high_total_strictclass'...
+    num2str(strict_class) '_upto_length_4.csv']);                         
