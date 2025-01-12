@@ -47,8 +47,8 @@ spatialClusters = table2array(annotationTableSpatialClusters(:, clusteridx));
 % coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % analyze either DC or CVR data
-analyzeGroup = 'CVR'; 
-%analyzeGroup = 'DC';
+%analyzeGroup = 'CVR'; 
+analyzeGroup = 'DC';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 filename = [outputFolder ...
             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_best'...
