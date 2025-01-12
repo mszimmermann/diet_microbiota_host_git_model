@@ -94,13 +94,17 @@ countsMatrixGetMM_DNA_table = countsMatrixGetMM_DNA_table(countsMatrixGetMM_DNA_
 %     'merged_metaT_shortBRED_results.txt']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get shortbred results for selected metabolites
-folderName_shortbredDNA = 'Z:\henseler\ZH002_Revisions_Diet_Microbiome_Interactions\Data\mouse_shortBRED\rerun_060524\quantify_metaG\quantified';
-countsMatrix_shortBRED_DNA = combine_shortbred_results(folderName_shortbredDNA,...
-    ['.\ProcessedData\output\',...
+% folderName_shortbredDNA = 'Z:\henseler\ZH002_Revisions_Diet_Microbiome_Interactions\Data\mouse_shortBRED\rerun_060524\quantify_metaG\quantified';
+% countsMatrix_shortBRED_DNA = combine_shortbred_results(folderName_shortbredDNA,...
+%     ['.\ProcessedData\output\',...
+%     'merged_metaG_DCCVR_shortBRED_results.txt']);
+% folderName_shortbredRNA = 'Z:\bartmans\Projects\ZachRerun\quantified';
+% countsMatrix_shortBRED_RNA = combine_shortbred_results(folderName_shortbredRNA,...
+%     ['.\ProcessedData\shortBRED\',...
+%     'merged_metaT_DCCVR_shortBRED_results.txt']);
+countsMatrix_shortBRED_DNA = readtable(['.\ProcessedData\output\',...
     'merged_metaG_DCCVR_shortBRED_results.txt']);
-folderName_shortbredRNA = 'Z:\bartmans\Projects\ZachRerun\quantified';
-countsMatrix_shortBRED_RNA = combine_shortbred_results(folderName_shortbredRNA,...
-    ['.\ProcessedData\shortBRED\',...
+countsMatrix_shortBRED_RNA = readtable(['.\ProcessedData\shortBRED\',...
     'merged_metaT_DCCVR_shortBRED_results.txt']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read metabolite data
@@ -1457,6 +1461,7 @@ shortbred_genes = cellfun(@(x) x{1}, shortbred_genes, 'unif', 0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot for each metablite product shortbred results
 curenzymes_locustags_combined=[];
+curenzymes_locustags_total_num = 0;
 
 for i=1:length(plotdata_rows)
 %i = 7; 
@@ -1474,6 +1479,8 @@ for i=1:length(plotdata_rows)
     curenzymes_locustags = cellfun(@(x) strrep(x, "']", ""), curenzymes_locustags, 'unif', 0);
     curenzymes_locustags = cellfun(@(x) x{1}, curenzymes_locustags, 'unif', 0);
     
+    curenzymes_locustags_total_num = curenzymes_locustags_total_num + length(curenzymes_locustags);
+
     
     sprintf('%s expected enzymes: %d,  found enzymes: %d\n', ...
         plotdata_rows{i}, ...
@@ -1488,6 +1495,9 @@ curenzymes_locustags_combined = table(curenzymes_locustags_combined(:,1),...
                                       'VariableNames', {'KEGGID_product', 'locus_tag'});
 writetable(curenzymes_locustags_combined, ...
     '.\ProcessedData\shortBRED\locustags_for_plotting_products.txt');
+
+%curenzymes_locustags_total_num =
+%   363
 
 % leave only sample names
 %shortbred_columns = cellfun(@(x)x(1:strfind(x,'_')-1), shortbred_columns, 'unif',0);
@@ -1504,6 +1514,15 @@ end
 % plot correlation for each enzyme
 % save information about metabolite-enzyme correlation for all mice, DC
 % mice and CVR mice
+select_path_idx_orig = select_path_idx;
+
+%nrand_perm = 1000;
+%corr_shortbred_rand = zeros(nrand_perm, 1);
+
+%for rand_i = 1:nrand_perm
+%    select_path_idx = select_path_idx_orig(randperm(length(select_path_idx_orig)));         
+select_path_idx = select_path_idx_orig;
+
 met_enz_PCCall = zeros(height(curenzymes_locustags_combined),1);
 met_enz_PCCPall = zeros(height(curenzymes_locustags_combined),1);
 met_enz_SCCall = zeros(height(curenzymes_locustags_combined),1);
@@ -1532,9 +1551,17 @@ met_enz_NENZcvr = zeros(height(curenzymes_locustags_combined),1);
 met_enz_metabolite = cell(height(curenzymes_locustags_combined),1);
 met_enz_enzyme = cell(height(curenzymes_locustags_combined),1);
 
+% save metabolite and enzyme data
+met_enz_metabolite_data = zeros(height(curenzymes_locustags_combined),20);
+met_enz_enzyme_data = zeros(height(curenzymes_locustags_combined),20);
+
 met_enz_idx=1;
 
-fig = figure('units','normalized','outerposition',[0 0 1 1]);
+plot_shortbred_flag = 0;
+
+if plot_shortbred_flag
+    fig = figure('units','normalized','outerposition',[0 0 1 1]);
+end
 
 for i=1:length(plotdata_rows)
     curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
@@ -1575,27 +1602,31 @@ for i=1:length(plotdata_rows)
                 met_enz_metabolite{met_enz_idx} = plotdata_rows{i};
                 met_enz_enzyme{met_enz_idx} = curenzymes_locustags{k};
 
+                met_enz_metabolite_data(met_enz_idx, :) = X;
+                met_enz_enzyme_data(met_enz_idx, :) = y; 
+
                 % plot full dataset
                 [curcorr, curcorrP] = corr(X,y);
                 [curcorrS, curcorrSP] = corr(X,y, 'type','spearman'); 
                 mdl = fitlm(X,y); % fit linear model
     
-                subplot(3,5,spidx);
-                hold on
-                scatter(X,y, 'filled');
-                if shortbred_dna_flag
-                    xlabel('All mice, DNA')  
-                else
-                    xlabel('All mice, RNA')
+                if plot_shortbred_flag
+                    subplot(3,5,spidx);
+                    hold on
+                    scatter(X,y, 'filled');
+                    if shortbred_dna_flag
+                        xlabel('All mice, DNA')  
+                    else
+                        xlabel('All mice, RNA')
+                    end
+    
+                    axis square
+                    title({shortbred_genes{shortbred_row_idx},...
+                           sprintf('%.2f %.2f %.2f %.2f %.2f',curcorr, curcorrP,...
+                                                 curcorrS,curcorrSP),...
+                           sprintf('RSQ %.2f', mdl.Rsquared.Adjusted)}, ...
+                           'Interpreter', 'none')
                 end
-
-                axis square
-                title({shortbred_genes{shortbred_row_idx},...
-                       sprintf('%.2f %.2f %.2f %.2f %.2f',curcorr, curcorrP,...
-                                             curcorrS,curcorrSP),...
-                       sprintf('RSQ %.2f', mdl.Rsquared.Adjusted)}, ...
-                       'Interpreter', 'none')
-
                 met_enz_PCCall(met_enz_idx) = curcorr;
                 met_enz_PCCPall(met_enz_idx) = curcorrP;
                 met_enz_SCCall(met_enz_idx) = curcorrS;
@@ -1610,21 +1641,23 @@ for i=1:length(plotdata_rows)
                 [curcorrS, curcorrSP] = corr(X(1:10),y(1:10), 'type','spearman'); 
                 mdl = fitlm(X(1:10),y(1:10)); % fit linear model
     
-                subplot(3,5,5+spidx);
-                hold on
-                scatter(X(1:10),y(1:10), 'filled');
-                if shortbred_dna_flag
-                    xlabel('DC mice, DNA')  
-                else
-                    xlabel('DC mice, RNA')
+                if plot_shortbred_flag
+                    subplot(3,5,5+spidx);
+                    hold on
+                    scatter(X(1:10),y(1:10), 'filled');
+                    if shortbred_dna_flag
+                        xlabel('DC mice, DNA')  
+                    else
+                        xlabel('DC mice, RNA')
+                    end
+    
+                    axis square
+                    title({shortbred_genes{shortbred_row_idx},...
+                           sprintf('%.2f %.2f %.2f %.2f %.2f',curcorr, curcorrP,...
+                                                 curcorrS,curcorrSP),...
+                           sprintf('RSQ %.2f', mdl.Rsquared.Adjusted)}, ...
+                           'Interpreter', 'none')
                 end
-
-                axis square
-                title({shortbred_genes{shortbred_row_idx},...
-                       sprintf('%.2f %.2f %.2f %.2f %.2f',curcorr, curcorrP,...
-                                             curcorrS,curcorrSP),...
-                       sprintf('RSQ %.2f', mdl.Rsquared.Adjusted)}, ...
-                       'Interpreter', 'none')
 
                 met_enz_PCCdc(met_enz_idx) = curcorr;
                 met_enz_PCCPdc(met_enz_idx) = curcorrP;
@@ -1639,21 +1672,23 @@ for i=1:length(plotdata_rows)
                 [curcorrS, curcorrSP] = corr(X(11:20),y(11:20), 'type','spearman'); 
                 mdl = fitlm(X(11:20),y(11:20)); % fit linear model
     
-                subplot(3,5,10+spidx);
-                hold on
-                scatter(X(11:20),y(11:20), 'filled');
-                if shortbred_dna_flag
-                    xlabel('CVR mice, DNA')  
-                else
-                    xlabel('CVR mice, RNA')
+                if plot_shortbred_flag
+                    subplot(3,5,10+spidx);
+                    hold on
+                    scatter(X(11:20),y(11:20), 'filled');
+                    if shortbred_dna_flag
+                        xlabel('CVR mice, DNA')  
+                    else
+                        xlabel('CVR mice, RNA')
+                    end
+    
+                    axis square
+                    title({shortbred_genes{shortbred_row_idx},...
+                           sprintf('%.2f %.2f %.2f %.2f',curcorr, curcorrP,...
+                                                 curcorrS,curcorrSP),...
+                           sprintf('RSQ %.2f', mdl.Rsquared.Adjusted)}, ...
+                           'Interpreter', 'none')
                 end
-
-                axis square
-                title({shortbred_genes{shortbred_row_idx},...
-                       sprintf('%.2f %.2f %.2f %.2f',curcorr, curcorrP,...
-                                             curcorrS,curcorrSP),...
-                       sprintf('RSQ %.2f', mdl.Rsquared.Adjusted)}, ...
-                       'Interpreter', 'none')
                 met_enz_PCCcvr(met_enz_idx) = curcorr;
                 met_enz_PCCPcvr(met_enz_idx) = curcorrP;
                 met_enz_SCCcvr(met_enz_idx) = curcorrS;
@@ -1673,10 +1708,12 @@ for i=1:length(plotdata_rows)
                sgtitle(sprintf('%s shortbred RNA (PCC, PCCp, SCC, SCCp, Rsqadj)',plotdata_rows{i}));
             end 
   
-            print(fig, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
-                                        [figureFolder, figureFile]);
-            clf(fig)
-            spidx=1;
+            if plot_shortbred_flag
+                print(fig, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
+                                            [figureFolder, figureFile]);
+                clf(fig)
+                spidx=1;
+            end
         end
     end
    if shortbred_dna_flag
@@ -1684,10 +1721,12 @@ for i=1:length(plotdata_rows)
    else
        sgtitle(sprintf('%s shortbred RNA (PCC, PCCp, SCC, SCCp, Rsqadj)',plotdata_rows{i}));
    end    
-   orient landscape 
-   print(fig, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
-       [figureFolder, figureFile]);
-   clf(fig)
+   if plot_shortbred_flag
+       orient landscape 
+       print(fig, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
+           [figureFolder, figureFile]);
+       clf(fig)
+   end
 end
 
 met_enz_PCCall(met_enz_idx:end) = [];
@@ -1718,6 +1757,18 @@ met_enz_NENZcvr(met_enz_idx:end) = [];
 met_enz_metabolite(met_enz_idx:end) = [];
 met_enz_enzyme(met_enz_idx:end) = [];
 
+met_enz_metabolite_data(met_enz_idx:end,:) = [];
+met_enz_enzyme_data(met_enz_idx:end,:) = [];
+
+%corr_shortbred_rand(rand_i) = corr(met_enz_PCCdc, met_enz_PCCcvr);
+%end
+
+figure
+histogram(corr_shortbred_rand)
+hold on
+plot([corrC, corrC], [1, 20], 'g')
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlations per metabolite
 figure
@@ -1742,10 +1793,51 @@ else
            sprintf('PCC %.2f %2f SCC %.2f %.2f', corrC, corrP, corrSC, corrSP)})
     figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_RNA.pdf';
 end
-
-
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
        [figureFolder, figureFile]);
+
+% permute which CV enzyme is correlated to the corresponding metabolite
+% (calculate correlation with a random CV enzyme)
+nperm = 100;
+testcorr = zeros(nperm,1);                
+figure
+hold on
+for i=1:nperm
+    met_enz_enzyme_data_shuffled = [met_enz_enzyme_data(:,1:10),...
+                                met_enz_enzyme_data(randperm(size(met_enz_enzyme_data,1)),11:20)];      
+    cor_dc = zeros(size(met_enz_enzyme_data_shuffled,1),1);
+    cor_cvr = zeros(size(met_enz_enzyme_data_shuffled,1),1);
+    
+    for j=1:size(met_enz_enzyme_data_shuffled,1)
+        cor_dc(j) = corr(met_enz_metabolite_data(j,1:10)', met_enz_enzyme_data_shuffled(j,1:10)');
+        cor_cvr(j) = corr(met_enz_metabolite_data(j,11:20)', met_enz_enzyme_data_shuffled(j,11:20)');
+    end
+        
+    testcorr(i) = corr(cor_dc, cor_cvr);
+    scatter(cor_dc, cor_cvr, 'filled', 'MarkerFaceColor', [.5 .5 .5])
+end
+figure
+histogram(testcorr)
+hold on
+plot([corrC, corrC], [1, 20], 'g')
+
+% permute correlation coefficients (correlate random pairs of
+% enzyme-metabolites that belong together)
+nperm = 100;
+testcorr = zeros(nperm,1);
+hold on
+for i=1:nperm
+    met_enz_shuffled_dc = met_enz_PCCdc(randperm(length(met_enz_PCCdc)));
+    met_enz_shuffled = met_enz_PCCcvr(randperm(length(met_enz_PCCcvr)));
+    testcorr(i) = corr(met_enz_shuffled_dc, met_enz_shuffled);
+    scatter(met_enz_shuffled_dc, met_enz_shuffled, 'filled', 'MarkerFaceColor', [.5 .5 .5])
+end
+
+figure
+histogram(testcorr)
+hold on
+plot([corrC, corrC], [1, 20], 'g')
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
 for i=1:length(plotdata_rows)
