@@ -336,13 +336,13 @@ for ptw_i = 1%:3
             % save enrichment results at each threshold to file
             % comment the section since decided to use one threshold
             % instead of sliding window
-            % if (ptw_i==1)
-            %     enrichmentTable_pathway_file = ['./ProcessedData/enrichments/',...
-            %                        strrep(strrep(strrep(strrep(pathwayNames{iPw}, ':', '_'),'/','_'),' ', '_'),'.','_'),...
-            %                        '_', changedir];
-            % 
-            %     enrichmentTable_pathway = zeros(length(changing_fdr), 7);
-            % end
+            if (ptw_i==1)
+                enrichmentTable_pathway_file = ['./ProcessedData/enrichments/',...
+                                   strrep(strrep(strrep(strrep(pathwayNames{iPw}, ':', '_'),'/','_'),' ', '_'),'.','_'),...
+                                   '_', changedir];
+
+                enrichmentTable_pathway = zeros(length(changing_fdr), 7);
+            end
             for fdrthres = length(changing_fdr):-1:1
                 if isequal(changedir, 'UP')
                     %changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=fcThreshold) &...
@@ -404,13 +404,13 @@ for ptw_i = 1%:3
             end
             % comment the section since decided to use one threshold
             % instead of sliding window
-            % if (ptw_i==1)
-            %     enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
-            %     {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
-            %     writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FDR.csv']);
-            %     % set the table back to 0 for fc recordings
-            %     enrichmentTable_pathway = zeros(length(changing_fc), 7);
-            % end
+            if (ptw_i==1)
+                enrichmentTable_pathway = array2table(enrichmentTable_pathway, 'VariableNames',...
+                {'score', 'genesFound', 'groupSize', 'nPwDetectedGenes','nDetectedGenes', 'FDRthreshold', 'FCthreshold'});
+                writetable(enrichmentTable_pathway, [enrichmentTable_pathway_file, '_FDR.csv']);
+                % set the table back to 0 for fc recordings
+                enrichmentTable_pathway = zeros(length(changing_fc), 7);
+            end
             for fcthres = length(changing_fc):-1:1
                 if isequal(changedir, 'UP')
                     % changing_group = (edgeRTable_filtered.fcHFDCTR_RNA>=changing_fc(fcthres)) &...
@@ -599,7 +599,7 @@ for ptw_i = 1%:3
                                        edgeRFileNames_abbr{abbr_i},'_',...
                                        strrep(strrep(strrep(strrep(pathwayNames{iPw}, ':', '_'),'/','_'),' ', '_'),'.','_'),...
                                        '_', changedir];
-                 
+
                     enrichmentTable_pathway = zeros(length(changing_fdr), 7);
                 end
 
@@ -790,37 +790,37 @@ for ptw_i = 1%:3
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test how many pathways fit each threshold
-changing_fdr_DOWN = changing_fdr_pathway_pval_DOWN;
-changing_fdr_DOWN(changing_fdr_DOWN==0)=1;
-for i=1:size(changing_fdr_DOWN,1)
-    changing_fdr_DOWN(i,:) = my_bhfdr(changing_fdr_DOWN(i,:));
-end
-max(sum(changing_fdr_DOWN<=0.05,2))
-sum(sum(changing_fdr_DOWN<=0.05,1)>0)
-
-changing_fdr_UP = changing_fdr_pathway_pval_UP;
-changing_fdr_UP(changing_fdr_UP==0)=1;
-for i=1:size(changing_fdr_UP,1)
-    changing_fdr_UP(i,:) = my_bhfdr(changing_fdr_UP(i,:));
-end
-max(sum(changing_fdr_UP<=0.05,2))
-sum(sum(changing_fdr_UP<=0.05,1)>0)
-
-changing_fc_DOWN = changing_fc_pathway_pval_DOWN;
-changing_fc_DOWN(changing_fc_DOWN==0)=1;
-for i=1:size(changing_fc_DOWN,1)
-    changing_fc_DOWN(i,:) = my_bhfdr(changing_fc_DOWN(i,:));
-end
-max(sum(changing_fc_DOWN<=0.05,2))
-sum(sum(changing_fc_DOWN<=0.05,1)>0)
-
-changing_fc_UP = changing_fc_pathway_pval_UP;
-changing_fc_UP(changing_fc_UP==0)=1;
-for i=1:size(changing_fc_UP,1)
-    changing_fc_UP(i,:) = my_bhfdr(changing_fc_UP(i,:));
-end
-max(sum(changing_fc_UP<=0.05,2))
-sum(sum(changing_fc_UP<=0.05,1)>0)
+% changing_fdr_DOWN = changing_fdr_pathway_pval_DOWN;
+% changing_fdr_DOWN(changing_fdr_DOWN==0)=1;
+% for i=1:size(changing_fdr_DOWN,1)
+%     changing_fdr_DOWN(i,:) = my_bhfdr(changing_fdr_DOWN(i,:));
+% end
+% max(sum(changing_fdr_DOWN<=0.05,2))
+% sum(sum(changing_fdr_DOWN<=0.05,1)>0)
+% 
+% changing_fdr_UP = changing_fdr_pathway_pval_UP;
+% changing_fdr_UP(changing_fdr_UP==0)=1;
+% for i=1:size(changing_fdr_UP,1)
+%     changing_fdr_UP(i,:) = my_bhfdr(changing_fdr_UP(i,:));
+% end
+% max(sum(changing_fdr_UP<=0.05,2))
+% sum(sum(changing_fdr_UP<=0.05,1)>0)
+% 
+% changing_fc_DOWN = changing_fc_pathway_pval_DOWN;
+% changing_fc_DOWN(changing_fc_DOWN==0)=1;
+% for i=1:size(changing_fc_DOWN,1)
+%     changing_fc_DOWN(i,:) = my_bhfdr(changing_fc_DOWN(i,:));
+% end
+% max(sum(changing_fc_DOWN<=0.05,2))
+% sum(sum(changing_fc_DOWN<=0.05,1)>0)
+% 
+% changing_fc_UP = changing_fc_pathway_pval_UP;
+% changing_fc_UP(changing_fc_UP==0)=1;
+% for i=1:size(changing_fc_UP,1)
+%     changing_fc_UP(i,:) = my_bhfdr(changing_fc_UP(i,:));
+% end
+% max(sum(changing_fc_UP<=0.05,2))
+% sum(sum(changing_fc_UP<=0.05,1)>0)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -858,15 +858,16 @@ for ptw_i = 1%:3
                 enrichmentTable_UP = enrichmentTable_EC_UP(:,[3 1 2 4:end]);
                 enrichmentFileName = 'ptwenr_recalc_EC_';
     end
-    enrichmentTable_DOWN_perspecies = cell2table(enrichmentTable_DOWN_perspecies,...
-                                                'VariableNames', enrichmentColumns_species);
-    enrichmentTable_UP_perspecies = cell2table(enrichmentTable_UP_perspecies,...
-                                                'VariableNames', enrichmentColumns_species);
-    enrichmentTable_DOWN = cell2table(enrichmentTable_DOWN,...
-                                      'VariableNames', enrichmentColumns);
-    enrichmentTable_UP = cell2table(enrichmentTable_UP,...
-                                    'VariableNames', enrichmentColumns);
-
+    if ~istable(enrichmentTable_DOWN_perspecies)
+        enrichmentTable_DOWN_perspecies = cell2table(enrichmentTable_DOWN_perspecies,...
+                                                    'VariableNames', enrichmentColumns_species);
+        enrichmentTable_UP_perspecies = cell2table(enrichmentTable_UP_perspecies,...
+                                                    'VariableNames', enrichmentColumns_species);
+        enrichmentTable_DOWN = cell2table(enrichmentTable_DOWN,...
+                                          'VariableNames', enrichmentColumns);
+        enrichmentTable_UP = cell2table(enrichmentTable_UP,...
+                                        'VariableNames', enrichmentColumns);
+    end
     % save to file
     writetable(enrichmentTable_DOWN_perspecies,...
                [outputFolder, enrichmentFileName, 'DOWN_updfiltered_eggnog_edgerdeseq_FDR005_FC05_per_species.csv']);

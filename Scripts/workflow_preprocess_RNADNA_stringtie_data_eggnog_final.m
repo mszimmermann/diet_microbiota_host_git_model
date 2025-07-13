@@ -41,7 +41,7 @@ add_global_and_file_dependencies
 annAbbr = 'EGGNOGann';
 
 stringtieFiles = dir(stringtieFolderRNA);
-stringtieFileNames = cell(size(stringtieFolderRNA,1),1);
+stringtieFileNames = cell(size(stringtieFiles ,1),1);
 for i=1:length(stringtieFiles)
     stringtieFileNames{i} = stringtieFiles(i).name;
 end
@@ -58,28 +58,36 @@ stringtieFileNamesRNA_raw = stringtieFileNamesRNA_raw(...
                                                  contains(x,'RNA100_t_e'),...
                                     stringtieFileNamesRNA_raw));
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% read differential expression analysis results
+stringtieFilesDEG = dir(degFolderRNA);
+stringtieFileNamesDEG = cell(size(stringtieFilesDEG,1),1);
+for i=1:length(stringtieFilesDEG)
+    stringtieFileNamesDEG{i} = stringtieFilesDEG(i).name;
+end
+
 %extract file names of edgeR results
-stringtieFileNamesRNA_edgeR2results = stringtieFileNames(...
+stringtieFileNamesRNA_edgeR2results = stringtieFileNamesDEG(...
                                     cellfun(@(x) contains(x,'edgeR_LRT_results') & ... 
                                                  contains(x,annAbbr) & ...
                                                  contains(x,'ucount') & ...
                                                  contains(x,'RNA'),...
-                                                           stringtieFileNames))';
+                                                           stringtieFileNamesDEG))';
 %extract file names of deseq2 results
-stringtieFileNamesRNA_deseq2results = stringtieFileNames(...
+stringtieFileNamesRNA_deseq2results = stringtieFileNamesDEG(...
                                     cellfun(@(x) contains(x,'deseq_results') & ... 
                                                  contains(x,annAbbr) & ...
                                                  contains(x,'ucount') & ...
                                                  contains(x,'RNA'),...
-                                                           stringtieFileNames))';
+                                                           stringtieFileNamesDEG))';
 
 %extract file names of GetMM normalized counts
 % get only the merged getmm file
-getmmFileNamesRNA_norm = stringtieFileNames(cellfun(@(x) contains(x,'getmm_normalized') & ...
+getmmFileNamesRNA_norm = stringtieFileNamesDEG(cellfun(@(x) contains(x,'getmm_normalized') & ...
                                                            contains(x,annAbbr) & ...
                                                            contains(x,'ucount') & ...
                                                            contains(x,'RNA100_t_e'),...
-                                                           stringtieFileNames))';
+                                                           stringtieFileNamesDEG))';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get DNA results
@@ -159,7 +167,7 @@ for method_i = 1:2
             case 2
                 curfile = cellfun(@(x) contains(x, edgeRFileNames_abbr{i}),...
                                                 stringtieFileNamesRNA_edgeR2results);
-                curtable = readtable([stringtieFolderRNA...
+                curtable = readtable([degFolderRNA...
                                       stringtieFileNamesRNA_edgeR2results{curfile}],...
                                       opts,...
                                       'ReadVariableNames', 1);
@@ -204,7 +212,7 @@ for method_i = 1:2
             case 2
                 curfile = cellfun(@(x) contains(x, edgeRFileNames_abbr{i}),...
                                                 stringtieFileNamesRNA_deseq2results);
-                curtable = readtable([stringtieFolderRNA...
+                curtable = readtable([degFolderRNA...
                                       stringtieFileNamesRNA_deseq2results{curfile}],...
                                       opts,...
                                       'ReadVariableNames', 1);
@@ -251,7 +259,7 @@ end
 getmmNormDNA_full = curtable;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read RNA getMM
-curtable = readtable([stringtieFolderRNA...
+curtable = readtable([degFolderRNA...
                           getmmFileNamesRNA_norm{1}],...
                           opts,...
                           'ReadVariableNames', 1);
@@ -626,6 +634,7 @@ annTable_FCinfo.pDeseq2HFDCTR_RNA = pMatrixDeseq2HFDCTR_RNA;
 annTable_FCinfo.fdrDeseq2HFDCTR_RNA = padjMatrixDeseq2HFDCTR_RNA;
 % save table to file
 writetable(annTable_FCinfo, [outputFolder 'edgeR_deseq2_gene_fold_changes_and_ann.csv']);
+%writetable(annTable_FCinfo, [outputFolder 'edgeR_deseq2_gene_fold_changes_and_ann_20250713_newV.csv']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % write pathway-gene relationships to file
 % kegg
@@ -675,6 +684,7 @@ end
 fclose(fid);
 
 % save gene counts matrices to files
+postfix = '';
 % get column names
 countcols = contains(getmmNormDNA_full.Properties.VariableNames, 'MSZ');                       
 countcols = getmmNormDNA_full.Properties.VariableNames(countcols);
@@ -684,27 +694,27 @@ countsMatrixGetMM_DNA_table = array2table(countsMatrixGetMM_DNA,...
                                     'VariableNames',countcols);
 countsMatrixGetMM_DNA_table.species_genes = annTable.species_genes;
 countsMatrixGetMM_DNA_table.geneFilter = annTable_FCinfo.geneFilter;
-writetable(countsMatrixGetMM_DNA_table, [outputFolder 'countsMatrixGetMM_DNA_table.txt']);
+writetable(countsMatrixGetMM_DNA_table, [outputFolder 'countsMatrixGetMM_DNA_table' postfix '.txt']);
 % getMM RNA
 countsMatrixGetMM_RNA_table = array2table(countsMatrixGetMM_RNA,...
                                     'VariableNames',countcols);
 countsMatrixGetMM_RNA_table.species_genes = annTable.species_genes;
 countsMatrixGetMM_RNA_table.geneFilter = annTable_FCinfo.geneFilter;
-writetable(countsMatrixGetMM_RNA_table, [outputFolder 'countsMatrixGetMM_RNA_table.txt']);
+writetable(countsMatrixGetMM_RNA_table, [outputFolder 'countsMatrixGetMM_RNA_table' postfix '.txt']);
 % raw DNA
 countsMatrixRAW_DNA_table = array2table(countsMatrixRAW_DNA,...
                                     'VariableNames',countcols);
 countsMatrixRAW_DNA_table.species_genes = annTable.species_genes;
 countsMatrixRAW_DNA_table.geneFilter = annTable_FCinfo.geneFilter;
-writetable(countsMatrixRAW_DNA_table, [outputFolder 'countsMatrixRAW_DNA_table.txt']);
+writetable(countsMatrixRAW_DNA_table, [outputFolder 'countsMatrixRAW_DNA_table' postfix '.txt']);
 % raw RNA
 countsMatrixRAW_RNA_table = array2table(countsMatrixRAW_RNA,...
                                     'VariableNames',countcols);
 countsMatrixRAW_RNA_table.species_genes = annTable.species_genes;
 countsMatrixRAW_RNA_table.geneFilter = annTable_FCinfo.geneFilter;
-writetable(countsMatrixRAW_RNA_table, [outputFolder 'countsMatrixRAW_RNA_table.txt']);
+writetable(countsMatrixRAW_RNA_table, [outputFolder 'countsMatrixRAW_RNA_table' postfix '.txt']);
 
 % write annotations to file
-writetable(annTable_filtered, [outputFolder 'geneAnnTable_filtered.csv']);
-writetable(annTable, [outputFolder 'geneAnnTable_full.csv']);
+writetable(annTable_filtered, [outputFolder 'geneAnnTable_filtered' postfix '.csv']);
+writetable(annTable, [outputFolder 'geneAnnTable_full' postfix '.csv']);
 

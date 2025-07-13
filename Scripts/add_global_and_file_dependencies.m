@@ -11,6 +11,7 @@ outputFolder = '.\ProcessedData\output\';
 figureFolder = '.\Figures\';
 stringtieFolderRNA = '.\InputData\sequencing_data\ballGown_RNA\eggNOGann\';   
 stringtieFolderDNA = '.\InputData\sequencing_data\ballGown_DNA\eggNOGann\';   
+degFolderRNA = '.\ProcessedData\DEGoutput\';   
 
 % metabolomics
 massThreshold = 0.001;

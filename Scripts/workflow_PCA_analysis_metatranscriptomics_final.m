@@ -122,120 +122,123 @@ species_genes_genomes(:,3) = strcat(species_genes_genomes(:,1), '_', species_gen
 [~, idx] = unique(species_genes_genomes(:,3));
 species_genes_genomes = species_genes_genomes(idx,:);
 
-% % get raw reads
-% countsMatrixDNAtable = readtable([inputFolderSeq,...
-%                                 'countsMatrixRAW_DNA_table.txt']);
-% countsMatrixRNAtable = readtable([inputFolderSeq,...
-%                                 'countsMatrixRAW_RNA_table.txt']);
-% 
-% % get rows of sample data
-% countsMatrixSamples = countsMatrixDNAtable.Properties.VariableNames(...
-%     cellfun(@(x) contains(x, 'MSZ'), countsMatrixDNAtable.Properties.VariableNames));
-% 
-% % add species names to the table
-% countsMatrixDNAtable.species_chr = cellfun(@(x) x(1:strfind(x,'.')-1), countsMatrixDNAtable.species_genes,'unif',0);
-% countsMatrixRNAtable.species_chr = cellfun(@(x) x(1:strfind(x,'.')-1), countsMatrixRNAtable.species_genes,'unif',0);
-% 
-% % get species genomes names from the dictionary
-% countsMatrixDNAtable.species_name = cellfun(@(x) x(1:strfind(x,'.')-1), countsMatrixDNAtable.species_genes,'unif',0);
-% countsMatrixRNAtable.species_name = cellfun(@(x) x(1:strfind(x,'.')-1), countsMatrixRNAtable.species_genes,'unif',0);
-% 
-% for i=1:length(countsMatrixDNAtable.species_name)
-%     curnameDNA = species_genes_genomes(ismember(species_genes_genomes(:,1),...
-%         countsMatrixDNAtable.species_chr(i)), 2);
-%     curnameRNA = species_genes_genomes(ismember(species_genes_genomes(:,1),...
-%         countsMatrixRNAtable.species_chr(i)), 2);
-%     if ~isempty(curnameDNA)
-%         countsMatrixDNAtable.species_name(i) = curnameDNA;
-%     else
-%         countsMatrixDNAtable.species_name(i) = {'nan'};
-%     end
-%     if ~isempty(curnameRNA)
-%         countsMatrixRNAtable.species_name(i) = curnameRNA;
-%     else
-%         countsMatrixRNAtable.species_name(i) = {'nan'};
-%     end
-%         
-% end
-% % fill nans with species names if previous and next genomes are the same
-% nanpositions = find(ismember(countsMatrixDNAtable.species_name, {'nan'}));
-% % get positions of previous and next non-nan
-% nanpositions = [nanpositions zeros(length(nanpositions),2)];
-% for i=1:length(nanpositions)
-%     nanpositions(i,2) = nanpositions(i,1)-1;
-%     while sum(nanpositions(:,1)==nanpositions(i,2))>0
-%         nanpositions(i,2) = nanpositions(i,2)-1;
-%     end
-%     nanpositions(i,3) = nanpositions(i,1)+1;
-%     % add more if next one is also nan
-%     while sum(nanpositions(:,1)==nanpositions(i,3))>0
-%         nanpositions(i,3) = nanpositions(i,3)+1;
-%     end
-% end
-% % fill nan positions
-% for i=1:length(nanpositions)
-%     if nanpositions(i,3)<=height(countsMatrixDNAtable)
-%         if isequal(countsMatrixDNAtable.species_name{nanpositions(i,2)},...
-%                 countsMatrixDNAtable.species_name{nanpositions(i,3)})
-%             countsMatrixDNAtable.species_name{nanpositions(i,1)} = ...
-%                 countsMatrixDNAtable.species_name{nanpositions(i,2)};
-%         else
-%             if isequal(countsMatrixDNAtable.species_chr{nanpositions(i,1)}(1:5),...
-%                     countsMatrixDNAtable.species_chr{nanpositions(i,2)}(1:5))
-%                 countsMatrixDNAtable.species_name{nanpositions(i,1)} = ...
-%                 countsMatrixDNAtable.species_name{nanpositions(i,2)};
-%             end
-%         end
-%         
-%     else
-%         countsMatrixDNAtable.species_name{nanpositions(i,1)} = ...
-%             countsMatrixDNAtable.species_name{nanpositions(i,2)};
-%     end
-% end
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % fill RNA species
-% % fill nans with species names if previous and next genomes are the same
-% nanpositions = find(ismember(countsMatrixRNAtable.species_name, {'nan'}));
-% % get positions of previous and next non-nan
-% nanpositions = [nanpositions zeros(length(nanpositions),2)];
-% for i=1:length(nanpositions)
-%     nanpositions(i,2) = nanpositions(i,1)-1;
-%     while sum(nanpositions(:,1)==nanpositions(i,2))>0
-%         nanpositions(i,2) = nanpositions(i,2)-1;
-%     end
-%     nanpositions(i,3) = nanpositions(i,1)+1;
-%     % add more if next one is also nan
-%     while sum(nanpositions(:,1)==nanpositions(i,3))>0
-%         nanpositions(i,3) = nanpositions(i,3)+1;
-%     end
-% end
-% % fill nan positions
-% for i=1:length(nanpositions)
-%     if nanpositions(i,3)<=height(countsMatrixRNAtable)
-%         if isequal(countsMatrixRNAtable.species_name{nanpositions(i,2)},...
-%                 countsMatrixRNAtable.species_name{nanpositions(i,3)})
-%             countsMatrixRNAtable.species_name{nanpositions(i,1)} = ...
-%                 countsMatrixRNAtable.species_name{nanpositions(i,2)};
-%         else
-%             if isequal(countsMatrixRNAtable.species_chr{nanpositions(i,1)}(1:5),...
-%                     countsMatrixRNAtable.species_chr{nanpositions(i,2)}(1:5))
-%                 countsMatrixRNAtable.species_name{nanpositions(i,1)} = ...
-%                 countsMatrixRNAtable.species_name{nanpositions(i,2)};
-%             end
-%         end
-%         
-%     else
-%         countsMatrixRNAtable.species_name{nanpositions(i,1)} = ...
-%             countsMatrixRNAtable.species_name{nanpositions(i,2)};
-%     end
-% end
-% 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % save count tables with species names to file
-% writetable(countsMatrixDNAtable, ...
-%     [outputFolder, 'countsMatrixRAW_DNA_table_with_species.txt']);
-% writetable(countsMatrixRNAtable, ...
-%     [outputFolder, 'countsMatrixRAW_RNA_table_with_species.txt']);
+flag_make_tables_with_species = 1;
+if flag_make_tables_with_species
+    % % get raw reads
+    countsMatrixDNAtable = readtable([outputFolder,...
+                                    'countsMatrixRAW_DNA_table.txt']);
+    countsMatrixRNAtable = readtable([outputFolder,...
+                                    'countsMatrixRAW_RNA_table.txt']);
+    
+    % get rows of sample data
+    countsMatrixSamples = countsMatrixDNAtable.Properties.VariableNames(...
+        cellfun(@(x) contains(x, 'MSZ'), countsMatrixDNAtable.Properties.VariableNames));
+    
+    % add species names to the table
+    countsMatrixDNAtable.species_chr = cellfun(@(x) x(1:strfind(x,'.')-1), countsMatrixDNAtable.species_genes,'unif',0);
+    countsMatrixRNAtable.species_chr = cellfun(@(x) x(1:strfind(x,'.')-1), countsMatrixRNAtable.species_genes,'unif',0);
+    
+    % get species genomes names from the dictionary
+    countsMatrixDNAtable.species_name = cellfun(@(x) x(1:strfind(x,'.')-1), countsMatrixDNAtable.species_genes,'unif',0);
+    countsMatrixRNAtable.species_name = cellfun(@(x) x(1:strfind(x,'.')-1), countsMatrixRNAtable.species_genes,'unif',0);
+    
+    for i=1:length(countsMatrixDNAtable.species_name)
+        curnameDNA = species_genes_genomes(ismember(species_genes_genomes(:,1),...
+            countsMatrixDNAtable.species_chr(i)), 2);
+        curnameRNA = species_genes_genomes(ismember(species_genes_genomes(:,1),...
+            countsMatrixRNAtable.species_chr(i)), 2);
+        if ~isempty(curnameDNA)
+            countsMatrixDNAtable.species_name(i) = curnameDNA;
+        else
+            countsMatrixDNAtable.species_name(i) = {'nan'};
+        end
+        if ~isempty(curnameRNA)
+            countsMatrixRNAtable.species_name(i) = curnameRNA;
+        else
+            countsMatrixRNAtable.species_name(i) = {'nan'};
+        end
+    
+    end
+    % fill nans with species names if previous and next genomes are the same
+    nanpositions = find(ismember(countsMatrixDNAtable.species_name, {'nan'}));
+    % get positions of previous and next non-nan
+    nanpositions = [nanpositions zeros(length(nanpositions),2)];
+    for i=1:length(nanpositions)
+        nanpositions(i,2) = nanpositions(i,1)-1;
+        while sum(nanpositions(:,1)==nanpositions(i,2))>0
+            nanpositions(i,2) = nanpositions(i,2)-1;
+        end
+        nanpositions(i,3) = nanpositions(i,1)+1;
+        % add more if next one is also nan
+        while sum(nanpositions(:,1)==nanpositions(i,3))>0
+            nanpositions(i,3) = nanpositions(i,3)+1;
+        end
+    end
+    % fill nan positions
+    for i=1:length(nanpositions)
+        if nanpositions(i,3)<=height(countsMatrixDNAtable)
+            if isequal(countsMatrixDNAtable.species_name{nanpositions(i,2)},...
+                    countsMatrixDNAtable.species_name{nanpositions(i,3)})
+                countsMatrixDNAtable.species_name{nanpositions(i,1)} = ...
+                    countsMatrixDNAtable.species_name{nanpositions(i,2)};
+            else
+                if isequal(countsMatrixDNAtable.species_chr{nanpositions(i,1)}(1:5),...
+                        countsMatrixDNAtable.species_chr{nanpositions(i,2)}(1:5))
+                    countsMatrixDNAtable.species_name{nanpositions(i,1)} = ...
+                    countsMatrixDNAtable.species_name{nanpositions(i,2)};
+                end
+            end
+    
+        else
+            countsMatrixDNAtable.species_name{nanpositions(i,1)} = ...
+                countsMatrixDNAtable.species_name{nanpositions(i,2)};
+        end
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % fill RNA species
+    % fill nans with species names if previous and next genomes are the same
+    nanpositions = find(ismember(countsMatrixRNAtable.species_name, {'nan'}));
+    % get positions of previous and next non-nan
+    nanpositions = [nanpositions zeros(length(nanpositions),2)];
+    for i=1:length(nanpositions)
+        nanpositions(i,2) = nanpositions(i,1)-1;
+        while sum(nanpositions(:,1)==nanpositions(i,2))>0
+            nanpositions(i,2) = nanpositions(i,2)-1;
+        end
+        nanpositions(i,3) = nanpositions(i,1)+1;
+        % add more if next one is also nan
+        while sum(nanpositions(:,1)==nanpositions(i,3))>0
+            nanpositions(i,3) = nanpositions(i,3)+1;
+        end
+    end
+    % fill nan positions
+    for i=1:length(nanpositions)
+        if nanpositions(i,3)<=height(countsMatrixRNAtable)
+            if isequal(countsMatrixRNAtable.species_name{nanpositions(i,2)},...
+                    countsMatrixRNAtable.species_name{nanpositions(i,3)})
+                countsMatrixRNAtable.species_name{nanpositions(i,1)} = ...
+                    countsMatrixRNAtable.species_name{nanpositions(i,2)};
+            else
+                if isequal(countsMatrixRNAtable.species_chr{nanpositions(i,1)}(1:5),...
+                        countsMatrixRNAtable.species_chr{nanpositions(i,2)}(1:5))
+                    countsMatrixRNAtable.species_name{nanpositions(i,1)} = ...
+                    countsMatrixRNAtable.species_name{nanpositions(i,2)};
+                end
+            end
+    
+        else
+            countsMatrixRNAtable.species_name{nanpositions(i,1)} = ...
+                countsMatrixRNAtable.species_name{nanpositions(i,2)};
+        end
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % save count tables with species names to file
+    writetable(countsMatrixDNAtable, ...
+        [outputFolder, 'countsMatrixRAW_DNA_table_with_species.txt']);
+    writetable(countsMatrixRNAtable, ...
+        [outputFolder, 'countsMatrixRAW_RNA_table_with_species.txt']);
+end
 
 % get raw reads with species info
 countsMatrixDNAtable = readtable([inputFolderSeq,...
