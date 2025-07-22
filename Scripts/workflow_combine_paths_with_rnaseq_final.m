@@ -54,33 +54,35 @@ shortestPathTable = readtable([outputFolder, ...
     'delim', ',');
 
 % get gene FC
-geneFileName = [inputFolderSeq, ...
-    'edgeR_gene_fold_changes_and_ann.csv'];
+%geneFileName = [inputFolderSeq, ...
+%    'edgeR_gene_fold_changes_and_ann.csv'];
+geneFileName = [outputFolder, ...
+    'edgeR_deseq2_gene_fold_changes_and_ann.csv'];
 % detect import options to change some of the variable to strings
 opts = detectImportOptions(geneFileName);
 for i = 26:42
-    opts.VariableTypes{i} = 'char';  % This will change column 15 from 'double' or whatever it is to 'char', which is what you want.
+    opts.VariableTypes{i} = 'char';  % This will change columns that contain pathway info from  'double' or whatever it is to 'char'.
 end
 opts.Delimiter = ',';
 geneTable = readtable(geneFileName, opts);
 
 % get EC annotation
-ecTable = readtable([inputFolderSeq, ...
-    'gene_annotation_EC.tsv'], 'fileType','text', 'delim', '\t');
+%ecTable = readtable([inputFolderSeq, ...
+%    'gene_annotation_EC.tsv'], 'fileType','text', 'delim', '\t');
 
 % remove unfiltered genes
 geneTable = geneTable(geneTable.geneFilter==1,:);
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % load gene expression from RNA and correlate with metabolite abundances
-countsMatrixGetMM_RNA_table = readtable([inputFolderSeq,...
+countsMatrixGetMM_RNA_table = readtable([outputFolder,...inputFolderSeq,...
     'countsMatrixGetMM_RNA_table.txt']);
 % add filter and remove unfiltered genes
 countsMatrixGetMM_RNA_table = countsMatrixGetMM_RNA_table(countsMatrixGetMM_RNA_table.geneFilter==1,:);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % load gene abundance from DNA and correlate with metabolite abundances
-countsMatrixGetMM_DNA_table = readtable([inputFolderSeq,...
+countsMatrixGetMM_DNA_table = readtable([outputFolder,...inputFolderSeq,...
     'countsMatrixGetMM_DNA_table.txt']);
 % add filter and remove unfiltered genes
 countsMatrixGetMM_DNA_table = countsMatrixGetMM_DNA_table(countsMatrixGetMM_DNA_table.geneFilter==1,:);
@@ -114,10 +116,10 @@ metaboliteData = readtable([outputFolder,...
 % metaboliteData = readtable([inputFolder,...
 %     'metabolites_allions_combined_norm_intensity.csv']);
     
-metaboliteFilters = readtable([inputFolder,...
+metaboliteFilters = readtable([outputFolder,...inputFolder,...
     'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
 
-metaboliteDiff = readtable([resultsFolder,...
+metaboliteDiff = readtable([outputFolder,...resultsFolder,...
     'table_diff_abundance_metabolite_ions_removed2outliers.csv']);
 
 % potential_substrates_ids_all_table = readtable(...
@@ -622,7 +624,10 @@ for i=1:length(kegg_sub_prod_substrates_unique)
     
     %multiply corr by changes of substrate and products
     curcorr = curcorr.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2));
-    
+    curcorrP = curcorrP.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) - ...
+        (1-repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) );
+    curcorrP(curcorrP<0) = nan;
+
     for j=1:length(kegg_substrate_product_1enzyme.Dir)
         if kegg_substrate_product_1enzyme.Dir(j)==-1
             curgeneidx(j,:) = kegg_sub_prod_EC_prod_corr_geneidx(j,:);
@@ -669,7 +674,9 @@ for i=1:length(kegg_sub_prod_products_unique)
     
     %multiply corr by changes of substrate and products
     curcorr = curcorr.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2));
- 
+    curcorrP = curcorrP.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) - ...
+        (1-repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) );
+    curcorrP(curcorrP<0) = nan;
     
     curgeneidx = kegg_sub_prod_EC_prod_corr_geneidx;
     for j=1:length(kegg_substrate_product_1enzyme.Dir)
@@ -942,7 +949,9 @@ for i=1:length(kegg_sub_prod_substrates_unique)
     
     %multiply corr by changes of substrate and products
     curcorr = curcorr.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2));
-
+    curcorrP = curcorrP.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) - ...
+        (1-repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) );
+    curcorrP(curcorrP<0) = nan;
     
     for j=1:length(kegg_substrate_product_1enzyme.Dir)
         if kegg_substrate_product_1enzyme.Dir(j)==-1
@@ -992,7 +1001,9 @@ for i=1:length(kegg_sub_prod_products_unique)
     
     %multiply corr by changes of substrate and products
     curcorr = curcorr.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2));
-
+    curcorrP = curcorrP.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) - ...
+        (1-repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) );
+    curcorrP(curcorrP<0) = nan;
     
     for j=1:length(kegg_substrate_product_1enzyme.Dir)
         if kegg_substrate_product_1enzyme.Dir(j)==-1
@@ -1059,6 +1070,8 @@ for i=1:length(kegg_sub_prod_products_unique)
 
         %multiply corr by changes of substrate and products
         curcorr = curcorr.*cursubLI.*curprodLI;
+        curcorrP = curcorrP.*cursubLI.*curprodLI - (1-cursubLI.*curprodLI);
+        curcorrP(curcorrP<0) = nan;
     
         speciesOTU_products_corr(i, ismember(species_list, speciesOTUabbr{k})) = curcorr;
         speciesOTU_products_corrP(i, ismember(species_list, speciesOTUabbr{k})) = curcorrP;       
@@ -1088,7 +1101,8 @@ for i=1:length(kegg_sub_prod_substrates_unique)
 
         %multiply corr by changes of substrate and products
         curcorr = curcorr.*cursubLI.*curprodLI;
-
+        curcorrP = curcorrP.*cursubLI.*curprodLI - (1-cursubLI.*curprodLI);
+        curcorrP(curcorrP<0) = nan;
         
         speciesOTU_substrates_corr(i, ismember(species_list, speciesOTUabbr{k})) = curcorr;
         speciesOTU_substrates_corrP(i, ismember(species_list, speciesOTUabbr{k})) = curcorrP;       
@@ -1981,21 +1995,25 @@ writetable(shortestPathTable_unique, [outputFolder, 'table_shortest_path_subprod
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % write correlation tables to file
+table_mets = repmat(reshape(kegg_sub_prod_products_unique,[],1),...
+                    length(species_list),1);
+table_species = reshape(repmat(reshape(species_list,1,[]),...
+                        length(kegg_sub_prod_products_unique),1),...
+                        [], 1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % corr RNA
-corrtable = array2table(kegg_sub_prod_products_bestcorr_pos,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtable, ...
-    [outputFolder, 'table_kegg_RNA_sub_prod_products_bestcorr_pos.csv'],...
-    'WriteRowNames',true);
-% pvalues
-corrtable = array2table(kegg_sub_prod_products_bestcorrP_pos,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtable, ...
-    [outputFolder, 'table_kegg_RNA_sub_prod_products_bestcorrP_pos.csv'],...
-    'WriteRowNames',true);
-% enzymes
+table_corrtype = repmat({'corr_RNA_EC'}, length(table_mets),1);
+
+table_corr = reshape(kegg_sub_prod_products_bestcorr_pos,[],1);
+table_corrP = reshape(kegg_sub_prod_products_bestcorrP_pos,[],1);
+table_corrP(table_corr==0) = NaN;
+
+%calculate fdr
+table_corrFDR = nan(size(table_corrP));
+table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
+
+
+% % enzymes
 corrtable = cell(size(kegg_sub_prod_products_bestcorr_geneidx_pos));
 corrtableEC = cell(size(kegg_sub_prod_products_bestcorr_geneidx_pos));
 for i=1:size(kegg_sub_prod_products_bestcorr_geneidx_pos,1)
@@ -2009,34 +2027,24 @@ for i=1:size(kegg_sub_prod_products_bestcorr_geneidx_pos,1)
         end
     end
 end
-corrtable = cell2table(corrtable,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtable, ...
-    [outputFolder, 'table_kegg_RNA_sub_prod_products_bestcorr_genes_pos.csv'],...
-    'WriteRowNames',true);
-corrtableEC = cell2table(corrtableEC,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtableEC, ...
-    [outputFolder, 'table_kegg_RNA_sub_prod_products_bestcorr_EC_pos.csv'],...
-    'WriteRowNames',true);
+table_Gene = reshape(corrtable, [], 1);
+table_EC = reshape(corrtableEC, [], 1);
 
-% corr DNA
-corrtable = array2table(kegg_DNA_sub_prod_products_bestcorr_pos,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtable, ...
-    [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorr_pos.csv'],...
-    'WriteRowNames',true);
-% pvalues
-corrtable = array2table(kegg_DNA_sub_prod_products_bestcorrP_pos,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtable, ...
-    [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorrP_pos.csv'],...
-    'WriteRowNames',true);
-% enzymes
+corrtableRNA = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR,...
+    table_Gene, table_EC);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % corr DNA
+table_corrtype = repmat({'corr_DNA_EC'}, length(table_mets),1);
+
+table_corr = reshape(kegg_DNA_sub_prod_products_bestcorr_pos,[],1);
+table_corrP = reshape(kegg_DNA_sub_prod_products_bestcorrP_pos,[],1);
+table_corrP(table_corr==0) = NaN;
+%calculate fdr
+table_corrFDR = nan(size(table_corrP));
+table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
+
+% % enzymes
 corrtable = cell(size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos));
 corrtableEC = cell(size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos));
 for i=1:size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos,1)
@@ -2050,32 +2058,133 @@ for i=1:size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos,1)
         end
     end
 end
-corrtable = cell2table(corrtable,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtable, ...
-    [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorr_genes_pos.csv'],...
-    'WriteRowNames',true);
-corrtableEC = cell2table(corrtableEC,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtableEC, ...
-    [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorr_EC_pos.csv'],...
-    'WriteRowNames',true);
+table_Gene = reshape(corrtable, [], 1);
+table_EC = reshape(corrtableEC, [], 1);
 
-
+corrtableDNA = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR,...
+    table_Gene, table_EC);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % corr OTU
-corrtable = array2table(speciesOTU_products_corr,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
+table_corrtype = repmat({'corr_OTU'}, length(table_mets),1);
+
+table_corr = reshape(speciesOTU_products_corr,[],1);
+table_corrP = reshape(speciesOTU_products_corrP,[],1);
+table_corrP(table_corr==0) = NaN;
+
+%calculate fdr
+table_corrFDR = nan(size(table_corrP));
+table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
+
+table_Gene = repmat({'NaN'}, length(table_mets),1);
+table_EC = repmat({'NaN'}, length(table_mets),1);
+
+corrtableOTU = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR,...
+            table_Gene, table_EC);
+
+    
+corrtable = vertcat(corrtableRNA, corrtableDNA, corrtableOTU);
+
 writetable(corrtable, ...
-    [outputFolder, 'table_speciesOTU_products_corr.csv'],...
+    [outputFolder, 'table_speciesRNADNAOTU_withFDR_long.csv'],...
     'WriteRowNames',true);
-% pvalues
-corrtable = array2table(speciesOTU_products_corrP,...
-    'RowNames', kegg_sub_prod_products_unique,...
-    'VariableNames', species_list);
-writetable(corrtable, ...
-    [outputFolder, 'table_speciesOTU_products_corrP.csv'],...
-    'WriteRowNames',true);
+
+
+% corrtable = array2table(kegg_sub_prod_products_bestcorr_pos,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtable, ...
+%     [outputFolder, 'table_kegg_RNA_sub_prod_products_bestcorr_pos.csv'],...
+%     'WriteRowNames',true);
+% % pvalues
+% corrtable = array2table(kegg_sub_prod_products_bestcorrP_pos,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtable, ...
+%     [outputFolder, 'table_kegg_RNA_sub_prod_products_bestcorrP_pos.csv'],...
+%     'WriteRowNames',true);
+% % enzymes
+% corrtable = cell(size(kegg_sub_prod_products_bestcorr_geneidx_pos));
+% corrtableEC = cell(size(kegg_sub_prod_products_bestcorr_geneidx_pos));
+% for i=1:size(kegg_sub_prod_products_bestcorr_geneidx_pos,1)
+%     for j=1:size(kegg_sub_prod_products_bestcorr_geneidx_pos,2)
+%         if ~isempty(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j})
+%             corrtable{i,j} = strjoin(geneTable.species_genes(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j}),"|");
+%             curec = geneTable.EC(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j});
+%             curec = unique(curec);
+%             curec(ismember(curec, {'nan'}))=[];
+%             corrtableEC{i,j} = strjoin(curec, "|");
+%         end
+%     end
+% end
+% corrtable = cell2table(corrtable,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtable, ...
+%     [outputFolder, 'table_kegg_RNA_sub_prod_products_bestcorr_genes_pos.csv'],...
+%     'WriteRowNames',true);
+% corrtableEC = cell2table(corrtableEC,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtableEC, ...
+%     [outputFolder, 'table_kegg_RNA_sub_prod_products_bestcorr_EC_pos.csv'],...
+%     'WriteRowNames',true);
+
+% % corr DNA
+% corrtable = array2table(kegg_DNA_sub_prod_products_bestcorr_pos,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtable, ...
+%     [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorr_pos.csv'],...
+%     'WriteRowNames',true);
+% % pvalues
+% corrtable = array2table(kegg_DNA_sub_prod_products_bestcorrP_pos,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtable, ...
+%     [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorrP_pos.csv'],...
+%     'WriteRowNames',true);
+% % enzymes
+% corrtable = cell(size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos));
+% corrtableEC = cell(size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos));
+% for i=1:size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos,1)
+%     for j=1:size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos,2)
+%         if ~isempty(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j})
+%             corrtable{i,j} = strjoin(geneTable.species_genes(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j}),"|");
+%             curec = geneTable.EC(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j});
+%             curec = unique(curec);
+%             curec(ismember(curec, {'nan'}))=[];
+%             corrtableEC{i,j} = strjoin(curec, "|");
+%         end
+%     end
+% end
+% corrtable = cell2table(corrtable,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtable, ...
+%     [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorr_genes_pos.csv'],...
+%     'WriteRowNames',true);
+% corrtableEC = cell2table(corrtableEC,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtableEC, ...
+%     [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorr_EC_pos.csv'],...
+%     'WriteRowNames',true);
+
+
+
+
+
+% corrtable = array2table(speciesOTU_products_corr,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtable, ...
+%     [outputFolder, 'table_speciesOTU_products_corr.csv'],...
+%     'WriteRowNames',true);
+% % pvalues
+% corrtable = array2table(speciesOTU_products_corrP,...
+%     'RowNames', kegg_sub_prod_products_unique,...
+%     'VariableNames', species_list);
+% writetable(corrtable, ...
+%     [outputFolder, 'table_speciesOTU_products_corrP.csv'],...
+%     'WriteRowNames',true);
 
