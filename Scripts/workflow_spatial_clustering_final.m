@@ -147,31 +147,49 @@ for diet_i = 1:length(sampleDiet_unique)
 end
 
 % find optimal value of K
-kmeansEva_cell = cell(size(conditionsArray,2),1);
+numiter = 20;
+kmeansEva_cell = cell(size(conditionsArray,2),numiter);
 idx=1;
 fprintf('Selecting optimal k for different conditions\n');
-for cond_i = 1:size(conditionsArray,2)
-    selectDiet = conditionsArray{1,cond_i};
-    selectMouse = conditionsArray{2,cond_i};
-    kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & ...
-                               contains(x,selectDiet),meanConditions));
-    kmeanConditions = meanConditions(cellfun(@(x) contains(x,selectMouse) & ...
-                                contains(x,selectDiet),meanConditions));
-    kmeanMatrix = kmeanMatrix(:,1:6);
-    kmeanConditions = kmeanConditions(1:6);
-
-    selected_mets = find(sum(kmeanMatrix~=intensityNoise,2)~=0 &...
-                         binaryFilter);
-
-    kmeans_ions = joinedMzRT(selected_mets);
-    kmeans_means = zscore(kmeanMatrix(selected_mets,:),[],2);
-    eva = evalclusters(kmeans_means,'kmeans','silhouette', 'KList', 1:30);
-    kmeansEva_cell{idx} = eva;
+for cond_i = 5:size(conditionsArray,2)
+    for iter_i = 1:numiter
+        selectDiet = conditionsArray{1,cond_i};
+        selectMouse = conditionsArray{2,cond_i};
+        kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & ...
+                                   contains(x,selectDiet),meanConditions));
+        kmeanConditions = meanConditions(cellfun(@(x) contains(x,selectMouse) & ...
+                                    contains(x,selectDiet),meanConditions));
+        kmeanMatrix = kmeanMatrix(:,1:6);
+        kmeanConditions = kmeanConditions(1:6);
+    
+        selected_mets = find(sum(kmeanMatrix~=intensityNoise,2)~=0 &...
+                             binaryFilter);
+    
+        kmeans_ions = joinedMzRT(selected_mets);
+        kmeans_means = zscore(kmeanMatrix(selected_mets,:),[],2);
+        eva = evalclusters(kmeans_means,'kmeans','silhouette', 'KList', 1:30);
+        kmeansEva_cell{idx, iter_i} = eva;
+        fprintf('Selected optimal k for %s %s (%d of %d) iteration %d of %d\n', selectDiet, selectMouse, cond_i, size(conditionsArray,2), iter_i, numiter);
+    end
     idx = idx+1;
-    fprintf('Selected optimal k for %s %s\n', selectDiet, selectMouse);
-
 end
 
+% make a table with all criteria and write to file
+criterion_mat = zeros(numiter*size(kmeansEva_cell,1), length(kmeansEva_cell{1,1}.CriterionValues));
+criterion_cols = arrayfun(@(x) num2str(x), kmeansEva_cell{1,1}.InspectedK, 'unif', 0);
+criterion_rows = cell(numiter*size(kmeansEva_cell,1),1);
+idx=1;
+for i=1:size(kmeansEva_cell,1)
+    for iter_i=1:numiter
+        criterion_mat(idx,:) = kmeansEva_cell{i, iter_i}.CriterionValues;
+        criterion_rows{idx} = strcat(colLabels{i}, '_iter', num2str(iter_i));
+        idx = idx+1;
+    end
+end
+criterion_mat = array2table(criterion_mat,...
+    'RowNames',criterion_rows, 'VariableNames', criterion_cols);
+writetable(criterion_mat, [outputFolder, 'kmeans_silhouette_allmets_20iter.csv'],...
+    'WriteRowNames', 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % mycolors = [ 0    0.4492    0.6953;...
@@ -185,13 +203,14 @@ mylinestyles = {':', '-', '--'};
 % plot eval silhouette
 figure
 hold on
-for i=1:length(kmeansEva_cell)
+for i=1:size(kmeansEva_cell,1)
     if isequal(conditionsArray{1,i}, sampleDiet_unique{1})
         curcolor = mycolors(1,:);
     else
         curcolor = mycolors(2,:);
     end
     if isequal(conditionsArray{2,i}, sampleType_unique{1})
+        continue; % skip CVR
         curstyle = mylinestyles{1};
     elseif isequal(conditionsArray{2,i}, sampleType_unique{2})
         curstyle = mylinestyles{2};
@@ -199,21 +218,38 @@ for i=1:length(kmeansEva_cell)
         curstyle = mylinestyles{3};
     end
 
-    plot(kmeansEva_cell{i}.InspectedK,...
-         kmeansEva_cell{i}.CriterionValues,...
+    criterion_mat = zeros(numiter, length(kmeansEva_cell{i,1}.CriterionValues));
+    for iter_i=1:numiter
+        criterion_mat(iter_i,:) = kmeansEva_cell{i, iter_i}.CriterionValues;
+    end
+    criterion_mean = mean(criterion_mat);
+    criterion_std = std(criterion_mat);
+
+    % plot(kmeansEva_cell{i}.InspectedK,...
+    %      criterion_mean,...
+    %      'Color', curcolor, 'LineStyle', curstyle,  'LineWidth', 2)
+    errorbar(kmeansEva_cell{i,1}.InspectedK,...
+         criterion_mean,...
+         criterion_std,...
          'Color', curcolor, 'LineStyle', curstyle,  'LineWidth', 2)
+
+
+    % plot(kmeansEva_cell{i}.InspectedK,...
+    %      kmeansEva_cell{i}.CriterionValues,...
+    %      'Color', curcolor, 'LineStyle', curstyle,  'LineWidth', 2)
 end
 xlim([1 30])
 set(gca, 'XTick', 1:30)
+set(gca, 'XTickLabel', 1:30)
 xlabel('Number of clusters')
 ylabel(kmeansEva_cell{1}.CriterionName)
 title('Kmeans cluster evaluation')
 colLabels = strcat(conditionsArray(1,:),'-', ...
     conditionsArray(2,:));
-legend(colLabels, 'location', 'southeast')
+legend(colLabels([2 3 5 6]), 'location', 'southeast')
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
             [figureFolder,...
-            'fig_sup_kmeans_silhouette_evaluation.pdf'])
+            'fig_sup_kmeans_silhouette_evaluation_numiter20_allions_noCVR.pdf'])
 
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -429,7 +465,7 @@ annotationTable = readtable([outputFolder,...
 
 % select columns from annotationTable with cluster info
 annColumns = annotationTable.Properties.VariableNames';
-annColumnsTEST = annotationTableTEST.Properties.VariableNames';
+%nnColumnsTEST = annotationTableTEST.Properties.VariableNames';
 clusterColumns = annColumns(cellfun(@(x) contains(x,'spatial_'), annColumns));
 for i=1:length(clusterColumns)
     curcol = strsplit(clusterColumns{i}, '_');
@@ -564,7 +600,7 @@ annotationTableSpatialClusters = readtable(...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot pathway enrichment results
 plot_hmdb = 3;%1-Class 2-Superclass 3-SubClass
-plotclusterFlag = 6;%0-all, 1-serum and liver, 6-only GI
+plotclusterFlag = 0;%0-all, 1-serum and liver, 6-only GI
 plotCVRflag = 0; 
 
 switch plot_hmdb
@@ -660,8 +696,16 @@ switch plotclusterFlag
         plotted_clusters = '_GIT_clusters_';
 end
 if ~plotCVRflag
-    selectclusters = selectclusters & ~cellfun(@(x) contains(x, 'CVR'), clusterColLabels);
+    selectclusters = selectclusters & ~cellfun(@(x) contains(x, 'CVR'), reshape(clusterColLabels,1,[]));
 end
+% if both 2-serum and 2-liver cluster names exist, leave only one of them
+% as the yare identical criteria
+if sum(cellfun(@(x) contains(x, '2-serum-'),  clusterColLabels))>0 &&...
+   sum(cellfun(@(x) contains(x, '2-liver-'),  clusterColLabels))>0 
+    selectclusters = selectclusters & ~cellfun(@(x) contains(x, '2-serum-'), ...
+        reshape(clusterColLabels,1,[]));
+end
+
 
 selectpathways = sum(fdrMet(:, selectclusters)<0.1,2)>0;
 %displaymat = numMet(selectpathways,selectclusters);
@@ -683,6 +727,7 @@ displayvalues = '_fractmetperclustsize_';
 
 %displaymat(displaymat>0.5)=1;
 displaymat(displaymat>30)=30;
+displaymat(isnan(displaymat))=0; % put 0 instead of NaN
 
 if iscell(kmeansTables_cell{1}{1,1})
     rowLabels = cellfun(@(x) x{1}, kmeansTables_cell{1}(selectpathways,1), 'unif', 0);
@@ -848,7 +893,7 @@ clear kmeansTables_table
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save mean values per tissue to file
-annotationTable_withmean = [annotationTableSpatialClusters,...
+annotationTable_withmean = [annotationTable,...
     array2table(meanMatrix, 'VariableNames', ...
     cellfun(@(x) strcat('mean_', strrep(x,' ', '_')), meanConditions, 'unif', 0))];
 % write(annotationTable_withmean,...
