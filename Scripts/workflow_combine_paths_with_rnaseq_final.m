@@ -411,14 +411,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % calculate correlations between RNA and metabolites
 kegg_sub_prod_EC_sub_corr = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_sub_prod_EC_sub_corrP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_sub_prod_EC_sub_corrP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_sub_prod_EC_sub_sum_corr = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_sub_prod_EC_sub_sum_corrP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_sub_prod_EC_sub_sum_corrP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_sub_prod_EC_sub_corr_id = cell(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_sub_prod_EC_sub_corr_geneidx = cell(size(kegg_substrate_product_1enzyme,1), length(species_list));
 % prepare matrices for linear model fits and r adjusted
 kegg_sub_prod_EC_sub_mdlX = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_sub_prod_EC_sub_mdlP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_sub_prod_EC_sub_mdlP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_sub_prod_EC_sub_mdlRsqadj = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
 
 % substrates
@@ -431,11 +431,11 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
             curenzymes_geneidx = geneTable_EC_species(idxGene,:);
             % prepare tables for correlation values etc
             curenzymes_mat = zeros(length(idxEC), length(species_list));
-            curenzymes_p = ones(length(idxEC), length(species_list));
+            curenzymes_p = -ones(length(idxEC), length(species_list));
             curenzymes_ec = cell(length(idxEC), length(species_list));
             % for linear model
             curenzymes_mdlX = zeros(length(idxEC), length(species_list));
-            curenzymes_mdlXp = ones(length(idxEC), length(species_list));
+            curenzymes_mdlXp = -ones(length(idxEC), length(species_list));
             curenzymes_mdlRsqadj = zeros(length(idxEC), length(species_list));
             
             for k=1:size(curenzymes_geneidx,2)
@@ -459,7 +459,7 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
                             curenzymes_mdlXp(j,k) = mdl.Coefficients.pValue(2);
                             curenzymes_mdlRsqadj(j,k) = mdl.Rsquared.Adjusted;
                         end
-                        curenzymes_ec{j, k} = curec;
+                        curenzymes_ec{j, k} = curenzymes{idxEC(j)};
                         
                     end
                 end
@@ -494,14 +494,14 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
 end
 % products
 kegg_sub_prod_EC_prod_corr = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_sub_prod_EC_prod_corrP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_sub_prod_EC_prod_corrP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_sub_prod_EC_prod_sum_corr = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_sub_prod_EC_prod_sum_corrP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_sub_prod_EC_prod_sum_corrP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_sub_prod_EC_prod_corr_id = cell(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_sub_prod_EC_prod_corr_geneidx = cell(size(kegg_substrate_product_1enzyme,1), length(species_list));
 % prepare matrices for linear model fits and r adjusted
 kegg_sub_prod_EC_prod_mdlX = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_sub_prod_EC_prod_mdlP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_sub_prod_EC_prod_mdlP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_sub_prod_EC_prod_mdlRsqadj = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
 
 for i=1:size(kegg_substrate_product_1enzyme,1)
@@ -513,11 +513,11 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
             curenzymes_geneidx = geneTable_EC_species(idxGene,:);
             % prepare tables for correlation values etc
             curenzymes_mat = zeros(length(idxEC), length(species_list));
-            curenzymes_p = ones(length(idxEC), length(species_list));
+            curenzymes_p = -ones(length(idxEC), length(species_list));
             curenzymes_ec = cell(length(idxEC), length(species_list));
             % for linear model
             curenzymes_mdlX = zeros(length(idxEC), length(species_list));
-            curenzymes_mdlXp = ones(length(idxEC), length(species_list));
+            curenzymes_mdlXp = -ones(length(idxEC), length(species_list));
             curenzymes_mdlRsqadj = zeros(length(idxEC), length(species_list));
 
             for k=1:size(curenzymes_geneidx,2)
@@ -540,7 +540,7 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
                             curenzymes_mdlXp(j,k) = mdl.Coefficients.pValue(2);
                             curenzymes_mdlRsqadj(j,k) = mdl.Rsquared.Adjusted;
                         end
-                        curenzymes_ec{j, k} = curec;
+                        curenzymes_ec{j, k} = curenzymes{idxEC(j)};
                     end
                 end
                 % calculate corr with sum of all enzymes
@@ -569,6 +569,19 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
             kegg_sub_prod_EC_prod_mdlRsqadj(i,:) = curenzymes_mdlRsqadj(idx);
         end
     end
+end
+%perform FDR correction of correlation p-values per species
+kegg_sub_prod_EC_prod_corrPFDR = ones(size(kegg_sub_prod_EC_prod_corrP));
+for i=1:size(kegg_sub_prod_EC_prod_corrP,2)
+    nonnan_idx = kegg_sub_prod_EC_prod_corrP(:,i)>=0;
+    kegg_sub_prod_EC_prod_corrPFDR(nonnan_idx,i) = ...
+        my_bhfdr(kegg_sub_prod_EC_prod_corrP(nonnan_idx,i));
+end
+kegg_sub_prod_EC_sub_corrPFDR = ones(size(kegg_sub_prod_EC_sub_corrP));
+for i=1:size(kegg_sub_prod_EC_sub_corrP,2)
+    nonnan_idx = kegg_sub_prod_EC_sub_corrP(:,i)>=0;
+    kegg_sub_prod_EC_sub_corrPFDR(nonnan_idx,i) = ...
+        my_bhfdr(kegg_sub_prod_EC_sub_corrP(nonnan_idx,i));
 end
 
 % get sub and prod LI changes in 1 enzyme paths
@@ -604,6 +617,10 @@ kegg_sub_prod_substrates_bestcorrP_pos = zeros(length(kegg_sub_prod_substrates_u
     size(kegg_sub_prod_EC_prod_corr,2));
 kegg_sub_prod_substrates_bestcorrP_neg = zeros(length(kegg_sub_prod_substrates_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
+kegg_sub_prod_substrates_bestcorrPFDR_pos = zeros(length(kegg_sub_prod_substrates_unique),...
+    size(kegg_sub_prod_EC_prod_corr,2));
+kegg_sub_prod_substrates_bestcorrPFDR_neg = zeros(length(kegg_sub_prod_substrates_unique),...
+    size(kegg_sub_prod_EC_prod_corr,2));
 kegg_sub_prod_substrates_bestcorr_geneidx_pos = cell(length(kegg_sub_prod_substrates_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
 kegg_sub_prod_substrates_bestcorr_geneidx_neg = cell(length(kegg_sub_prod_substrates_unique),...
@@ -616,6 +633,10 @@ for i=1:length(kegg_sub_prod_substrates_unique)
     curcorrP = (kegg_sub_prod_EC_sub_corrP.*(kegg_substrate_product_1enzyme.Dir==1)) +...
            (kegg_sub_prod_EC_prod_corrP.*(kegg_substrate_product_1enzyme.Dir==-1));
     curcorrP=curcorrP(curidx,:);
+    curcorrPFDR = (kegg_sub_prod_EC_sub_corrPFDR.*(kegg_substrate_product_1enzyme.Dir==1)) +...
+           (kegg_sub_prod_EC_prod_corrPFDR.*(kegg_substrate_product_1enzyme.Dir==-1));
+    curcorrPFDR=curcorrPFDR(curidx,:);
+    
     curgeneidx = kegg_sub_prod_EC_sub_corr_geneidx;
     
     % get info about change in LI for substrate and product
@@ -626,7 +647,7 @@ for i=1:length(kegg_sub_prod_substrates_unique)
     curcorr = curcorr.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2));
     curcorrP = curcorrP.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) - ...
         (1-repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) );
-    curcorrP(curcorrP<0) = nan;
+    %curcorrP(curcorrP<0) = nan;
 
     for j=1:length(kegg_substrate_product_1enzyme.Dir)
         if kegg_substrate_product_1enzyme.Dir(j)==-1
@@ -635,14 +656,26 @@ for i=1:length(kegg_sub_prod_substrates_unique)
     end
     curgeneidx=curgeneidx(curidx,:);
     
-    [kegg_sub_prod_substrates_bestcorr_pos(i,:),idx] = max(curcorr,[],1);
+     % replace 0 with NaN to not include 0 in comparison of correlations
+    % (e.g. keep negative corr in case only negative and 0 are present)
+    curcorr(curcorrP<0) = nan;
+        
+    [maxcurcorr,idx] = max(curcorr,[],1, 'omitnan');
+    maxcurcorr(isnan(maxcurcorr)) = 0; % change back tp 0 if only nans are present
+
+    kegg_sub_prod_substrates_bestcorr_pos(i,:) = maxcurcorr;
     for j=1:length(idx)
         kegg_sub_prod_substrates_bestcorrP_pos(i,j) = curcorrP(idx(j),j);
+        kegg_sub_prod_substrates_bestcorrPFDR_pos(i,j) = curcorrPFDR(idx(j),j);
         kegg_sub_prod_substrates_bestcorr_geneidx_pos{i,j} = curgeneidx{idx(j),j};
     end
-    [kegg_sub_prod_substrates_bestcorr_neg(i,:),idx] = min(curcorr,[],1);
+    [mincurcorr,idx] = min(curcorr,[],1, 'omitnan');
+    mincurcorr(isnan(mincurcorr)) = 0; % change back to 0 if only nans are present
+
+    kegg_sub_prod_substrates_bestcorr_neg(i,:) = mincurcorr;
     for j=1:length(idx)
         kegg_sub_prod_substrates_bestcorrP_neg(i,j) = curcorrP(idx(j),j);
+        kegg_sub_prod_substrates_bestcorrPFDR_neg(i,j) = curcorrPFDR(idx(j),j);
         kegg_sub_prod_substrates_bestcorr_geneidx_neg{i,j} = curgeneidx{idx(j),j};
     end
 end
@@ -654,6 +687,10 @@ kegg_sub_prod_products_bestcorr_neg = zeros(length(kegg_sub_prod_products_unique
 kegg_sub_prod_products_bestcorrP_pos = zeros(length(kegg_sub_prod_products_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
 kegg_sub_prod_products_bestcorrP_neg = zeros(length(kegg_sub_prod_products_unique),...
+    size(kegg_sub_prod_EC_prod_corr,2));
+kegg_sub_prod_products_bestcorrPFDR_pos = zeros(length(kegg_sub_prod_products_unique),...
+    size(kegg_sub_prod_EC_prod_corr,2));
+kegg_sub_prod_products_bestcorrPFDR_neg = zeros(length(kegg_sub_prod_products_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
 kegg_sub_prod_products_bestcorr_geneidx_pos = cell(length(kegg_sub_prod_products_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
@@ -667,6 +704,10 @@ for i=1:length(kegg_sub_prod_products_unique)
     curcorrP = (kegg_sub_prod_EC_prod_corrP.*(kegg_substrate_product_1enzyme.Dir==1)) +...
            (kegg_sub_prod_EC_sub_corrP.*(kegg_substrate_product_1enzyme.Dir==-1));
     curcorrP=curcorrP(curidx,:);
+
+    curcorrPFDR = (kegg_sub_prod_EC_prod_corrPFDR.*(kegg_substrate_product_1enzyme.Dir==1)) +...
+           (kegg_sub_prod_EC_sub_corrPFDR.*(kegg_substrate_product_1enzyme.Dir==-1));
+    curcorrPFDR=curcorrPFDR(curidx,:);
     
     % get info about change in LI for substrate and product
     cursubLI = sum(kegg_sub_prod_sub_LIchange(curidx,:),2)>0;
@@ -676,7 +717,7 @@ for i=1:length(kegg_sub_prod_products_unique)
     curcorr = curcorr.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2));
     curcorrP = curcorrP.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) - ...
         (1-repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) );
-    curcorrP(curcorrP<0) = nan;
+    %curcorrP(curcorrP<0) = nan;
     
     curgeneidx = kegg_sub_prod_EC_prod_corr_geneidx;
     for j=1:length(kegg_substrate_product_1enzyme.Dir)
@@ -685,15 +726,27 @@ for i=1:length(kegg_sub_prod_products_unique)
         end
     end
     curgeneidx=curgeneidx(curidx,:);
+
+     % replace 0 with NaN to not include 0 in comparison of correlations
+    % (e.g. keep negative corr in case only negative and 0 are present)
+    curcorr(curcorrP<0) = nan;
+        
+    [maxcurcorr,idx] = max(curcorr,[],1, 'omitnan');%, 'includenan');%'omitnan');
+    maxcurcorr(isnan(maxcurcorr)) = 0; % change back tp 0 if only nans are present
     
-    [kegg_sub_prod_products_bestcorr_pos(i,:), idx] = max(curcorr,[],1);    
+    kegg_sub_prod_products_bestcorr_pos(i,:) = maxcurcorr;    
     for j=1:length(idx)
         kegg_sub_prod_products_bestcorrP_pos(i,j) = curcorrP(idx(j),j);
+        kegg_sub_prod_products_bestcorrPFDR_pos(i,j) = curcorrPFDR(idx(j),j);
         kegg_sub_prod_products_bestcorr_geneidx_pos{i,j} = curgeneidx{idx(j),j};
     end
-    [kegg_sub_prod_products_bestcorr_neg(i,:), idx] = min(curcorr,[],1);
+    [mincurcorr,idx] = min(curcorr,[],1, 'omitnan');%, 'includenan');%, 'omitnan');
+    mincurcorr(isnan(mincurcorr)) = 0; % change back tp 0 if only nans are present
+
+    kegg_sub_prod_products_bestcorr_neg(i,:) = mincurcorr;
     for j=1:length(idx)
         kegg_sub_prod_products_bestcorrP_neg(i,j) = curcorrP(idx(j),j);
+        kegg_sub_prod_products_bestcorrPFDR_neg(i,j) = curcorrPFDR(idx(j),j);
         kegg_sub_prod_products_bestcorr_geneidx_neg{i,j} = curgeneidx{idx(j),j};
     end
 end
@@ -760,14 +813,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % calculate correlations between DNA and metabolites
 kegg_DNA_sub_prod_EC_sub_corr = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_DNA_sub_prod_EC_sub_corrP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_DNA_sub_prod_EC_sub_corrP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_DNA_sub_prod_EC_sub_sum_corr = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_DNA_sub_prod_EC_sub_sum_corrP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_DNA_sub_prod_EC_sub_sum_corrP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_DNA_sub_prod_EC_sub_corr_id = cell(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_DNA_sub_prod_EC_sub_corr_geneidx = cell(size(kegg_substrate_product_1enzyme,1), length(species_list));
 % prepare matrices for linear model fits and r adjusted
 kegg_DNA_sub_prod_EC_sub_mdlX = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_DNA_sub_prod_EC_sub_mdlP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_DNA_sub_prod_EC_sub_mdlP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_DNA_sub_prod_EC_sub_mdlRsqadj = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
 
 % substrates
@@ -780,11 +833,11 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
             curenzymes_geneidx = geneTable_EC_species(idxGene,:);
             % prepare tables for correlation values etc
             curenzymes_mat = zeros(length(idxEC), length(species_list));
-            curenzymes_p = ones(length(idxEC), length(species_list));
+            curenzymes_p = -ones(length(idxEC), length(species_list));
             curenzymes_ec = cell(length(idxEC), length(species_list));
             % for linear model
             curenzymes_mdlX = zeros(length(idxEC), length(species_list));
-            curenzymes_mdlXp = ones(length(idxEC), length(species_list));
+            curenzymes_mdlXp = -ones(length(idxEC), length(species_list));
             curenzymes_mdlRsqadj = zeros(length(idxEC), length(species_list));
             
             for k=1:size(curenzymes_geneidx,2)
@@ -808,7 +861,7 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
                             curenzymes_mdlXp(j,k) = mdl.Coefficients.pValue(2);
                             curenzymes_mdlRsqadj(j,k) = mdl.Rsquared.Adjusted;
                         end
-                        curenzymes_ec{j, k} = curec;
+                        curenzymes_ec{j, k} = curenzymes{idxEC(j)};
                         
                     end
                 end
@@ -843,14 +896,14 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
 end
 % products
 kegg_DNA_sub_prod_EC_prod_corr = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_DNA_sub_prod_EC_prod_corrP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_DNA_sub_prod_EC_prod_corrP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_DNA_sub_prod_EC_prod_sum_corr = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_DNA_sub_prod_EC_prod_sum_corrP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_DNA_sub_prod_EC_prod_sum_corrP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_DNA_sub_prod_EC_prod_corr_id = cell(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_DNA_sub_prod_EC_prod_corr_geneidx = cell(size(kegg_substrate_product_1enzyme,1), length(species_list));
 % prepare matrices for linear model fits and r adjusted
 kegg_DNA_sub_prod_EC_prod_mdlX = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
-kegg_DNA_sub_prod_EC_prod_mdlP = ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
+kegg_DNA_sub_prod_EC_prod_mdlP = -ones(size(kegg_substrate_product_1enzyme,1), length(species_list));
 kegg_DNA_sub_prod_EC_prod_mdlRsqadj = zeros(size(kegg_substrate_product_1enzyme,1), length(species_list));
 
 for i=1:size(kegg_substrate_product_1enzyme,1)
@@ -862,11 +915,11 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
             curenzymes_geneidx = geneTable_EC_species(idxGene,:);
             % prepare tables for correlation values etc
             curenzymes_mat = zeros(length(idxEC), length(species_list));
-            curenzymes_p = ones(length(idxEC), length(species_list));
+            curenzymes_p = -ones(length(idxEC), length(species_list));
             curenzymes_ec = cell(length(idxEC), length(species_list));
             % for linear model
             curenzymes_mdlX = zeros(length(idxEC), length(species_list));
-            curenzymes_mdlXp = ones(length(idxEC), length(species_list));
+            curenzymes_mdlXp = -ones(length(idxEC), length(species_list));
             curenzymes_mdlRsqadj = zeros(length(idxEC), length(species_list));
 
             for k=1:size(curenzymes_geneidx,2)
@@ -889,7 +942,7 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
                             curenzymes_mdlXp(j,k) = mdl.Coefficients.pValue(2);
                             curenzymes_mdlRsqadj(j,k) = mdl.Rsquared.Adjusted;
                         end
-                        curenzymes_ec{j, k} = curec;
+                        curenzymes_ec{j, k} = curenzymes{idxEC(j)};
                     end
                 end
                 % calculate corr with sum of all enzymes
@@ -920,6 +973,20 @@ for i=1:size(kegg_substrate_product_1enzyme,1)
     end
 end
 
+%perform FDR correction of correlation p-values per species
+kegg_DNA_sub_prod_EC_prod_corrPFDR = ones(size(kegg_DNA_sub_prod_EC_prod_corrP));
+for i=1:size(kegg_DNA_sub_prod_EC_prod_corrP,2)
+    nonnan_idx = kegg_DNA_sub_prod_EC_prod_corrP(:,i)>=0;
+    kegg_DNA_sub_prod_EC_prod_corrPFDR(nonnan_idx,i) = ...
+        my_bhfdr(kegg_DNA_sub_prod_EC_prod_corrP(nonnan_idx,i));
+end
+kegg_DNA_sub_prod_EC_sub_corrPFDR = ones(size(kegg_DNA_sub_prod_EC_sub_corrP));
+for i=1:size(kegg_DNA_sub_prod_EC_sub_corrP,2)
+    nonnan_idx = kegg_DNA_sub_prod_EC_sub_corrP(:,i)>=0;
+    kegg_DNA_sub_prod_EC_sub_corrPFDR(nonnan_idx,i) = ...
+        my_bhfdr(kegg_DNA_sub_prod_EC_sub_corrP(nonnan_idx,i));
+end
+
 % calculate best correlation per species across all enzymes
 kegg_DNA_sub_prod_substrates_bestcorr_pos = zeros(length(kegg_sub_prod_substrates_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
@@ -928,6 +995,10 @@ kegg_DNA_sub_prod_substrates_bestcorr_neg = zeros(length(kegg_sub_prod_substrate
 kegg_DNA_sub_prod_substrates_bestcorrP_pos = zeros(length(kegg_sub_prod_substrates_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
 kegg_DNA_sub_prod_substrates_bestcorrP_neg = zeros(length(kegg_sub_prod_substrates_unique),...
+    size(kegg_sub_prod_EC_prod_corr,2));
+kegg_DNA_sub_prod_substrates_bestcorrPFDR_pos = zeros(length(kegg_sub_prod_substrates_unique),...
+    size(kegg_sub_prod_EC_prod_corr,2));
+kegg_DNA_sub_prod_substrates_bestcorrPFDR_neg = zeros(length(kegg_sub_prod_substrates_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
 kegg_DNA_sub_prod_substrates_bestcorr_geneidx_pos = cell(length(kegg_sub_prod_substrates_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
@@ -941,6 +1012,12 @@ for i=1:length(kegg_sub_prod_substrates_unique)
     curcorrP = (kegg_DNA_sub_prod_EC_sub_corrP.*(kegg_substrate_product_1enzyme.Dir==1)) +...
            (kegg_DNA_sub_prod_EC_prod_corrP.*(kegg_substrate_product_1enzyme.Dir==-1));
     curcorrP=curcorrP(curidx,:);
+
+    curcorrPFDR = (kegg_DNA_sub_prod_EC_sub_corrPFDR.*(kegg_substrate_product_1enzyme.Dir==1)) +...
+           (kegg_DNA_sub_prod_EC_prod_corrPFDR.*(kegg_substrate_product_1enzyme.Dir==-1));
+    curcorrPFDR=curcorrPFDR(curidx,:);
+  
+
     curgeneidx = kegg_DNA_sub_prod_EC_sub_corr_geneidx;
     
     % get info about change in LI for substrate and product
@@ -959,15 +1036,27 @@ for i=1:length(kegg_sub_prod_substrates_unique)
         end
     end
     curgeneidx=curgeneidx(curidx,:);
-    
-    [kegg_DNA_sub_prod_substrates_bestcorr_pos(i,:),idx] = max(curcorr,[],1);
+
+    % replace 0 with NaN to not include 0 in comparison of correlations
+    % (e.g. keep negative corr in case only negative and 0 are present)
+    %curcorr(curcorrP<0) = nan;
+        
+    [maxcurcorr,idx] = max(curcorr,[],1, 'omitnan');
+    maxcurcorr(isnan(maxcurcorr)) = 0; % change back to 0 if only nans are present
+
+    kegg_DNA_sub_prod_substrates_bestcorr_pos(i,:) = maxcurcorr;
     for j=1:length(idx)
         kegg_DNA_sub_prod_substrates_bestcorrP_pos(i,j) = curcorrP(idx(j),j);
+        kegg_DNA_sub_prod_substrates_bestcorrPFDR_pos(i,j) = curcorrPFDR(idx(j),j);
         kegg_DNA_sub_prod_substrates_bestcorr_geneidx_pos{i,j} = curgeneidx{idx(j),j};
     end
-    [kegg_DNA_sub_prod_substrates_bestcorr_neg(i,:),idx] = min(curcorr,[],1);
+    [mincurcorr,idx] = min(curcorr,[],1, 'omitnan');
+    mincurcorr(isnan(mincurcorr)) = 0; % change back to 0 if only nans are present
+
+    kegg_DNA_sub_prod_substrates_bestcorr_neg(i,:) = mincurcorr;
     for j=1:length(idx)
         kegg_DNA_sub_prod_substrates_bestcorrP_neg(i,j) = curcorrP(idx(j),j);
+        kegg_DNA_sub_prod_substrates_bestcorrPFDR_neg(i,j) = curcorrPFDR(idx(j),j);
         kegg_DNA_sub_prod_substrates_bestcorr_geneidx_neg{i,j} = curgeneidx{idx(j),j};
     end
 end
@@ -980,6 +1069,11 @@ kegg_DNA_sub_prod_products_bestcorrP_pos = zeros(length(kegg_sub_prod_products_u
     size(kegg_sub_prod_EC_prod_corr,2));
 kegg_DNA_sub_prod_products_bestcorrP_neg = zeros(length(kegg_sub_prod_products_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
+kegg_DNA_sub_prod_products_bestcorrPFDR_pos = zeros(length(kegg_sub_prod_products_unique),...
+    size(kegg_sub_prod_EC_prod_corr,2));
+kegg_DNA_sub_prod_products_bestcorrPFDR_neg = zeros(length(kegg_sub_prod_products_unique),...
+    size(kegg_sub_prod_EC_prod_corr,2));
+
 kegg_DNA_sub_prod_products_bestcorr_geneidx_pos = cell(length(kegg_sub_prod_products_unique),...
     size(kegg_sub_prod_EC_prod_corr,2));
 kegg_DNA_sub_prod_products_bestcorr_geneidx_neg = cell(length(kegg_sub_prod_products_unique),...
@@ -992,6 +1086,10 @@ for i=1:length(kegg_sub_prod_products_unique)
     curcorrP = (kegg_DNA_sub_prod_EC_prod_corrP.*(kegg_substrate_product_1enzyme.Dir==1)) +...
            (kegg_DNA_sub_prod_EC_sub_corrP.*(kegg_substrate_product_1enzyme.Dir==-1));
     curcorrP=curcorrP(curidx,:);
+
+    curcorrPFDR = (kegg_DNA_sub_prod_EC_prod_corrPFDR.*(kegg_substrate_product_1enzyme.Dir==1)) +...
+           (kegg_DNA_sub_prod_EC_sub_corrPFDR.*(kegg_substrate_product_1enzyme.Dir==-1));
+    curcorrPFDR=curcorrPFDR(curidx,:);
     
     curgeneidx = kegg_DNA_sub_prod_EC_prod_corr_geneidx;
     
@@ -1003,7 +1101,7 @@ for i=1:length(kegg_sub_prod_products_unique)
     curcorr = curcorr.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2));
     curcorrP = curcorrP.*repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) - ...
         (1-repmat(cursubLI,1,size(curcorr,2)).*repmat(curprodLI,1,size(curcorr,2)) );
-    curcorrP(curcorrP<0) = nan;
+    %curcorrP(curcorrP<0) = nan;
     
     for j=1:length(kegg_substrate_product_1enzyme.Dir)
         if kegg_substrate_product_1enzyme.Dir(j)==-1
@@ -1011,15 +1109,27 @@ for i=1:length(kegg_sub_prod_products_unique)
         end
     end
     curgeneidx=curgeneidx(curidx,:);
+
+    % replace 0 with NaN to not include 0 in comparison of correlations
+    % (e.g. keep negative corr in case only negative and 0 are present)
+    curcorr(curcorrP<0) = nan;
+        
+    [maxcurcorr,idx] = max(curcorr,[],1, 'omitnan');% 'includenan');%
+    maxcurcorr(isnan(maxcurcorr)) = 0; % change back tp 0 if only nans are present
     
-    [kegg_DNA_sub_prod_products_bestcorr_pos(i,:), idx] = max(curcorr,[],1);    
+    kegg_DNA_sub_prod_products_bestcorr_pos(i,:) = maxcurcorr;    
     for j=1:length(idx)
         kegg_DNA_sub_prod_products_bestcorrP_pos(i,j) = curcorrP(idx(j),j);
+        kegg_DNA_sub_prod_products_bestcorrPFDR_pos(i,j) = curcorrPFDR(idx(j),j);
         kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j} = curgeneidx{idx(j),j};
     end
-    [kegg_DNA_sub_prod_products_bestcorr_neg(i,:), idx] = min(curcorr,[],1);
+    [mincurcorr,idx] = min(curcorr,[],1, 'omitnan');%, 'includenan');%, 'omitnan');
+    mincurcorr(isnan(mincurcorr)) = 0; % change back tp 0 if only nans are present
+
+    kegg_DNA_sub_prod_products_bestcorr_neg(i,:) = mincurcorr;
     for j=1:length(idx)
         kegg_DNA_sub_prod_products_bestcorrP_neg(i,j) = curcorrP(idx(j),j);
+        kegg_DNA_sub_prod_products_bestcorrPFDR_neg(i,j) = curcorrPFDR(idx(j),j);
         kegg_DNA_sub_prod_products_bestcorr_geneidx_neg{i,j} = curgeneidx{idx(j),j};
     end
 end
@@ -1109,6 +1219,20 @@ for i=1:length(kegg_sub_prod_substrates_unique)
    end
 end
 
+%perform FDR correction of correlation p-values per species
+speciesOTU_products_corrPFDR = ones(size(speciesOTU_products_corrP));
+for i=1:size(speciesOTU_products_corrP,2)
+    nonnan_idx = speciesOTU_products_corrP(:,i)>=0;
+    speciesOTU_products_corrPFDR(nonnan_idx,i) = ...
+        my_bhfdr(speciesOTU_products_corrP(nonnan_idx,i));
+end
+speciesOTU_substrates_corrPFDR = ones(size(speciesOTU_substrates_corrP));
+for i=1:size(speciesOTU_substrates_corrP,2)
+    nonnan_idx = speciesOTU_substrates_corrP(:,i)>=0;
+    speciesOTU_substrates_corrPFDR(nonnan_idx,i) = ...
+        my_bhfdr(speciesOTU_substrates_corrP(nonnan_idx,i));
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1122,6 +1246,14 @@ filter_genes = cellfun(@(x) ~isempty(x), kegg_sub_prod_products_bestcorr_geneidx
 plotdata = [speciesOTU_products_corr(filter_genes==1)...
             kegg_DNA_sub_prod_products_bestcorr_pos(filter_genes==1)...
             kegg_sub_prod_products_bestcorr_pos(filter_genes==1)];
+
+plotdataP = [speciesOTU_products_corrP(filter_genes==1)...
+            kegg_DNA_sub_prod_products_bestcorrP_pos(filter_genes==1)...
+            kegg_sub_prod_products_bestcorrP_pos(filter_genes==1)];
+
+plotdataPFDR = [speciesOTU_products_corrPFDR(filter_genes==1)...
+            kegg_DNA_sub_prod_products_bestcorrPFDR_pos(filter_genes==1)...
+            kegg_sub_prod_products_bestcorrPFDR_pos(filter_genes==1)];
 
 %%% Positive correlations with substrates
 %filter_genes = cellfun(@(x) ~isempty(x), kegg_sub_prod_substrates_bestcorr_geneidx_pos(:));
@@ -1137,6 +1269,8 @@ plotdata = [speciesOTU_products_corr(filter_genes==1)...
 % remove nan rows
 plotdata(isnan(sum(plotdata,2)),:)=[];
 % remove zeros in both DNA and RNA
+%plotdata(sum(abs(plotdata(:,2:3)),2)==0,:)=[];
+% remove zeros in all
 plotdata(sum(abs(plotdata(:,1:3)),2)==0,:)=[];
 
 figure
@@ -1169,7 +1303,7 @@ title('Best product positive corr')
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_5c_boxplotnotch_best_combinedsol_strictclass'...
-    num2str(strict_class), '_product_corrPOS_otuFiltered_DNA_RNA_LIchange_sub_prod_signrank.pdf'])
+    num2str(strict_class), '_product_corrPOS_otuFiltered_DNA_RNA_LIchange_sub_prod_signrank_120925.pdf'])
 % print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
 %     [figureFolder ...
 %     'fig_5c_violin_best_product_corrPOS_otuFiltered_DNA_RNA_LIchange_sub_prod_signrank.pdf'])
@@ -1181,6 +1315,85 @@ print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
 % print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
 %     [figureFolder ...
 %       'fig_sup_violin_best_substrate_corrNEG_otuFiltered_DNA_RNA_LIchange_sub_prod_signrank.pdf'])
+
+
+% calculate correlations that are revealed at each layer and their
+% relationships
+
+% filter by fdr
+% plotdata(plotdataP>0.1)=0;
+
+corr_flag_matrix = dec2bin(0:7) - '0';
+corr_threshold = 0.3;
+corr_bin_counts = zeros(size(corr_flag_matrix,1),1);
+
+for i=1:size(corr_flag_matrix,1)
+    corr_bin_counts(i) = ...
+        nnz( ((plotdata(:,1) >= corr_threshold)==corr_flag_matrix(i,1)) &...
+             ((plotdata(:,2) >= corr_threshold)==corr_flag_matrix(i,2)) &...
+             ((plotdata(:,3) >= corr_threshold)==corr_flag_matrix(i,3)));
+end
+        
+% make Sankey diagram out of the correlation bins
+% according to example from https://de.mathworks.com/matlabcentral/fileexchange/128679-sankey-plot
+nodeNames = cell(14,1);
+idx=1;
+for i=1:size(corr_flag_matrix,2)
+    curnames = num2str(unique(corr_flag_matrix(:,1:i), 'rows'));
+    for j=1:size(curnames,1)
+        nodeNames{idx} = strcat(curnames(j,:));
+        idx=idx+1;
+    end
+end
+% create adjacency matrix between different layers
+adjMat=zeros(length(nodeNames));
+for i=1:size(corr_flag_matrix,2)-1
+    [input_nodes, ~, input_nodes_idx] = unique(corr_flag_matrix(:,1:i), 'rows');
+    [output_nodes, ~, output_nodes_idx] = unique(corr_flag_matrix(:,1:(i+1)), 'rows');
+    for j=1:length(output_nodes)
+        curlink = sum(corr_bin_counts(output_nodes_idx==j));
+        cur_input = strcat(num2str(unique(corr_flag_matrix(output_nodes_idx==j,1:i), 'rows')));
+        cur_output = strcat(num2str(unique(corr_flag_matrix(output_nodes_idx==j,1:(i+1)), 'rows')));
+        adj_idx_input = ismember(nodeNames, cur_input);
+        adj_idx_output = ismember(nodeNames, cur_output);
+        adjMat(adj_idx_input, adj_idx_output) = curlink;
+    end
+end
+
+% add sizes to node names
+nodeNames_display = nodeNames;
+for i=1:size(corr_flag_matrix,2)
+    [input_nodes, ~, input_nodes_idx] = unique(corr_flag_matrix(:,1:i), 'rows');
+    for j=1:length(input_nodes)
+        curlink = sum(corr_bin_counts(input_nodes_idx==j));
+        cur_input = strcat(num2str(unique(corr_flag_matrix(input_nodes_idx==j,1:i), 'rows')));
+        adj_idx_input = ismember(nodeNames, cur_input);
+        nodeNames_display(adj_idx_input) = strcat(nodeNames_display(adj_idx_input), '[', num2str(curlink), ']');
+    end
+end
+        
+% define color of each node based on the value
+sk_colorlist = repmat([.5 .5 .5], length(nodeNames),1);
+for i=1:length(nodeNames)
+    if isequal(nodeNames{i}(end), '1')
+        sk_colorlist(i,:) = [128 21 23]./255; %dark red for '1'
+    end
+end
+
+% Create a Sankey diagram object
+SK=SSankey([],[],[],'NodeList',nodeNames_display, 'AdjMat',adjMat);
+% set colors according to corr flags
+SK.ColorList=sk_colorlist;
+% (Start drawing)
+SK.draw()
+%add text on top
+FontCell={'FontSize',14,'FontName','Times New Roman','HorizontalAlignment','center','VerticalAlignment','bottom'};
+for i=1:length(plotnames)
+    text(i+SK.BlockScale/2,min(min(SK.LayerPos(:,3:4))),plotnames{i}, FontCell{:});
+end
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
+   [figureFolder ...
+   'fig_sankey_productcorr_withtext.pdf'])
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1239,7 +1452,7 @@ fig = cgo.plot;
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_5d_clustergam_best_combined_strictclass'...
-    num2str(strict_class) '_product_corrPOS_RNA_filteredbyRNADNA_allpos_withtaurine.pdf'])
+    num2str(strict_class) '_product_corrPOS_RNA_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 
 cgo = clustergram(plotdataDNA, ...
@@ -1251,7 +1464,7 @@ fig = cgo.plot;
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_sup_clustergam_best_combined_strictclass'...
-    num2str(sctrict_class) '_product_corrPOS_DNA_filteredbyRNADNA_allpos_withtaurine.pdf'])
+    num2str(strict_class) '_product_corrPOS_DNA_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 cgo = clustergram(plotdataOTU, ...
     'columnLabels', species_list,...
@@ -1262,14 +1475,14 @@ fig = cgo.plot;
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_sup_clustergam_best_combined_strictclass'...
-    num2str(strict_class), '_product_corrPOS_OTU_filteredbyRNADNA_allpos_withtaurine.pdf'])
+    num2str(strict_class), '_product_corrPOS_OTU_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % for each selected product, plot heatmaps of corr with OTU, DNA and RNA
 %figureFile = 'heatmap_products_filtered_byRNAandDNA_significant0_1.ps';
 figureFile = ['fig_5e_sup_heatmap_combined_strictclass' num2str(strict_class)...
-              '_products_filtered_byRNAandDNA_onlyPosCorr_significant0_1_sortedX.ps'];
+              '_products_filtered_byRNAandDNA_onlyPosCorr_significant0_1_sortedX_120925.ps'];
 [~,~,plot_order] = intersect(species_order_cluster, species_list, 'stable');
 for i=1:size(plotdataRNA,1)
     fig = figure;
@@ -1290,7 +1503,7 @@ end
 % plot correlation between species enzymes and metabolites for each
 % metabolite with significant correlation
 figureFile = ['fig_sup_scatter_combined_strictclass' num2str(strict_class)...
-    '_metabolites_vs_best_enzymes_per_species_pos_pRNA_or_pRNA_0_1.ps'];
+    '_metabolites_vs_best_enzymes_per_species_pos_pRNA_or_pRNA_0_1_120925.ps'];
 for i=1:length(plotdata_rows)
    curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
    fig = figure('units','normalized','outerposition',[0 0 1 1]);
@@ -1340,16 +1553,17 @@ end
 % plot correlation between species enzymes and metabolites for each
 % metabolite with significant correlation
 figureFile = ['fig_sup_scatter_combined_strictclass' num2str(strict_class),...
-    '_metabolites_vs_best_enzymes_DNA_per_species.ps'];
+    '_metabolites_vs_best_enzymes_DNA_per_species_120925.ps'];
+fig = figure('units','normalized','outerposition',[0 0 1 1]);
 for i=1:length(plotdata_rows)
    curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
-   fig = figure('units','normalized','outerposition',[0 0 1 1]);
    spidx=1;   
    for k=1:size(plotdata_genes,2)
         if ~isempty(plotdata_genes{i,k})
             cur_expression = table2array(countsMatrixGetMM_DNA_table(...
-                plotdata_genes{i,k},gene_idx))';
-            cur_expression = sum(cur_expression, 2);
+                plotdata_genes{i,k},gene_idx));
+            cur_expression = sum(cur_expression, 1);
+            cur_expression = reshape(cur_expression, [], 1);
 
             if sum(cur_expression)>0
                 % corr with substrate
@@ -1379,52 +1593,285 @@ for i=1:length(plotdata_rows)
    end
    sgtitle(sprintf('%s DNA (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
    orient landscape 
+   print(fig, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
+       [figureFolder, figureFile]);
+   clf
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot correlation between species enzymes and metabolites for each
+% metabolite with significant correlation
+figureFile = 'fig_sup_scatter_metabolites_vs_OTU_DNA_per_species_210825.ps';
+for i=1:length(plotdata_rows)
+   curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
+   fig = figure('units','normalized','outerposition',[0 0 1 1]);
+   spidx=1;   
+   for k=1:size(plotdata_genes,2)
+        X= table2array(speciesOTU(k,2:end))';
+        
+        if shortestPathTable.Dir(select_path_idx(curmetidx(1)))==1
+            y = kegg_prod_sum_intensities(select_path_idx(curmetidx(1)),...
+                                      metabolomics_idx)';  
+        else
+            y = kegg_sub_sum_intensities(select_path_idx(curmetidx(1)),...
+                                      metabolomics_idx)'; 
+        end
+       
+        [curcorr, curcorrP] = corr(X,y);
+        [curcorrS] = corr(X,y, 'type','spearman');                          
+
+
+        mdl = fitlm(X,y);
+        subplot(3,5,spidx);
+        scatter(X,y);
+        axis square
+        title(sprintf('%s %.2f %.2f %.2f %.2f',speciesOTUabbr{k},...
+                                     curcorr, curcorrP, curcorrS,...
+                                     mdl.Rsquared.Adjusted))
+    
+        spidx = spidx+1;
+   end
+   sgtitle(sprintf('%s OTU DNA (corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
+   orient landscape 
    print(gcf, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
        [figureFolder, figureFile]);
    close(fig)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% write correlation tables to file
+table_mets = repmat(reshape(kegg_sub_prod_products_unique,[],1),...
+                    length(species_list),1);
+table_species = reshape(repmat(reshape(species_list,1,[]),...
+                        length(kegg_sub_prod_products_unique),1),...
+                        [], 1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% corr RNA
+table_corrtype = repmat({'corr_RNA_EC'}, length(table_mets),1);
+
+table_corr = reshape(kegg_sub_prod_products_bestcorr_pos,[],1);
+table_corrP = reshape(kegg_sub_prod_products_bestcorrP_pos,[],1);
+table_corrP(table_corr==0) = NaN;
+
+%calculate fdr
+table_corrFDR = nan(size(table_corrP));
+table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
+
+% check if original fdr is different from recalculated
+table_corrFDRorig = reshape(kegg_sub_prod_products_bestcorrPFDR_pos,[],1);
+
+
+% % enzymes
+corrtable = cell(size(kegg_sub_prod_products_bestcorr_geneidx_pos));
+corrtableEC = cell(size(kegg_sub_prod_products_bestcorr_geneidx_pos));
+for i=1:size(kegg_sub_prod_products_bestcorr_geneidx_pos,1)
+    for j=1:size(kegg_sub_prod_products_bestcorr_geneidx_pos,2)
+        if ~isempty(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j})
+            corrtable{i,j} = strjoin(geneTable.species_genes(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j}),"|");
+            curec = geneTable.EC(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j});
+            curec = unique(curec);
+            curec(ismember(curec, {'nan'}))=[];
+            corrtableEC{i,j} = strjoin(curec, "|");
+        end
+    end
+end
+table_Gene = reshape(corrtable, [], 1);
+table_EC = reshape(corrtableEC, [], 1);
+
+corrtableRNA = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR, table_corrFDRorig,...
+    table_Gene, table_EC);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % corr DNA
+table_corrtype = repmat({'corr_DNA_EC'}, length(table_mets),1);
+
+table_corr = reshape(kegg_DNA_sub_prod_products_bestcorr_pos,[],1);
+table_corrP = reshape(kegg_DNA_sub_prod_products_bestcorrP_pos,[],1);
+table_corrP(table_corr==0) = NaN;
+%calculate fdr
+table_corrFDR = nan(size(table_corrP));
+table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
+
+% check if original fdr is different from recalculated
+table_corrFDRorig = reshape(kegg_DNA_sub_prod_products_bestcorrPFDR_pos,[],1);
+
+
+% % enzymes
+corrtable = cell(size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos));
+corrtableEC = cell(size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos));
+for i=1:size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos,1)
+    for j=1:size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos,2)
+        if ~isempty(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j})
+            corrtable{i,j} = strjoin(geneTable.species_genes(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j}),"|");
+            curec = geneTable.EC(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j});
+            curec = unique(curec);
+            curec(ismember(curec, {'nan'}))=[];
+            corrtableEC{i,j} = strjoin(curec, "|");
+        end
+    end
+end
+table_Gene = reshape(corrtable, [], 1);
+table_EC = reshape(corrtableEC, [], 1);
+
+corrtableDNA = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR, table_corrFDRorig,...
+    table_Gene, table_EC);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% corr OTU
+table_corrtype = repmat({'corr_OTU'}, length(table_mets),1);
+
+table_corr = reshape(speciesOTU_products_corr,[],1);
+table_corrP = reshape(speciesOTU_products_corrP,[],1);
+table_corrP(table_corr==0) = NaN;
+
+%calculate fdr
+table_corrFDR = nan(size(table_corrP));
+table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
+
+table_corrFDRorig = reshape(speciesOTU_products_corrPFDR,[],1);
+
+table_Gene = repmat({'NaN'}, length(table_mets),1);
+table_EC = repmat({'NaN'}, length(table_mets),1);
+
+corrtableOTU = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR, table_corrFDRorig,...
+            table_Gene, table_EC);
+
+    
+corrtable = vertcat(corrtableRNA, corrtableDNA, corrtableOTU);
+
+writetable(corrtable, ...
+    [outputFolder, 'table_speciesRNADNAOTU_withFDR_long_210825.csv'],...
+    'WriteRowNames',true);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% calculate number of products correlating with enzymes
+prod_bestcorrP_pos_nonneg = kegg_sub_prod_products_bestcorrPFDR_pos;
+prod_bestcorrP_pos_nonneg(prod_bestcorrP_pos_nonneg<0) = nan;
+
+nnz(sum(prod_bestcorrP_pos_nonneg<0.1,2))
+% calculate mz for each product to calculate unique ions
+kegg_sub_prod_products_unique_mz = zeros(size(kegg_sub_prod_products_unique));
+for i=1:length(kegg_sub_prod_products_unique)
+    curidx = kegg_ids_unique_index(ismember(kegg_ids_unique, kegg_sub_prod_products_unique{i}));
+    kegg_sub_prod_products_unique_mz(i) = metaboliteFilters.MZ(curidx);
+end
+% calculate p-values for unique ions
+kegg_sub_prod_products_unique_mz_unique = unique(kegg_sub_prod_products_unique_mz);
+kegg_sub_prod_products_unique_mz_unique_sigcorr = zeros(size(kegg_sub_prod_products_unique_mz_unique));
+for i=1:length(kegg_sub_prod_products_unique_mz_unique)
+    curidx = (kegg_sub_prod_products_unique_mz == kegg_sub_prod_products_unique_mz_unique(i));
+    kegg_sub_prod_products_unique_mz_unique_sigcorr(i) = max(sum(prod_bestcorrP_pos_nonneg(curidx ,:)<0.1,2));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% get unique substrate mz
+% calculate mz for each product to calculate unique ions
+kegg_sub_prod_substrates_unique_mz = zeros(size(kegg_sub_prod_substrates_unique));
+for i=1:length(kegg_sub_prod_substrates_unique)
+    curidx = kegg_ids_unique_index(ismember(kegg_ids_unique, kegg_sub_prod_substrates_unique{i}));
+    kegg_sub_prod_substrates_unique_mz(i) = metaboliteFilters.MZ(curidx);
+end
+length(unique(kegg_sub_prod_substrates_unique_mz))
+% ans = 70 / new: 82
+length(unique(kegg_sub_prod_products_unique_mz))
+% ans = 66 / new: 78
+nnz(kegg_sub_prod_products_unique_mz_unique_sigcorr)
+% ans = 9 / new: 6 (FDR)
+nnz(kegg_sub_prod_products_unique_mz_unique_sigcorr)/length((kegg_sub_prod_products_unique_mz_unique_sigcorr))
+% ans = 0.1364 / new: 0.0769
+
+% get unique pathes and change substrates and products 
+% and get MZs
+[shortestPathTable_unique, testidx] = unique(shortestPathTable);
+shortestPathTable_unique.Path_length = shortestPathTable_length(testidx);
+shortestPathTable_unique_sub = cell(size(shortestPathTable_unique,1),1);
+shortestPathTable_unique_prod = cell(size(shortestPathTable_unique,1),1);
+shortestPathTable_unique_sub_mz = zeros(size(shortestPathTable_unique,1),1);
+shortestPathTable_unique_prod_mz = zeros(size(shortestPathTable_unique,1),1);
+shortestPathTable_unique_sub_idx = zeros(size(shortestPathTable_unique,1),1);
+shortestPathTable_unique_prod_idx = zeros(size(shortestPathTable_unique,1),1);
+for i=1:size(shortestPathTable_unique,1)
+    if (shortestPathTable_unique.Dir(i)==1)
+        cursub = shortestPathTable_unique.Substrate{i};
+        curprod = shortestPathTable_unique.Product{i};
+    else
+        cursub = shortestPathTable_unique.Product{i};
+        curprod = shortestPathTable_unique.Substrate{i};
+    end
+    %substrate mz
+    curidx = kegg_ids_unique_index(ismember(kegg_ids_unique, cursub));
+    cursub_mz = metaboliteFilters.MZ(curidx);
+    shortestPathTable_unique_sub_idx(i) = curidx;
+    % product mz
+    curidx = kegg_ids_unique_index(ismember(kegg_ids_unique, curprod));
+    curprod_mz = metaboliteFilters.MZ(curidx);
+    shortestPathTable_unique_prod_idx(i) = curidx;
+    
+    shortestPathTable_unique_sub{i} = cursub;
+    shortestPathTable_unique_prod{i} = curprod;
+    shortestPathTable_unique_sub_mz(i) = cursub_mz;
+    shortestPathTable_unique_prod_mz(i) = curprod_mz;
+end
+shortestPathTable_unique.Substrate = shortestPathTable_unique_sub;
+shortestPathTable_unique.Product = shortestPathTable_unique_prod;
+shortestPathTable_unique.Substrate_MZ = shortestPathTable_unique_sub_mz;
+shortestPathTable_unique.Product_MZ = shortestPathTable_unique_prod_mz;
+shortestPathTable_unique.Substrate_IDX = shortestPathTable_unique_sub_idx;
+shortestPathTable_unique.Product_IDX = shortestPathTable_unique_prod_idx;
+% write to table
+writetable(shortestPathTable_unique, [outputFolder, 'table_shortest_path_subprod_sorted_unique_210825.csv']);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % include data from CV mice as well
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %figureFile = 'fig_sup_scatter_metabolites_vs_best_enzymes_DNA_per_species.ps';
 %for i=1:length(plotdata_rows)
-i=9; % porph
-   curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
-   fig = figure('units','normalized','outerposition',[0 0 1 1]);
-   spidx=1;   
-   for k=1:size(plotdata_genes,2)
-        if ~isempty(plotdata_genes{i,k})
-            cur_expression = table2array(countsMatrixGetMM_DNA_table(...
-                plotdata_genes{i,k},gene_idx))';
-            cur_expression = sum(cur_expression, 2);
-
-            if sum(cur_expression)>0
-                % corr with product
-                X = cur_expression;
-                if shortestPathTable.Dir(select_path_idx(curmetidx(1)))==1
-                    y = kegg_prod_sum_intensities(select_path_idx(curmetidx(1)),...
-                                              metabolomics_idx)';  
-                else
-                    y = kegg_sub_sum_intensities(select_path_idx(curmetidx(1)),...
-                                              metabolomics_idx)'; 
-                end
-                [curcorr, curcorrP] = corr(X,y);
-                [curcorrS] = corr(X,y, 'type','spearman');                          
-                                        
-
-                mdl = fitlm(X,y);
-                subplot(3,5,spidx);
-                scatter(X,y);
-                axis square
-                title(sprintf('%s %.2f %.2f %.2f %.2f %.2f',species_list{k},...
-                                             plotdataDNA(i,k),...
-                                             curcorr, curcorrP, curcorrS,...
-                                             mdl.Rsquared.Adjusted))
-            end
-        end
-        spidx = spidx+1;
-   end
-   sgtitle(sprintf('%s DNA (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
+% i=9; % porph
+%    curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
+%    fig = figure('units','normalized','outerposition',[0 0 1 1]);
+%    spidx=1;   
+%    for k=1:size(plotdata_genes,2)
+%         if ~isempty(plotdata_genes{i,k})
+%             cur_expression = table2array(countsMatrixGetMM_DNA_table(...
+%                 plotdata_genes{i,k},gene_idx))';
+%             cur_expression = sum(cur_expression, 2);
+% 
+%             if sum(cur_expression)>0
+%                 % corr with product
+%                 X = cur_expression;
+%                 if shortestPathTable.Dir(select_path_idx(curmetidx(1)))==1
+%                     y = kegg_prod_sum_intensities(select_path_idx(curmetidx(1)),...
+%                                               metabolomics_idx)';  
+%                 else
+%                     y = kegg_sub_sum_intensities(select_path_idx(curmetidx(1)),...
+%                                               metabolomics_idx)'; 
+%                 end
+%                 [curcorr, curcorrP] = corr(X,y);
+%                 [curcorrS] = corr(X,y, 'type','spearman');                          
+% 
+% 
+%                 mdl = fitlm(X,y);
+%                 subplot(3,5,spidx);
+%                 scatter(X,y);
+%                 axis square
+%                 title(sprintf('%s %.2f %.2f %.2f %.2f %.2f',species_list{k},...
+%                                              plotdataDNA(i,k),...
+%                                              curcorr, curcorrP, curcorrS,...
+%                                              mdl.Rsquared.Adjusted))
+%             end
+%         end
+%         spidx = spidx+1;
+%    end
+%    sgtitle(sprintf('%s DNA (max corr, corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
 
 % plot shortbred results
 %shortbred_genes = unique(countsMatrix_shortBRED.Family);
@@ -1473,7 +1920,7 @@ shortbred_genes = cellfun(@(x) strrep(x, "']", ""), shortbred_genes, 'unif', 0);
 shortbred_genes = cellfun(@(x) x{1}, shortbred_genes, 'unif', 0);
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% plot for each metablite product shortbred results
+% plot for each metabolite product shortbred results
 curenzymes_locustags_combined=[];
 curenzymes_locustags_total_num = 0;
 
@@ -1508,10 +1955,14 @@ curenzymes_locustags_combined = table(curenzymes_locustags_combined(:,1),...
                                       curenzymes_locustags_combined(:,2),...
                                       'VariableNames', {'KEGGID_product', 'locus_tag'});
 writetable(curenzymes_locustags_combined, ...
-    '.\ProcessedData\shortBRED\locustags_for_plotting_products.txt');
+    '.\ProcessedData\shortBRED\locustags_for_plotting_products_210825_noneg.txt');
 
 %curenzymes_locustags_total_num =
 %   363
+% if negative correlations are also included in the max without including
+% zero genes
+%curenzymes_locustags_total_num =
+%   552
 
 % leave only sample names
 %shortbred_columns = cellfun(@(x)x(1:strfind(x,'_')-1), shortbred_columns, 'unif',0);
@@ -1519,10 +1970,10 @@ min_mice_num = 5; % minimum number of mice to consider correlation
 
 if shortbred_dna_flag==1
     figureFile = ['fig_sup_scatter_metabolites_vs_best_enzymes_shortbred_DNA_per_species_minmice'...
-                   num2str(min_mice_num) '.ps'];
+                   num2str(min_mice_num) '_210825.ps'];
 else
     figureFile = ['fig_sup_scatter_metabolites_vs_best_enzymes_shortbred_RNA_per_species_minmice'...
-                   num2str(min_mice_num) '.ps'];
+                   num2str(min_mice_num) '_210825.ps'];
 end
 
 % plot correlation for each enzyme
@@ -1777,11 +2228,11 @@ met_enz_enzyme_data(met_enz_idx:end,:) = [];
 %corr_shortbred_rand(rand_i) = corr(met_enz_PCCdc, met_enz_PCCcvr);
 %end
 
-figure
-histogram(corr_shortbred_rand)
-hold on
-plot([corrC, corrC], [1, 20], 'g')
-
+% figure
+% histogram(corr_shortbred_rand)
+% hold on
+% plot([corrC, corrC], [1, 20], 'g')
+% 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlations per metabolite
@@ -1798,17 +2249,26 @@ ylabel('PCC between enzyme and product, CVR')
 [corrC, corrP] = corr(met_enz_PCCdc, met_enz_PCCcvr);
 [corrSC, corrSP] = corr(met_enz_PCCdc, met_enz_PCCcvr, 'type', 'spearman');
 
+% add dot annotations
+hold on
+annotate_dots = find((met_enz_PCCdc>0.1) & (met_enz_PCCcvr>0.1));
+for i=1:length(annotate_dots)
+    text(met_enz_PCCdc(annotate_dots(i)), met_enz_PCCcvr(annotate_dots(i)),...
+        strcat(met_enz_metabolite(annotate_dots(i)), '-', strrep(met_enz_enzyme(annotate_dots(i)), '_', '-')))
+end
 if shortbred_dna_flag   
     title({['DNA minmicenum=' num2str(min_mice_num)],...
            sprintf('PCC %.2f %.2f SCC %.2f %.2f', corrC, corrP, corrSC, corrSP)})
-    figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_DNA.pdf';
+    figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_DNA_210825.pdf';
 else
     title({['RNA minmicenum=' num2str(min_mice_num)],...
            sprintf('PCC %.2f %2f SCC %.2f %.2f', corrC, corrP, corrSC, corrSP)})
-    figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_RNA.pdf';
+    figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_RNA_210825.pdf';
 end
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
        [figureFolder, figureFile]);
+
+
 
 % permute which CV enzyme is correlated to the corresponding metabolite
 % (calculate correlation with a random CV enzyme)
@@ -1839,6 +2299,7 @@ plot([corrC, corrC], [1, 20], 'g')
 % enzyme-metabolites that belong together)
 nperm = 100;
 testcorr = zeros(nperm,1);
+figure
 hold on
 for i=1:nperm
     met_enz_shuffled_dc = met_enz_PCCdc(randperm(length(met_enz_PCCdc)));
@@ -1866,46 +2327,6 @@ for i=1:length(plotdata_rows)
 end
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% plot correlation between species enzymes and metabolites for each
-% metabolite with significant correlation
-figureFile = 'fig_sup_scatter_metabolites_vs_OTU_DNA_per_species.ps';
-for i=1:length(plotdata_rows)
-   curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
-   fig = figure('units','normalized','outerposition',[0 0 1 1]);
-   spidx=1;   
-   for k=1:size(plotdata_genes,2)
-        X= table2array(speciesOTU(k,2:end))';
-        
-        if shortestPathTable.Dir(select_path_idx(curmetidx(1)))==1
-            y = kegg_prod_sum_intensities(select_path_idx(curmetidx(1)),...
-                                      metabolomics_idx)';  
-        else
-            y = kegg_sub_sum_intensities(select_path_idx(curmetidx(1)),...
-                                      metabolomics_idx)'; 
-        end
-       
-        [curcorr, curcorrP] = corr(X,y);
-        [curcorrS] = corr(X,y, 'type','spearman');                          
-
-
-        mdl = fitlm(X,y);
-        subplot(3,5,spidx);
-        scatter(X,y);
-        axis square
-        title(sprintf('%s %.2f %.2f %.2f %.2f',species_list{k},...
-                                     curcorr, curcorrP, curcorrS,...
-                                     mdl.Rsquared.Adjusted))
-    
-        spidx = spidx+1;
-   end
-   sgtitle(sprintf('%s OTU DNA (corr, corrP, corrS, Rsqadj)',plotdata_rows{i}));
-   orient landscape 
-   print(gcf, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
-       [figureFolder, figureFile]);
-   close(fig)
-end
- 
 % % for each pair, calculate in how many species it is present
 % kegg_sub_prod_ec_count = sum(kegg_sub_prod_ECchange~=0,2);
 % plotdata = kegg_sub_prod_ec_count(kegg_sub_prod_ec_count~=0);
@@ -1918,176 +2339,9 @@ end
 %     'histogram_number_of_species_single_pair_enzyme.pdf')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% calculate number of products correlating with enzymes
-nnz(sum(kegg_sub_prod_products_bestcorrP_pos<0.1,2))
-% calculate mz for each product to calculate unique ions
-kegg_sub_prod_products_unique_mz = zeros(size(kegg_sub_prod_products_unique));
-for i=1:length(kegg_sub_prod_products_unique)
-    curidx = kegg_ids_unique_index(ismember(kegg_ids_unique, kegg_sub_prod_products_unique{i}));
-    kegg_sub_prod_products_unique_mz(i) = metaboliteFilters.MZ(curidx);
-end
-% calculate p-values for unique ions
-kegg_sub_prod_products_unique_mz_unique = unique(kegg_sub_prod_products_unique_mz);
-kegg_sub_prod_products_unique_mz_unique_sigcorr = zeros(size(kegg_sub_prod_products_unique_mz_unique));
-for i=1:length(kegg_sub_prod_products_unique_mz_unique)
-    curidx = (kegg_sub_prod_products_unique_mz == kegg_sub_prod_products_unique_mz_unique(i));
-    kegg_sub_prod_products_unique_mz_unique_sigcorr(i) = max(sum(kegg_sub_prod_products_bestcorrP_pos(curidx ,:)<0.1,2));
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% get unique substrate mz
-% calculate mz for each product to calculate unique ions
-kegg_sub_prod_substrates_unique_mz = zeros(size(kegg_sub_prod_substrates_unique));
-for i=1:length(kegg_sub_prod_substrates_unique)
-    curidx = kegg_ids_unique_index(ismember(kegg_ids_unique, kegg_sub_prod_substrates_unique{i}));
-    kegg_sub_prod_substrates_unique_mz(i) = metaboliteFilters.MZ(curidx);
-end
-length(unique(kegg_sub_prod_substrates_unique_mz))
-% ans = 70
-length(unique(kegg_sub_prod_products_unique_mz))
-% ans = 66
-nnz(kegg_sub_prod_products_unique_mz_unique_sigcorr)
-% ans = 9
-nnz(kegg_sub_prod_products_unique_mz_unique_sigcorr)/length((kegg_sub_prod_products_unique_mz_unique_sigcorr))
-% ans = 0.1364
-
-% get unique pathes and change substrates and products 
-% and get MZs
-[shortestPathTable_unique, testidx] = unique(shortestPathTable);
-shortestPathTable_unique.Path_length = shortestPathTable_length(testidx);
-shortestPathTable_unique_sub = cell(size(shortestPathTable_unique,1),1);
-shortestPathTable_unique_prod = cell(size(shortestPathTable_unique,1),1);
-shortestPathTable_unique_sub_mz = zeros(size(shortestPathTable_unique,1),1);
-shortestPathTable_unique_prod_mz = zeros(size(shortestPathTable_unique,1),1);
-shortestPathTable_unique_sub_idx = zeros(size(shortestPathTable_unique,1),1);
-shortestPathTable_unique_prod_idx = zeros(size(shortestPathTable_unique,1),1);
-for i=1:size(shortestPathTable_unique,1)
-    if (shortestPathTable_unique.Dir(i)==1)
-        cursub = shortestPathTable_unique.Substrate{i};
-        curprod = shortestPathTable_unique.Product{i};
-    else
-        cursub = shortestPathTable_unique.Product{i};
-        curprod = shortestPathTable_unique.Substrate{i};
-    end
-    %substrate mz
-    curidx = kegg_ids_unique_index(ismember(kegg_ids_unique, cursub));
-    cursub_mz = metaboliteFilters.MZ(curidx);
-    shortestPathTable_unique_sub_idx(i) = curidx;
-    % product mz
-    curidx = kegg_ids_unique_index(ismember(kegg_ids_unique, curprod));
-    curprod_mz = metaboliteFilters.MZ(curidx);
-    shortestPathTable_unique_prod_idx(i) = curidx;
-    
-    shortestPathTable_unique_sub{i} = cursub;
-    shortestPathTable_unique_prod{i} = curprod;
-    shortestPathTable_unique_sub_mz(i) = cursub_mz;
-    shortestPathTable_unique_prod_mz(i) = curprod_mz;
-end
-shortestPathTable_unique.Substrate = shortestPathTable_unique_sub;
-shortestPathTable_unique.Product = shortestPathTable_unique_prod;
-shortestPathTable_unique.Substrate_MZ = shortestPathTable_unique_sub_mz;
-shortestPathTable_unique.Product_MZ = shortestPathTable_unique_prod_mz;
-shortestPathTable_unique.Substrate_IDX = shortestPathTable_unique_sub_idx;
-shortestPathTable_unique.Product_IDX = shortestPathTable_unique_prod_idx;
-% write to table
-writetable(shortestPathTable_unique, [outputFolder, 'table_shortest_path_subprod_sorted_unique.csv']);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% write correlation tables to file
-table_mets = repmat(reshape(kegg_sub_prod_products_unique,[],1),...
-                    length(species_list),1);
-table_species = reshape(repmat(reshape(species_list,1,[]),...
-                        length(kegg_sub_prod_products_unique),1),...
-                        [], 1);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% corr RNA
-table_corrtype = repmat({'corr_RNA_EC'}, length(table_mets),1);
-
-table_corr = reshape(kegg_sub_prod_products_bestcorr_pos,[],1);
-table_corrP = reshape(kegg_sub_prod_products_bestcorrP_pos,[],1);
-table_corrP(table_corr==0) = NaN;
-
-%calculate fdr
-table_corrFDR = nan(size(table_corrP));
-table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
-
-
-% % enzymes
-corrtable = cell(size(kegg_sub_prod_products_bestcorr_geneidx_pos));
-corrtableEC = cell(size(kegg_sub_prod_products_bestcorr_geneidx_pos));
-for i=1:size(kegg_sub_prod_products_bestcorr_geneidx_pos,1)
-    for j=1:size(kegg_sub_prod_products_bestcorr_geneidx_pos,2)
-        if ~isempty(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j})
-            corrtable{i,j} = strjoin(geneTable.species_genes(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j}),"|");
-            curec = geneTable.EC(kegg_sub_prod_products_bestcorr_geneidx_pos{i,j});
-            curec = unique(curec);
-            curec(ismember(curec, {'nan'}))=[];
-            corrtableEC{i,j} = strjoin(curec, "|");
-        end
-    end
-end
-table_Gene = reshape(corrtable, [], 1);
-table_EC = reshape(corrtableEC, [], 1);
-
-corrtableRNA = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR,...
-    table_Gene, table_EC);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % corr DNA
-table_corrtype = repmat({'corr_DNA_EC'}, length(table_mets),1);
-
-table_corr = reshape(kegg_DNA_sub_prod_products_bestcorr_pos,[],1);
-table_corrP = reshape(kegg_DNA_sub_prod_products_bestcorrP_pos,[],1);
-table_corrP(table_corr==0) = NaN;
-%calculate fdr
-table_corrFDR = nan(size(table_corrP));
-table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
-
-% % enzymes
-corrtable = cell(size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos));
-corrtableEC = cell(size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos));
-for i=1:size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos,1)
-    for j=1:size(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos,2)
-        if ~isempty(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j})
-            corrtable{i,j} = strjoin(geneTable.species_genes(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j}),"|");
-            curec = geneTable.EC(kegg_DNA_sub_prod_products_bestcorr_geneidx_pos{i,j});
-            curec = unique(curec);
-            curec(ismember(curec, {'nan'}))=[];
-            corrtableEC{i,j} = strjoin(curec, "|");
-        end
-    end
-end
-table_Gene = reshape(corrtable, [], 1);
-table_EC = reshape(corrtableEC, [], 1);
-
-corrtableDNA = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR,...
-    table_Gene, table_EC);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% corr OTU
-table_corrtype = repmat({'corr_OTU'}, length(table_mets),1);
-
-table_corr = reshape(speciesOTU_products_corr,[],1);
-table_corrP = reshape(speciesOTU_products_corrP,[],1);
-table_corrP(table_corr==0) = NaN;
-
-%calculate fdr
-table_corrFDR = nan(size(table_corrP));
-table_corrFDR(~isnan(table_corrP)) = my_bhfdr(table_corrP(~isnan(table_corrP)));
-
-table_Gene = repmat({'NaN'}, length(table_mets),1);
-table_EC = repmat({'NaN'}, length(table_mets),1);
-
-corrtableOTU = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR,...
-            table_Gene, table_EC);
-
-    
-corrtable = vertcat(corrtableRNA, corrtableDNA, corrtableOTU);
-
-writetable(corrtable, ...
-    [outputFolder, 'table_speciesRNADNAOTU_withFDR_long.csv'],...
-    'WriteRowNames',true);
-
+% old code for correlation table plot which is not replaced by long table
+% of all correlations above (before CVR part)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % corrtable = array2table(kegg_sub_prod_products_bestcorr_pos,...
 %     'RowNames', kegg_sub_prod_products_unique,...
@@ -2169,10 +2423,6 @@ writetable(corrtable, ...
 % writetable(corrtableEC, ...
 %     [outputFolder, 'table_kegg_DNA_sub_prod_products_bestcorr_EC_pos.csv'],...
 %     'WriteRowNames',true);
-
-
-
-
 
 % corrtable = array2table(speciesOTU_products_corr,...
 %     'RowNames', kegg_sub_prod_products_unique,...
