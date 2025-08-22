@@ -10,7 +10,7 @@ add_global_and_file_dependencies
 % Required files:
 % 'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'
 % 'mouse_info.csv'
-% Output: 
+% Output:
 % Files:
 % 'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'
 % 'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs_with_FC.txt'
