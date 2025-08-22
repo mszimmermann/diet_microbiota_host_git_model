@@ -1777,13 +1777,13 @@ for i=1:length(kegg_sub_prod_substrates_unique)
     kegg_sub_prod_substrates_unique_mz(i) = metaboliteFilters.MZ(curidx);
 end
 length(unique(kegg_sub_prod_substrates_unique_mz))
-% ans = 70 / new: 82
+% ans = 70 / new: 82 / strictclass=1 57
 length(unique(kegg_sub_prod_products_unique_mz))
-% ans = 66 / new: 78
+% ans = 66 / new: 78 / strictclass=1 54
 nnz(kegg_sub_prod_products_unique_mz_unique_sigcorr)
-% ans = 9 / new: 6 (FDR)
+% ans = 9 / new: 6 (FDR) / strictclass=1 5
 nnz(kegg_sub_prod_products_unique_mz_unique_sigcorr)/length((kegg_sub_prod_products_unique_mz_unique_sigcorr))
-% ans = 0.1364 / new: 0.0769
+% ans = 0.1364 / new: 0.0769 / strictclass=1 0.0926
 
 % get unique pathes and change substrates and products 
 % and get MZs
