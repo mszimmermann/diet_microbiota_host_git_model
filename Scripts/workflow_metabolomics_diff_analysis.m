@@ -23,10 +23,12 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read metabolite data
 metaboliteData = readtable([inputFolder,...
-    'metabolites_allions_combined_norm_intensity.csv']);
+    'metabolites_allions_combined_norm_intensity_with_CVR_220825.csv']);
+    %'metabolites_allions_combined_norm_intensity.csv']);
     
 metaboliteFilters = readtable([inputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
+    'metabolites_allions_combined_formulas_with_metabolite_filters_0825.csv']);
+    %'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % separate data into a matrix of normalized intensities

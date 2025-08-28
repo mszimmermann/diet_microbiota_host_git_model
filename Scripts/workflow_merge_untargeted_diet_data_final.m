@@ -332,6 +332,8 @@ for method_i = 1:length(curMethod_unique)
     % calculate intensity matrix for all metabolites
     combinedIntensity = zeros(size(curCompoundsMergedIDXconversion,1),...
                                 30*length(curmethodidx));
+    combinedIntensityRawMS = zeros(size(curCompoundsMergedIDXconversion,1),...
+                                30*length(curmethodidx));
     combinedTissues = cell(30*length(curmethodidx),1);
     combinedDiet = cell(30*length(curmethodidx),1);
     combinedType = cell(30*length(curmethodidx),1);
@@ -340,6 +342,7 @@ for method_i = 1:length(curMethod_unique)
     idx = 1;
     for d = 1:length(curmethodidx)
         curIntensitiesRaw =  curIntensitiesRaw_cell{curmethodidx(d)};
+        curIntensitiesRawMS =  curIntensitiesRawMS_cell{curmethodidx(d)};
 
         sampleType = cell(size(curSampleNames_cell{curmethodidx(d)}));
         sampleTissue = cell(size(curSampleNames_cell{curmethodidx(d)}));
@@ -357,6 +360,9 @@ for method_i = 1:length(curMethod_unique)
         combinedIntensity(curCompoundsMergedIDXconversion(:,d)~=0, idx:idx+size(sampleType)-1) = ...
              curIntensitiesRaw(curCompoundsMergedIDXconversion(curCompoundsMergedIDXconversion(:,d)~=0,d),:);
 
+        combinedIntensityRawMS(curCompoundsMergedIDXconversion(:,d)~=0, idx:idx+size(sampleType)-1) = ...
+             curIntensitiesRawMS(curCompoundsMergedIDXconversion(curCompoundsMergedIDXconversion(:,d)~=0,d),:);
+
         combinedTissues(idx:idx+size(sampleType)-1) = sampleTissue;
         combinedDiet(idx:idx+size(sampleType)-1) = sampleDiet;
         combinedType(idx:idx+size(sampleType)-1) = sampleType;
@@ -367,6 +373,7 @@ for method_i = 1:length(curMethod_unique)
 
     end
     combinedIntensity(:, idx:end) = [];
+    combinedIntensityRawMS(:, idx:end) = [];
     combinedTissues(idx:end) = [];
     combinedDiet(idx:end) = [];
     combinedType(idx:end) = [];
@@ -511,7 +518,7 @@ clear allKEGGID
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save annotation to file
-fid = fopen([outputFolder 'metabolites_allions_combined_formulas.csv'], 'w');
+fid = fopen([outputFolder 'metabolites_allions_combined_formulas_220825.csv'], 'w');
 fprintf(fid, 'MZ\tRT\tMethod\tMode\tSpectrum\tCompoundID\tCompoundName\tCompoundFormula\tMZdelta\tIDX\tmaxIntensity\tmeanintensity\tmedianIntensity\tNumDetectedSamples\n');
 onlyAnnotated = 0;%1;
 for i=1:length(joinedAnn)
@@ -620,7 +627,7 @@ combinedTissues(cellfun(@(x) isequal(x, 'DC'), combinedTissues)) = {'Feces'};
 % combinedType(removeCVR)=[];
 % combinedMouse(removeCVR) = [];
 
-fid = fopen([outputFolder 'metabolites_allions_combined_norm_intensity_with_CVR.csv'], 'w');
+fid = fopen([outputFolder 'metabolites_allions_combined_norm_intensity_with_CVR_220825.csv'], 'w');
 fprintf(fid, 'MZ\tRT\tMethod\tMode\tSpectrum');
 for i=1:length(combinedMouse)
     fprintf(fid, '\t%s_%s_%s_%s', combinedDiet{i}, ...
