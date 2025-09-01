@@ -26,6 +26,10 @@ if nargin >= 6
         cpdFORMULA = varargin{3};
     end
 end
+% round all cmpdMASS to fourth decimal to avoid numeric differences
+cpdMASS = round(cpdMASS*10000)/10000;
+MzRT = round(MzRT*10000)/10000;
+
 for i=1:length(MzRT)
     ann(i).annID = [];
     ann(i).annNames = [];
@@ -37,7 +41,8 @@ for i=1:length(MzRT)
     ann(i).byReference = 0;
     annFlag(i) = 0;
                     
-    closestMatch = find(abs(cpdMASS-MzRT(i,1)) <= annThres);
+    % round difference to fourth decimal to avoid numeric issues
+    closestMatch = find((round(abs(cpdMASS-MzRT(i,1))*10000)/10000) <= annThres);
     if ~isempty(closestMatch)
         for j=1:length(closestMatch)
             cur_refRT = refRT(ismember(refRT(:,1),cpdID(closestMatch(j))),3);
