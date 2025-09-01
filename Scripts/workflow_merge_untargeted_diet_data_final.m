@@ -21,7 +21,9 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % load annotation from joint KEGG/AGORA/HMDB file
-annKEGGAGORA = readtable([rawdataFolder 'kegg_agora_09_2020_hmdb_06_2021_table.csv']);
+% annKEGGAGORA = readtable([rawdataFolder 'kegg_agora_09_2020_hmdb_06_2021_table.csv']);
+% annKEGGAGORA = readtable([rawdataFolder 'kegg_hmdb_06_2021_table.csv']);
+annKEGGAGORA = readtable([rawdataFolder 'kegg_hmdb_06_2021_mimedb_03_2024_table.csv']);
 
 % Import experimental data
 filenameP1 = {[rawdataFolder 'metabolomics_data\C18_Neg_Alignments\C18-Neg_'],...
@@ -342,7 +344,7 @@ for method_i = 1:length(curMethod_unique)
     idx = 1;
     for d = 1:length(curmethodidx)
         curIntensitiesRaw =  curIntensitiesRaw_cell{curmethodidx(d)};
-        curIntensitiesRawMS =  curIntensitiesRawMS_cell{curmethodidx(d)};
+ %       curIntensitiesRawMS =  curIntensitiesRawMS_cell{curmethodidx(d)};
 
         sampleType = cell(size(curSampleNames_cell{curmethodidx(d)}));
         sampleTissue = cell(size(curSampleNames_cell{curmethodidx(d)}));
@@ -360,8 +362,8 @@ for method_i = 1:length(curMethod_unique)
         combinedIntensity(curCompoundsMergedIDXconversion(:,d)~=0, idx:idx+size(sampleType)-1) = ...
              curIntensitiesRaw(curCompoundsMergedIDXconversion(curCompoundsMergedIDXconversion(:,d)~=0,d),:);
 
-        combinedIntensityRawMS(curCompoundsMergedIDXconversion(:,d)~=0, idx:idx+size(sampleType)-1) = ...
-             curIntensitiesRawMS(curCompoundsMergedIDXconversion(curCompoundsMergedIDXconversion(:,d)~=0,d),:);
+%        combinedIntensityRawMS(curCompoundsMergedIDXconversion(:,d)~=0, idx:idx+size(sampleType)-1) = ...
+%             curIntensitiesRawMS(curCompoundsMergedIDXconversion(curCompoundsMergedIDXconversion(:,d)~=0,d),:);
 
         combinedTissues(idx:idx+size(sampleType)-1) = sampleTissue;
         combinedDiet(idx:idx+size(sampleType)-1) = sampleDiet;
@@ -485,8 +487,11 @@ changingMets_merged_mode = [combinedDataionMode_cell{1};...
                            ];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%cl%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %annotate samples based on MZ
+% round mass
+changingMets_merged_mass = round(changingMets_merged_mass*10000)/10000;
+
 joinedMzRT = [changingMets_merged_mass changingMets_merged_RT];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [joinedAnn] = annotateIonsByMZ(joinedMzRT, annKEGGAGORA.EXACT_MASS,...
@@ -518,13 +523,13 @@ clear allKEGGID
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save annotation to file
-fid = fopen([outputFolder 'metabolites_allions_combined_formulas_220825.csv'], 'w');
+fid = fopen([outputFolder 'metabolites_allions_combined_formulas_300825.csv'], 'w');
 fprintf(fid, 'MZ\tRT\tMethod\tMode\tSpectrum\tCompoundID\tCompoundName\tCompoundFormula\tMZdelta\tIDX\tmaxIntensity\tmeanintensity\tmedianIntensity\tNumDetectedSamples\n');
 onlyAnnotated = 0;%1;
 for i=1:length(joinedAnn)
     if onlyAnnotated == 1
         if ~isempty(joinedAnn(i).annID)
-            fprintf(fid, '%.3f\t',changingMets_merged_mass(i));
+            fprintf(fid, '%.4f\t',changingMets_merged_mass(i));
             fprintf(fid, '%.3f\t',changingMets_merged_RT(i));
             fprintf(fid, '%s\t',changingMets_merged_method{i});
             fprintf(fid, '%d\t',changingMets_merged_mode(i));
@@ -560,7 +565,7 @@ for i=1:length(joinedAnn)
         end
     else
          if ~isempty(joinedAnn(i).annID)
-            fprintf(fid, '%.3f\t',changingMets_merged_mass(i));
+            fprintf(fid, '%.4f\t',changingMets_merged_mass(i));
             fprintf(fid, '%.3f\t',changingMets_merged_RT(i));
             fprintf(fid, '%s\t',changingMets_merged_method{i});
             fprintf(fid, '%d\t',changingMets_merged_mode(i));
@@ -627,7 +632,7 @@ combinedTissues(cellfun(@(x) isequal(x, 'DC'), combinedTissues)) = {'Feces'};
 % combinedType(removeCVR)=[];
 % combinedMouse(removeCVR) = [];
 
-fid = fopen([outputFolder 'metabolites_allions_combined_norm_intensity_with_CVR_220825.csv'], 'w');
+fid = fopen([outputFolder 'metabolites_allions_combined_norm_intensity_with_CVR_300825.csv'], 'w');
 fprintf(fid, 'MZ\tRT\tMethod\tMode\tSpectrum');
 for i=1:length(combinedMouse)
     fprintf(fid, '\t%s_%s_%s_%s', combinedDiet{i}, ...
