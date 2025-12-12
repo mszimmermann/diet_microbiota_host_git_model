@@ -106,14 +106,15 @@ cgo=clustergram(clustergrammat,...'DisplayRange', truncVal,...
 % Zhaoxu Liu / slandarer (2024). 200 colormap (https://www.mathworks.com/matlabcentral/fileexchange/120088-200-colormap), MATLAB Central File Exchange. Accessed 21. August 2024. 
 
 % solution to turn on colormap programmatically from https://stackoverflow.com/questions/20648627/turn-on-colorbar-programmatically-in-clustergram
-cbButton = findall(gcf,'tag','HMInsertColorbar');
-ccb = get(cbButton,'ClickedCallback');
-set(cbButton,'State','on')
-ccb{1}(cbButton,[],ccb{2})
+%cbButton = findall(gcf,'tag','HMInsertColorbar');
+%ccb = get(cbButton,'ClickedCallback');
+%set(cbButton,'State','on')
+%ccb{1}(cbButton,[],ccb{2})
+% 2025/12 the solution above does not work anymore
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % plot figure from clustergram
-fig = cgo.plot;
+fig = plot(cgo);
 C = findall(gcf,'type','ColorBar');                         
 C.Label.String = 'Relative species abundance';
     
@@ -127,7 +128,7 @@ set(h, 'FontSize', 6)
 % print to figure
 orient landscape
 
-print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder, ...
     'fig_1d_clustergram_DC_DNA_humann2_metaphlan_selected_filterd_vikcmap_distanceCorr.pdf'])
 
@@ -140,7 +141,7 @@ otuTable = array2table(clustmat, 'RowNames', otuRowNames, 'VariableNames', otuCo
 % write filtered OTU table to file
 writetable(otuTable, ...
     [outputFolder,...
-    'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'],...
+    'table_S3c_merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'],...
     'WriteRowNames', 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -174,7 +175,7 @@ set(gca, 'XTick', 1:10)
 set(gca, 'XTickLabel', fliplr(clustCols))
 xlim([0.5 10.5])
 orient landscape
-print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
            [figureFolder, ...
            'fig_1c_barplot_OTU_per_mouse.pdf'])
 
@@ -221,7 +222,7 @@ legend({'CTR', 'HFD'})
 ylim([0 35])
 ylabel('Relative species abundance, %')
 
-print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder, ...
     'barplot_DNA_otu_PHYLUM_CV_ranksum_pvalue_FDR.pdf'])
 
@@ -238,7 +239,7 @@ otuTable.FDR_HFD_CTR = fdrTable;
 
 % write filtered OTU table to file
 writetable(otuTable, [outputFolder, ...
-    'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs_with_FC.txt'],...
+    'table_S3c_merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs_with_FC.txt'],...
     'WriteRowNames', 1);
 
 
