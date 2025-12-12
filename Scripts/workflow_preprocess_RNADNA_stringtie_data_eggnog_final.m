@@ -633,7 +633,7 @@ annTable_FCinfo.fcDeseq2HFDCTR_RNA = fcMatrixDeseq2HFDCTR_RNA;
 annTable_FCinfo.pDeseq2HFDCTR_RNA = pMatrixDeseq2HFDCTR_RNA;
 annTable_FCinfo.fdrDeseq2HFDCTR_RNA = padjMatrixDeseq2HFDCTR_RNA;
 % save table to file
-writetable(annTable_FCinfo, [outputFolder 'edgeR_deseq2_gene_fold_changes_and_ann.csv']);
+writetable(annTable_FCinfo, [outputFolder 'table_S4_edgeR_deseq2_gene_fold_changes_and_ann.csv']);
 %writetable(annTable_FCinfo, [outputFolder 'edgeR_deseq2_gene_fold_changes_and_ann_20250713_newV.csv']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % write pathway-gene relationships to file
@@ -683,6 +683,7 @@ for i=1:length(cogPathways)
 end
 fclose(fid);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save gene counts matrices to files
 postfix = '';
 % get column names
