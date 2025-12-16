@@ -11,27 +11,35 @@ add_global_and_file_dependencies
 % 'geneAnnTable_full.csv'
 % 'countsMatrixRAW_DNA_table_with_species.txt'
 % 'countsMatrixRAW_RNA_table_with_species.txt'
-% 'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'
+% 'table_S3c_merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'
+% 'mouse_info.csv' % for RNA species abundance plots
 % Output: 
 % Figures:
 % 'fig_sup_scatter_relab_metaphlan_comparison_all_DNA_RNA.pdf'
 % 'fig_sup_scatter_relab_metaphlan_comparison_all_DNA_RNA_noribo.pdf'
 % 'fig_1b_histfit_metaG_metaT_genome_coverage_rnaRESEQ.pdf'
+% 'fig_sup_s4g_clustergram_DC_RNA_vikcmap_distanceCorr.pdf'
+% 'fig_sup_s4f_barplot_RNA_species_abundance_per_mouse.pdf'
+% 'fig_sup_s4h_boxplot_DNA_to_RNA_ratio.pdf'
+% 'table_merged_DC_RNA_species_abundances.txt'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % read gene annotation file
-annTable = readtable([inputFolderSeq, 'geneAnnTable_full.csv']);
+annTable = readtable([outputFolder, 'geneAnnTable_full.csv']);
 
-countsMatrixDNAtable = readtable([inputFolderSeq,...
+countsMatrixDNAtable = readtable([outputFolder,...
                 'countsMatrixRAW_DNA_table_with_species.txt']);
-countsMatrixRNAtable = readtable([inputFolderSeq,...
+countsMatrixRNAtable = readtable([outputFolder,...
                 'countsMatrixRAW_RNA_table_with_species.txt']);
 
-filenameOTU = [inputFolderSeq,...
-        'merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'];
+filenameOTU = [outputFolder,...
+        'table_S3c_merged_humann2_metaphlan_species_filtered_mouseDNA_OTUs.txt'];
 mergeddietmetagenomeabundancetable = readtable(filenameOTU);
 
+% rename Rumonococcus obeum as Blautia obeum 
+mergeddietmetagenomeabundancetable.Row = cellfun(@(x) strrep(x, 'Ruminococcus_obeum', 'Blautia_obeum'),...
+                                            mergeddietmetagenomeabundancetable.Row, 'unif', 0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % compare raw reads to the whole transcriptome mapping
@@ -269,11 +277,11 @@ for idx = 1:3
     datacorr = ([reshape(method1table,[],1),...
                       reshape(method2table,[],1)]);
     datacorr(isinf(datacorr))=nan;
-    corrPC = corr(datacorr,...
+    [corrPC, corrPCp] = corr(datacorr,...
                     'rows', 'complete');
-    corrSC = corr(datacorr,...
+    [corrSC, corrSCp] = corr(datacorr,...
                    'rows', 'complete', 'type', 'Spearman');
-    title(sprintf('PCC=%.2f SCC=%.2f',corrPC(1,2), corrSC(1,2)))
+    title(sprintf('PCC=%.2f (p=%.e) \n SCC=%.2f (p=%.e)',corrPC(1,2), corrPCp(1,2), corrSC(1,2), corrSCp(1,2)))
     axis square
     
     % log scale
@@ -291,11 +299,11 @@ for idx = 1:3
     datacorr = log10([reshape(method1table,[],1),...
                       reshape(method2table,[],1)]);
     datacorr(isinf(datacorr))=nan;
-    corrPC = corr(datacorr,...
+    [corrPC, corrPCp] = corr(datacorr,...
                     'rows', 'complete');
-    corrSC = corr(datacorr,...
+    [corrSC, corrSCp] = corr(datacorr,...
                    'rows', 'complete', 'type', 'Spearman');
-    title(sprintf('PCC=%.2f SCC=%.2f',corrPC(1,2), corrSC(1,2)))
+    title(sprintf('PCC=%.2f (p=%.e) \n SCC=%.2f (p=%.e)',corrPC(1,2), corrPCp(1,2), corrSC(1,2), corrSCp(1,2)))
     axis square
             
 end
@@ -312,7 +320,7 @@ lgd = legend(cellfun(@(x) strrep(x, '_', ' '), mergedNames, 'unif', 0));
 %lgd.NumColumns = 2;
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
         [figureFolder, ...
-        'fig_sup_scatter_relab_metaphlan_comparison_all_DNA_RNA_noribo.pdf'])
+        'fig_sup_S4_scatter_relab_metaphlan_comparison_all_DNA_RNA_noribo.pdf'])
 close(fig)
 
 
@@ -386,7 +394,7 @@ set(gca, 'YTick', 5*(1:length(idxsort)))
 set(gca, 'YTickLabel', species_names_unique(idxsort))
 ylim([0 5*(length(idxsort)+1)])
 title('Fraction of genes detected')
-suptitle('Genome coverage by metaG and metaT')
+sgtitle('Genome coverage by metaG and metaT')
 orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
             [figureFolder, ...
@@ -436,7 +444,7 @@ xlabel('Fraction of genes')
 set(gca, 'YTick', 5:5:5*length(idxsort))
 set(gca, 'YTickLabel', species_names_unique(idxsort))
 legend({'DNA', 'RNA'},'location','northwest')
-suptitle('Genome coverage by metaG and metaT')
+sgtitle('Genome coverage by metaG and metaT')
 orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
             [figureFolder,...
@@ -531,7 +539,146 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
 %print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
 %            'scatter_and_dist_metaG_genome_coverage_NONribosomal_rnaRESEQ.pdf')
 
-         
-         
-         
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% make clustergram analysis of species composition according to RNA data
+mouseInfo = readtable([rawdataFolder 'mouse_info.csv'], 'delim', ',');
 
+mousecolsdiet = mouse_columns_names;
+for i=1:length(mouse_columns_names)
+    mousecolsdiet(i) = mouseInfo.Diet(ismember(mouseInfo.Mouse_number, mouse_columns_names{i}));
+end
+
+clustmat = speciesAbundance_RNA_noribo;
+
+clustCols = mouse_columns_names;
+clustRowNames = species_names_unique;
+
+clustRowAbbr = cell(size(clustRowNames));
+for i=1:length(clustRowNames)
+    curabbr = strsplit(clustRowNames{i}, ' ');
+    clustRowAbbr{i} = [curabbr{1}(1), curabbr{2}(1:3)];
+end
+clustdist = 'correlation';%'cityblock';%'euclidean';%'spearman';%'hamming';%
+
+clustmat_mean = [mean(clustmat(:,1:5),2), mean(clustmat(:,6:10),2)];
+
+% normalize with z-score
+clustergrammat = zscore(clustmat,0,2);
+
+set(groot, 'DefaultTextInterpreter', 'none')
+set(groot, 'DefaultAxesTickLabelInterpreter', 'none')
+
+cgo=clustergram(clustergrammat,...'DisplayRange', truncVal,...
+             'RowLabels', clustRowNames,...
+             'ColumnLabels', clustCols,...
+             'Symmetric', 1,...
+             'ColumnPdist', clustdist, 'RowPdist', clustdist,...
+             'Colormap', slanCM('vik'));
+% using new divergent colormap slanCM('vik') from 
+% Zhaoxu Liu / slandarer (2024). 200 colormap (https://www.mathworks.com/matlabcentral/fileexchange/120088-200-colormap), MATLAB Central File Exchange. Accessed 21. August 2024. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% plot figure from clustergram
+fig = plot(cgo);
+if ~isempty(C)
+    C = findall(gcf,'type','ColorBar');                         
+    C.Label.String = 'Relative species abundance';
+end
+
+set(0,'ShowHiddenHandles','on')
+% Get all handles from root
+allhnds = get(0,'Children');
+% Find hearmap axis and change the font size
+h = findall(allhnds, 'Tag', 'HeatMapAxes');
+set(h, 'FontSize', 6)
+
+% print to figure
+orient landscape
+
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
+    [figureFolder, ...
+    'fig_sup_s4g_clustergram_DC_RNA_vikcmap_distanceCorr.pdf'])
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+otuMAT = clustmat;
+otuCols = clustCols;
+otuRows = clustRowAbbr;
+otuRowNames = clustRowNames;
+otuTable = array2table(clustmat, 'RowNames', otuRowNames, 'VariableNames', otuCols);
+% write filtered OTU table to file
+writetable(otuTable, ...
+    [outputFolder,...
+    'table_merged_DC_RNA_species_abundances.txt'],...
+    'WriteRowNames', 1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot RNA species abundances as bar plot 
+sumRows = sum(clustmat~=0,2);
+sumRows_sort = sort(sumRows, 'descend');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+figure;
+ba = bar((fliplr(clustmat))','stacked', 'FaceColor','flat');
+mycolors = [70 170 150;...
+            0.8*[70 170 150];...
+            222 45 38;...
+            0.9*[222 45 38];...
+            0.8*[222 45 38];...
+            0.7*[222 45 38];...
+            0.6*[222 45 38];...
+            0.5*[222 45 38];...
+            8 81 156;...
+            0.9*[8 81 156];...
+            0.8*[8 81 156];...
+            0.7*[8 81 156];...
+            0.6*[8 81 156];...
+            205 145 60]/255;
+for i=1:size(mycolors,1)
+    ba(i).CData = mycolors(i,:);
+end
+legend(clustRowAbbr, 'Location', 'EastOutside')
+set(gca, 'XTick', 1:10)
+set(gca, 'XTickLabel', fliplr(clustCols))
+xlim([0.5 10.5])
+orient landscape
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
+           [figureFolder, ...
+           'fig_sup_s4f_barplot_RNA_species_abundance_per_mouse.pdf'])
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+         
+pergene_DNA_to_RNA_ratio = table2array(countsMatrixRNAtable(:,1:10)./countsMatrixDNAtable(:,1:10));
+pergene_DNA_to_RNA_ratio_species = countsMatrixRNAtable.species_name;
+
+% replace 0 and Inf with NaN
+pergene_DNA_to_RNA_ratio((pergene_DNA_to_RNA_ratio==0) |...
+                         (isinf(pergene_DNA_to_RNA_ratio))) = nan;
+
+% calculate average RNA to DNA ratio ignoring nan
+pergene_DNA_to_RNA_ratio_mean = log2(mean(pergene_DNA_to_RNA_ratio,2,"omitnan"));
+
+% remove NaN genes
+pergene_DNA_to_RNA_ratio_species(isnan(pergene_DNA_to_RNA_ratio_mean)) = [];
+pergene_DNA_to_RNA_ratio(isnan(pergene_DNA_to_RNA_ratio_mean),:) = [];
+pergene_DNA_to_RNA_ratio_mean(isnan(pergene_DNA_to_RNA_ratio_mean)) = [];
+
+
+% plot boxplot for each species
+species_unique = unique(pergene_DNA_to_RNA_ratio_species);
+
+figure
+boxplot(pergene_DNA_to_RNA_ratio_mean, pergene_DNA_to_RNA_ratio_species,...
+        'PlotStyle', 'compact','orientation','horizontal', 'colors', [.5 .5 .5])
+hold on
+% plot 0 line
+plot([0 0], [0 14], 'k')
+xlim([-15 15])
+xlabel('RNA to DNA count ratio per gene, log2')
+set(gca, 'YDir','reverse')
+print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
+           [figureFolder, ...
+           'fig_sup_s4h_boxplot_DNA_to_RNA_ratio.pdf'])
