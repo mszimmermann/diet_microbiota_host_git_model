@@ -15,7 +15,7 @@ add_global_and_file_dependencies
 % 'geneAnnTable_full.csv'
 % Output: 
 % Files:
-% 'merged_geneAnnTable_with_raw_norm_and_diff_counts.csv'
+% 'table_S4_merged_geneAnnTable_with_raw_norm_and_diff_counts.csv'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % also merge pathway enrichment results
@@ -29,7 +29,7 @@ add_global_and_file_dependencies
 % 'kegg_ptw_names_and_bact_flag.csv'
 % Output: 
 % Files:
-% 'merged_ptwenrTable.csv'
+% 'table_S5_merged_ptwenrTable.csv'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -165,7 +165,7 @@ mergedTable = movevars(mergedTable,'indexFiltered', 'After', 'geneFilter');
 
 % save merged table to file
 writetable(mergedTable, [outputFolder,...
-    'merged_geneAnnTable_with_raw_norm_and_diff_counts.csv']);
+    'table_S4_merged_geneAnnTable_with_raw_norm_and_diff_counts.csv']);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -245,10 +245,5 @@ merged_ptwenrTable = movevars(merged_ptwenrTable,'pathwayName', 'After', 'pathwa
 
 % save merged table to file
 writetable(merged_ptwenrTable, [outputFolder,...
-    'merged_ptwenrTable.csv']);
-
-
-
-
-    
+    'table_S5_merged_ptwenrTable.csv']);
 

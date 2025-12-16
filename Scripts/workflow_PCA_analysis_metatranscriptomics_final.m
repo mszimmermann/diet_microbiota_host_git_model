@@ -13,20 +13,38 @@ add_global_and_file_dependencies
 % 'countsMatrixGetMM_RNA_table.txt'
 % Output: 
 % Figures:
-% 'fig_sup_pca_DNA_all_raw_combined_getMMnorm_log10.pdf'
-% 'fig_sup_pca_RNA__combined_getmm_norm_log10.pdf'
+% 'fig_sup_S4b_pca_DNA_all_raw_combined_getMMnorm_log10.pdf'
+% 'fig_sup_S4b_pca_RNA__combined_getmm_norm_log10.pdf'
 % 'fig_sup_barh_metaG_metaT_reads_per_sample.pdf'
+% 'countsMatrixRAW_DNA_table_with_species.txt' (adding species info to the countsMatrix tables)
+% 'countsMatrixRAW_RNA_table_with_species.txt'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 % perform PCA on filtered metatranscriptomics 
 
-annTablefiltered = readtable([inputFolderSeq,...
-                        'countsMatrix_annTable_filtered.csv']);
-countsMatrixDNAtable = readtable([inputFolderSeq,...
+% annTablefiltered2 = readtable([inputFolderSeq,...
+%                         'countsMatrix_annTable_filtered.csv']);
+%get filtered gene table
+% read gene annotation and counts tables
+% detect import options to import columns with the same type
+opts = detectImportOptions([outputFolder,...
+                            'geneAnnTable_filtered.csv']);
+% manual curation of variable types
+opts.VariableNamesLine=1;
+opts.DataLine = 2;
+opts.VariableTypes(26:end) = {'char'};
+% read table
+annTablefiltered = readtable([outputFolder,...
+    'geneAnnTable_filtered.csv'], ...
+     opts,...
+     'ReadVariableNames', 1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+countsMatrixDNAtable = readtable([outputFolder,...
                         'countsMatrixGetMM_DNA_table.txt']);
-countsMatrixRNAtable = readtable([inputFolderSeq,...
+countsMatrixRNAtable = readtable([outputFolder,...
                         'countsMatrixGetMM_RNA_table.txt']);
 
 countsMatrixSamples = countsMatrixDNAtable.Properties.VariableNames(...
@@ -77,7 +95,7 @@ legend(pca_diet_unique)
 title('All filtered genes, getMM normalization, log10, DNA')
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
             [figureFolder ...
-            'fig_sup_pca_DNA_all_raw_combined_getMMnorm_log10.pdf'])
+            'fig_sup_S4b_pca_DNA_all_raw_combined_getMMnorm_log10.pdf'])
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % metatranscriptomics
@@ -107,7 +125,7 @@ legend(pca_diet_unique)
 title('All filtered genes, getmm norm log10, RNA')
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
             [figureFolder ...
-            'fig_sup_pca_RNA__combined_getmm_norm_log10.pdf'])
+            'fig_sup_S4b_pca_RNA__combined_getmm_norm_log10.pdf'])
         
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

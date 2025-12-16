@@ -14,6 +14,7 @@ add_global_and_file_dependencies
 % Raw counts, edgeR and GetMM-processed files in the folders
 % '.\InputData\sequencing_data\ballGown_RNA\eggNOGann\'
 % and '.\InputData\sequencing_data\ballGown_DNA\eggNOGann\'
+% .\InputData\genomes14_eggnog\genome_list.csv contains list of genome names
 
 % Output: 
 % Files:
@@ -35,7 +36,13 @@ add_global_and_file_dependencies
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RNA results
-% read eggnog annotations                   
+
+% read genome abbreviations and names
+genome_abbr_names = readtable(['.\InputData\genomes14_eggnog\'...
+                                'genome_list.csv'], 'delim', ',');
+% combine name and strain
+genome_abbr_names.("genome_name") = strcat(genome_abbr_names.Species_name,...
+                                    {' '}, genome_abbr_names.Strain);
 
 % read eggnog annotations                   
 annAbbr = 'EGGNOGann';
@@ -316,12 +323,21 @@ curtable(:,1:2)=[];
 curtable(:,1) = strcat(curtable.chr, '_',...
                                 curtable.gene_id);
 curtable.Properties.VariableNames{1} = 'species_genes';
+% add genome abbreviation and name columns
+curtable.("genome_abbr") = cell(height(curtable),1);
+curtable.("genome_name") = cell(height(curtable),1);
 
 % get annotation from single tables
 for i=1:length(edgeResultsRNA)
     curcols = intersect(edgeResultsRNA{i}.Properties.VariableNames, curtable.Properties.VariableNames);
     [~, test, currows] = intersect(edgeResultsRNA{i}{:,1}, curtable{:,1}, 'stable');
     curtable(currows, curcols) = edgeResultsRNA{i}(:,curcols);
+    % add genome abbrevuation as in the file name
+    % get genome name from the genome abbreviation table
+    curname = genome_abbr_names.genome_name(ismember(genome_abbr_names.Species_abbr,...
+                                            edgeRFileNames_abbr(i)));
+    curtable(currows, "genome_abbr") = repmat(edgeRFileNames_abbr(i),length(currows),1);
+    curtable(currows, "genome_name") = repmat(curname,length(currows),1);
 end
 stringtieRawRNA_full = curtable;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
