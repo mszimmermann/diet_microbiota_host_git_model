@@ -119,7 +119,7 @@ set(gca, 'YTickLabel', dietNutrientInfo);
 legend(dietlabels, 'Location', 'SouthEast')
 title('Nutrient percent calories')
 xlabel('%')
-suptitle('HFD and CTR diet comparison')
+sgtitle('HFD and CTR diet comparison')
 axis square
 orient landscape
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
