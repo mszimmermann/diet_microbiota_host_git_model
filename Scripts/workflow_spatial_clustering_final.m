@@ -32,14 +32,18 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % read annotation from file
-annotationTable = readtable([inputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
+annotationTable = readtable([outputFolder,...inputFolder,...
+    'metabolites_allions_combined_formulas_with_metabolite_filters_updated_filtering_0925.csv']);   
+%readtable([inputFolder,...
+%    'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
 % read metabolite normalized data from file
-metaboliteData = readtable([outputFolder,...
-    'metabolites_allions_combined_norm_intensity_with_CVR.csv']);
+metaboliteData = readtable([outputFolder,...inputFolder,...
+    'metabolites_allions_combined_norm_intensity_with_CVR_300825.csv']);
+%readtable([outputFolder,...
+%    'metabolites_allions_combined_norm_intensity_with_CVR.csv']);
 %metaboliteData = readtable([inputFolder,...
     %'metabolites_allions_combined_norm_intensity.csv']);
-
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % separate data into a matrix of normalized intensities
 % and get information on diet, tissue and mouse group
@@ -138,8 +142,8 @@ conditionsArray = cell(2, length(sampleDiet_unique)*length(sampleType_unique));
 %conditionsArray = {'HFD', 'CTR', 'HFD', 'CTR';
 %                   'GF', 'GF', 'DC', 'DC'};
 i=1;
-for diet_i = 1:length(sampleDiet_unique)
-    for type_i = 1:length(sampleType_unique)
+for type_i = 1:length(sampleType_unique)
+    for diet_i = 1:length(sampleDiet_unique)
         conditionsArray{1,i} = sampleDiet_unique{diet_i};
         conditionsArray{2,i} = sampleType_unique{type_i};
         i = i+1;
@@ -151,7 +155,7 @@ numiter = 20;
 kmeansEva_cell = cell(size(conditionsArray,2),numiter);
 idx=1;
 fprintf('Selecting optimal k for different conditions\n');
-for cond_i = 5:size(conditionsArray,2)
+for cond_i = 3:size(conditionsArray,2)
     for iter_i = 1:numiter
         selectDiet = conditionsArray{1,cond_i};
         selectMouse = conditionsArray{2,cond_i};
@@ -174,7 +178,16 @@ for cond_i = 5:size(conditionsArray,2)
     idx = idx+1;
 end
 
+% delete empty rows if any
+empty_row =find(cellfun(@(x) isempty(x), kmeansEva_cell(:,1)),1);
+kmeansEva_cell(empty_row:end,:) = [];
+
 % make a table with all criteria and write to file
+colLabels = strcat(conditionsArray(1,:),'-', ...
+    conditionsArray(2,:));
+if length(colLabels)>size(kmeansEva_cell,1)
+    colLabels = colLabels(3:end);
+end
 criterion_mat = zeros(numiter*size(kmeansEva_cell,1), length(kmeansEva_cell{1,1}.CriterionValues));
 criterion_cols = arrayfun(@(x) num2str(x), kmeansEva_cell{1,1}.InspectedK, 'unif', 0);
 criterion_rows = cell(numiter*size(kmeansEva_cell,1),1);
@@ -188,8 +201,13 @@ for i=1:size(kmeansEva_cell,1)
 end
 criterion_mat = array2table(criterion_mat,...
     'RowNames',criterion_rows, 'VariableNames', criterion_cols);
-writetable(criterion_mat, [outputFolder, 'kmeans_silhouette_allmets_20iter.csv'],...
+if nnz(binaryFilter==0)==0
+    writetable(criterion_mat, [outputFolder, 'kmeans_silhouette_allmets_20iter_092025.csv'],...
     'WriteRowNames', 1);
+else
+     writetable(criterion_mat, [outputFolder, 'kmeans_silhouette_annotmets_20iter_092025.csv'],...
+    'WriteRowNames', 1);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % mycolors = [ 0    0.4492    0.6953;...
@@ -201,18 +219,19 @@ mycolors = [ 0    0.4492    0.6953;...
 mylinestyles = {':', '-', '--'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot eval silhouette
+conditionsArray_plot = conditionsArray(:,3:end);
 figure
 hold on
 for i=1:size(kmeansEva_cell,1)
-    if isequal(conditionsArray{1,i}, sampleDiet_unique{1})
+    if isequal(conditionsArray_plot{1,i}, sampleDiet_unique{1})
         curcolor = mycolors(1,:);
     else
         curcolor = mycolors(2,:);
     end
-    if isequal(conditionsArray{2,i}, sampleType_unique{1})
+    if isequal(conditionsArray_plot{2,i}, sampleType_unique{1})
         continue; % skip CVR
         curstyle = mylinestyles{1};
-    elseif isequal(conditionsArray{2,i}, sampleType_unique{2})
+    elseif isequal(conditionsArray_plot{2,i}, sampleType_unique{2})
         curstyle = mylinestyles{2};
     else
         curstyle = mylinestyles{3};
@@ -244,13 +263,18 @@ set(gca, 'XTickLabel', 1:30)
 xlabel('Number of clusters')
 ylabel(kmeansEva_cell{1}.CriterionName)
 title('Kmeans cluster evaluation')
-colLabels = strcat(conditionsArray(1,:),'-', ...
-    conditionsArray(2,:));
-legend(colLabels([2 3 5 6]), 'location', 'southeast')
-print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
-            [figureFolder,...
-            'fig_sup_kmeans_silhouette_evaluation_numiter20_allions_noCVR.pdf'])
 
+%legend(colLabels([2 3 5 6]), 'location', 'southeast')
+legend(colLabels, 'location', 'southeast')
+if nnz(binaryFilter==0)==0
+    print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+            [figureFolder,...
+            'fig_sup_kmeans_silhouette_evaluation_numiter20_allions_noCVR_0925.pdf'])
+else
+    print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+            [figureFolder,...
+            'fig_sup_kmeans_silhouette_evaluation_numiter20_annotions_noCVR_0925.pdf'])
+end    
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test cluster robustness
@@ -331,10 +355,16 @@ for diet_i = 1:length(sampleDiet_unique)
                                     size(kmeans_clusters_repeat_cell{idx},2));
         kmeans_clusters_spatial_conditions_table(selected_mets,:) = kmeans_clusters_repeat_cell{idx};
         kmeans_clusters_spatial_conditions_table = array2table(kmeans_clusters_spatial_conditions_table);
-        writetable(kmeans_clusters_spatial_conditions_table,...
-            [outputFolder, 'kmeans_clustering_GIT100_',...
-            selectDiet, '_', selectMouse, '.txt']);
-        
+        if nnz(binaryFilter==0)==0
+            writetable(kmeans_clusters_spatial_conditions_table,...
+                [outputFolder, 'kmeans_clustering_allions_GIT100_',...
+                selectDiet, '_', selectMouse, '.txt']);
+        else
+            writetable(kmeans_clusters_spatial_conditions_table,...
+                [outputFolder, 'kmeans_clustering_annotions_GIT100_',...
+                selectDiet, '_', selectMouse, '.txt']);
+        end
+
         idx = idx+1;
     end
 end
@@ -346,56 +376,63 @@ annotationTable = [ annotationTable,...
                                 strcat('spatial_clust100_', conditionsArray(1,:), '_', ...
                                                          conditionsArray(2,:)))];
 % add index to track alternative annotations
-write(annotationTable,...
-    [outputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv']);
-
+if nnz(binaryFilter==0)==0
+     write(annotationTable,...
+        [outputFolder,...
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_0925.csv']);
+else
+         write(annotationTable,...
+        [outputFolder,...
+    'metabolites_annotions_combined_formulas_with_metabolite_filters_spatial100clusters_0925.csv']);
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot cluster centers for each condition
-idx=1;
-for diet_i = 1:length(sampleDiet_unique)
-    for type_i = 1:length(sampleType_unique)
-        selectDiet = sampleDiet_unique{diet_i};
-        selectMouse = sampleType_unique{type_i};
-        kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
-        kmeanConditions = meanConditions(cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
-        giConditions = cellfun(@(x) ~(contains(x,'Serum') | contains(x,'Liver')),...
-                            kmeanConditions);
-        kmeanMatrix = kmeanMatrix(:,giConditions);
-        kmeanConditions = kmeanConditions(giConditions);
-        % print tissue order to doublecheck interpretation
-        fprintf('Conditions: %s\n', strjoin(kmeanConditions,';'));
-        
-        kmeans_means = zscore(kmeanMatrix,[],2);
-       
-        kmeans_clusters = kmeans_clusters_spatial_conditions(:,idx);
-        figure
-        for i=1:ncluster
-            subplot(2,3,i)
-            curmeans = kmeans_means(kmeans_clusters==i,:);
-            hold on
-            h = fill([1,3.5,3.5,1],[-3,-3,3,3],'yellow', 'LineStyle','none');
-            h.FaceAlpha=0.3;
-            h = fill([3.5,6,6,3.5],[-3,-3,3,3],'green', 'LineStyle','none');
-            h.FaceAlpha=0.3;
-
-            for j=1:size(curmeans,1)
-                plot((1:size(curmeans,2)), curmeans(j,:), '-','Color', [.5 .5 .5]);
+if nnz(binaryFilter==0)>0 % plot only for filtered metabolites
+    idx=1;
+    for diet_i = 1:length(sampleDiet_unique)
+        for type_i = 1:length(sampleType_unique)
+            selectDiet = sampleDiet_unique{diet_i};
+            selectMouse = sampleType_unique{type_i};
+            kmeanMatrix = meanMatrix(:,cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
+            kmeanConditions = meanConditions(cellfun(@(x) contains(x,selectMouse) & contains(x,selectDiet),meanConditions));
+            giConditions = cellfun(@(x) ~(contains(x,'Serum') | contains(x,'Liver')),...
+                                kmeanConditions);
+            kmeanMatrix = kmeanMatrix(:,giConditions);
+            kmeanConditions = kmeanConditions(giConditions);
+            % print tissue order to doublecheck interpretation
+            fprintf('Conditions: %s\n', strjoin(kmeanConditions,';'));
+            
+            kmeans_means = zscore(kmeanMatrix,[],2);
+           
+            kmeans_clusters = kmeans_clusters_spatial_conditions(:,idx);
+            figure
+            for i=1:ncluster
+                subplot(2,3,i)
+                curmeans = kmeans_means(kmeans_clusters==i,:);
+                hold on
+                h = fill([1,3.5,3.5,1],[-3,-3,3,3],'yellow', 'LineStyle','none');
+                h.FaceAlpha=0.3;
+                h = fill([3.5,6,6,3.5],[-3,-3,3,3],'green', 'LineStyle','none');
+                h.FaceAlpha=0.3;
+    
+                for j=1:size(curmeans,1)
+                    plot((1:size(curmeans,2)), curmeans(j,:), '-','Color', [.5 .5 .5]);
+                end
+                plot((1:size(curmeans,2)),mean(curmeans), 'o-', 'Color', mycolors(1,:), 'LineWidth', 2);
+                xlim([1 size(curmeans,2)])
+                ylim([-3 3])
+                title(sprintf('Cluster %d',i))
+    
+                set(gca, 'XTick', 1:size(curmeans,2))
+                set(gca, 'XTickLabel', kmeanConditions)
             end
-            plot((1:size(curmeans,2)),mean(curmeans), 'o-', 'Color', mycolors(1,:), 'LineWidth', 2);
-            xlim([1 size(curmeans,2)])
-            ylim([-3 3])
-            title(sprintf('Cluster %d',i))
-
-            set(gca, 'XTick', 1:size(curmeans,2))
-            set(gca, 'XTickLabel', kmeanConditions)
+            sgtitle(['Metabolite profiles of ' selectMouse ' group under ' selectDiet ' diet'])
+            orient landscape
+           print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
+               [figureFolder,...
+               'fig2d_kmeans_profiled_6_' selectMouse '_' selectDiet '_GI_profiles_updated_filter_100repeat.pdf'])
+            idx = idx+1;
         end
-        title(['Metabolite profiles of ' selectMouse ' group under ' selectDiet ' diet'])
-        orient landscape
- %       print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
- %           [figureFolder,...
- %           'fig2d_kmeans_profiled_6_' selectMouse '_' selectDiet '_GI_profiles_updated_filter_100repeat.pdf'])
-        idx = idx+1;
     end
 end
 
@@ -453,15 +490,21 @@ annotationTable = [ annotationTable,...
                                 strcat('spatial_Serum_', conditionsArray(1,:), '_', ...
                                                          conditionsArray(2,:)))];
 % add index to track alternative annotations
-write(annotationTable,...
+if nnz(binaryFilter==0)==0
+    write(annotationTable,...
     [outputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv']);
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_0925.csv']);
+else
+     write(annotationTable,...
+    [outputFolder,...
+    'metabolites_annotions_combined_formulas_with_metabolite_filters_spatial100clusters_0925.csv']);
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % calculate number of filtered metabolites
 annotationTable = readtable([outputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv']);
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_0925.csv']);
 
 % select columns from annotationTable with cluster info
 annColumns = annotationTable.Properties.VariableNames';
@@ -486,12 +529,15 @@ fprintf('Ions with GIT clustering N=%d\n', nnz(sum(test(:,1:4),2)))
 % GIT metabolites
 fprintf('Metabolites with GIT clustering N=%d\n', nnz((sum(test(:,1:4),2)>0) &...
     (annotationTable.MetaboliteFilter>0)))
+% ans Ions with GIT clustering N=14156
+%     Metabolites with GIT clustering N=1859
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % perform pathway enrichment for clustering
 
-load('hmdbPTWtables.mat');
+%load('hmdbPTWtables.mat');
+load('hmdbPTWmimedbPTWtables.mat');
 for hmdbtype = 1:3
     switch hmdbtype
         case 1
@@ -589,12 +635,12 @@ annotationTable.HMDBclass = annotationHMDBclass;
 annotationTable.HMDBSubClass = annotationHMDBsubclass;
 writetable(annotationTable,...
     [outputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_HMDBsubclass.csv']);
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_HMDBsubclass_0925.csv']);
 
 
 annotationTableSpatialClusters = readtable(...
     [outputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_HMDBsubclass.csv']);
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_HMDBsubclass_0925.csv']);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -688,11 +734,11 @@ switch plotclusterFlag
         plotted_clusters = '_all_clusters_';
     case 1
         selectclusters = cellfun(@(x) contains(x, '-serum-') | ...
-                            contains(x, '-liver-'),  clusterColLabels);
+                            contains(x, '-liver-'),  reshape(clusterColLabels,1,[]));
         plotted_clusters = '_Liver_Serum_clusters_';
     case 6
         selectclusters = ~cellfun(@(x) contains(x, '-serum-') | ...
-                            contains(x, '-liver-'),  clusterColLabels);
+                            contains(x, '-liver-'),  reshape(clusterColLabels,1,[]));
         plotted_clusters = '_GIT_clusters_';
 end
 if ~plotCVRflag
@@ -805,12 +851,12 @@ C.Label.String = 'Relative number of metabolites';
 
 if plotclusterFlag == 6
     print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
-        [figureFolder, 'fig2e_', printFileName, plotted_clusters, displayvalues, '.pdf'])
-    saveas(fig, [figureFolder, 'fig2e_', printFileName, plotted_clusters, displayvalues, '.png']);
+        [figureFolder, 'fig2e_', printFileName, plotted_clusters, displayvalues, '_0925.pdf'])
+    saveas(fig, [figureFolder, 'fig2e_', printFileName, plotted_clusters, displayvalues, '_0925.png']);
 else
     print(gcf, '-painters', '-dpdf', '-r600', '-bestfit',...
-        [figureFolder, 'fig_sup_', printFileName, plotted_clusters, displayvalues, '.pdf'])
-     saveas(fig, [figureFolder, 'fig_sup_', printFileName, plotted_clusters, displayvalues, '.png'])
+        [figureFolder, 'fig_sup_', printFileName, plotted_clusters, displayvalues, '_0925.pdf'])
+     saveas(fig, [figureFolder, 'fig_sup_', printFileName, plotted_clusters, displayvalues, '_0925.png'])
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save hmdb pw enrichment to file
@@ -840,7 +886,7 @@ for hmdbtype = 1:3
                                 [curvarName colLabels]);
     writetable(kmeansTables_table,...
                [outputFolder,...
-               'ptwenr_', curvarName, '_kmeans_clustering_spatial_all_hmdbv4.csv']);
+               'ptwenr_', curvarName, '_kmeans_clustering_spatial_all_hmdbv4_0925.csv']);
 end
 clear kmeansTables kmeansTables_cell kmeansTables_current kmeansTables_table
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -858,7 +904,7 @@ for hmdbtype = 1:3
             curvarName = 'HMDBsuperclass';
     end
     kmeansTables_table = readtable( [outputFolder,...
-               'ptwenr_', curvarName, '_kmeans_clustering_spatial_all_hmdbv4.csv']);
+               'ptwenr_', curvarName, '_kmeans_clustering_spatial_all_hmdbv4_0925.csv']);
  
     switch hmdbtype
         case 1
@@ -901,7 +947,7 @@ annotationTable_withmean = [annotationTable,...
 %     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
 write(annotationTable_withmean,...
     [outputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR.csv']);
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR_0925.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
