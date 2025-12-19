@@ -7,7 +7,7 @@ add_global_and_file_dependencies
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Data requirements:
-% 'kegg_agora_09_2020_hmdb_06_2021_table.csv'
+% 'kegg_hmdb_06_2021_mimedb_03_2024_table.csv'
 % 'metabolomics_data\ folder with raw ion intensities
 % 'tissue_weights.txt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -244,6 +244,7 @@ curMethod_unique = unique(curMethod);
 % create a matrix with metabolites across tissues
 % first merge metabolites across tissues
 combinedDataNorm_cell = cell(length(curMethod_unique),1);
+combinedDataRaw_cell = cell(length(curMethod_unique),1);
 combinedDataTissues_cell = cell(length(curMethod_unique),1);
 combinedDataDiet_cell = cell(length(curMethod_unique),1);
 combinedDataMouse_cell = cell(length(curMethod_unique),1);
@@ -334,8 +335,8 @@ for method_i = 1:length(curMethod_unique)
     % calculate intensity matrix for all metabolites
     combinedIntensity = zeros(size(curCompoundsMergedIDXconversion,1),...
                                 30*length(curmethodidx));
-    combinedIntensityRawMS = zeros(size(curCompoundsMergedIDXconversion,1),...
-                                30*length(curmethodidx));
+%    combinedIntensityRawMS = zeros(size(curCompoundsMergedIDXconversion,1),...
+%                                30*length(curmethodidx));
     combinedTissues = cell(30*length(curmethodidx),1);
     combinedDiet = cell(30*length(curmethodidx),1);
     combinedType = cell(30*length(curmethodidx),1);
@@ -375,7 +376,7 @@ for method_i = 1:length(curMethod_unique)
 
     end
     combinedIntensity(:, idx:end) = [];
-    combinedIntensityRawMS(:, idx:end) = [];
+%    combinedIntensityRawMS(:, idx:end) = [];
     combinedTissues(idx:end) = [];
     combinedDiet(idx:end) = [];
     combinedType(idx:end) = [];
@@ -410,6 +411,7 @@ for method_i = 1:length(curMethod_unique)
         combinedType(combinedionMode==1)=[];
         combinedMouse(combinedionMode==1)=[];
         combinedIntensity(:, combinedionMode==1)=[];
+%        combinedIntensityRawMS(:, combinedionMode==1)=[];
     else
         currentIonMode = unique(combinedionMode)*ones(size(combinedIntensity,1),1);
     end
@@ -449,6 +451,7 @@ for method_i = 1:length(curMethod_unique)
     combinedIntensitiesNorm(isnan(combinedIntensitiesNorm)) = intensityNoise; %noise level
     
     combinedDataNorm_cell{method_i} = combinedIntensitiesNorm;
+    combinedDataRaw_cell{method_i} = combinedIntensity;
     combinedDataTissues_cell{method_i} = combinedTissues;
     combinedDataDiet_cell{method_i} = combinedDiet;
     combinedDataMouse_cell{method_i} = combinedType;
@@ -473,6 +476,10 @@ changingMets_merged_Spectrum  = [combinedIonSpectrum_cell{1};...
                            combinedIonSpectrum_cell{2};...
                            combinedIonSpectrum_cell{3};...
                            ];
+combinedIntensitiesRaw = [combinedDataRaw_cell{1};...
+                           combinedDataRaw_cell{2};...
+                           combinedDataRaw_cell{3};...
+                           ]; 
 combinedIntensitiesNorm = [combinedDataNorm_cell{1};...
                            combinedDataNorm_cell{2};...
                            combinedDataNorm_cell{3};...
@@ -599,7 +606,7 @@ for i=1:length(joinedAnn)
             fprintf(fid, '%d', nnz(~isnan(curIntensity)));
             fprintf(fid, '\n');
          else
-            fprintf(fid, '%.3f\t',changingMets_merged_mass(i));
+            fprintf(fid, '%.4f\t',changingMets_merged_mass(i));
             fprintf(fid, '%.3f\t',changingMets_merged_RT(i));
             fprintf(fid, '%s\t',changingMets_merged_method{i});
             fprintf(fid, '%d\t',changingMets_merged_mode(i));
@@ -617,7 +624,41 @@ for i=1:length(joinedAnn)
     end
 end
 fclose(fid);
-            
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% save raw data to file
+
+% rename distal colon (DC) to feces
+combinedTissues(cellfun(@(x) isequal(x, 'DC'), combinedTissues)) = {'Feces'};
+%  remove CVR
+% removeCVR = cellfun(@(x) contains(x,'CVR'), combinedType);
+% combinedIntensitiesNorm(:, removeCVR)=[];
+% combinedDiet(removeCVR)=[];
+% combinedTissues(removeCVR)=[];
+% combinedType(removeCVR)=[];
+% combinedMouse(removeCVR) = [];
+
+fid = fopen([outputFolder 'metabolites_allions_combined_raw_intensity_with_CVR_300825.csv'], 'w');
+fprintf(fid, 'MZ\tRT\tMethod\tMode\tSpectrum');
+for i=1:length(combinedMouse)
+    fprintf(fid, '\t%s_%s_%s_%s', combinedDiet{i}, ...
+        combinedType{i}, combinedTissues{i}, combinedMouse{i});
+end
+fprintf(fid, '\n');
+for i=1:size(combinedIntensitiesRaw,1)
+    fprintf(fid, '%.4f\t',changingMets_merged_mass(i));
+    fprintf(fid, '%.3f\t',changingMets_merged_RT(i));
+    fprintf(fid, '%s\t',changingMets_merged_method{i});
+    fprintf(fid, '%d\t',changingMets_merged_mode(i));
+    fprintf(fid, '%s',changingMets_merged_Spectrum{i});
+    
+    for j=1:size(combinedIntensitiesRaw,2)
+        fprintf(fid, '\t%f',combinedIntensitiesRaw(i,j));
+    end
+    fprintf(fid, '\n');
+end
+fclose(fid);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save normalized data to file
@@ -640,7 +681,7 @@ for i=1:length(combinedMouse)
 end
 fprintf(fid, '\n');
 for i=1:size(combinedIntensitiesNorm,1)
-    fprintf(fid, '%.3f\t',changingMets_merged_mass(i));
+    fprintf(fid, '%.4f\t',changingMets_merged_mass(i));
     fprintf(fid, '%.3f\t',changingMets_merged_RT(i));
     fprintf(fid, '%s\t',changingMets_merged_method{i});
     fprintf(fid, '%d\t',changingMets_merged_mode(i));
@@ -659,7 +700,7 @@ end
 fclose(fid);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% save normalized data to file
+% save normalized data to file without CVR
 
 % rename distal colon (DC) to feces
 combinedTissues(cellfun(@(x) isequal(x, 'DC'), combinedTissues)) = {'Feces'};
@@ -679,7 +720,7 @@ for i=1:length(combinedMouse)
 end
 fprintf(fid, '\n');
 for i=1:size(combinedIntensitiesNorm,1)
-    fprintf(fid, '%.3f\t',changingMets_merged_mass(i));
+    fprintf(fid, '%.4f\t',changingMets_merged_mass(i));
     fprintf(fid, '%.3f\t',changingMets_merged_RT(i));
     fprintf(fid, '%s\t',changingMets_merged_method{i});
     fprintf(fid, '%d\t',changingMets_merged_mode(i));
