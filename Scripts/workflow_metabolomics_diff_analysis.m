@@ -22,12 +22,12 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read metabolite data
-metaboliteData = readtable([inputFolder,...
-    'metabolites_allions_combined_norm_intensity_with_CVR_220825.csv']);
+metaboliteData = readtable([outputFolder,...inputFolder,...
+    'metabolites_allions_combined_norm_intensity_with_CVR_300825.csv']);
     %'metabolites_allions_combined_norm_intensity.csv']);
     
-metaboliteFilters = readtable([inputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_0825.csv']);
+metaboliteFilters = readtable([outputFolder,...inputFolder,...
+    'metabolites_allions_combined_formulas_with_metabolite_filters_updated_filtering_0925.csv']);
     %'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -206,16 +206,16 @@ for comparisontype = 1:length(dietcomparison)
         axis square
     end
 end
-suptitle('Annotated filtered metabolites')
+sgtitle('Annotated filtered metabolites')
 orient landscape
 if remove_outliers_flag
     print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
         [figureFolder ...
-        'fig_sup_volcanos_combined_ann_metabolites_removed2outliers.pdf'])
+        'fig_sup_volcanos_combined_ann_metabolites_removed2outliers_092025.pdf'])
 else
     print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
         [figureFolder...
-        'fig_sup_volcanos_combined_ann_metabolites.pdf'])
+        'fig_sup_volcanos_combined_ann_metabolites_092025.pdf'])
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save fold change and p-value table to file
@@ -224,14 +224,28 @@ diffMatrix_all_table = [metaboliteData(:,1:5),...
 if remove_outliers_flag
     writetable(diffMatrix_all_table, ...
         [outputFolder ,...
-        'table_diff_abundance_metabolite_ions_removed2outliers.csv']);
+        'table_diff_abundance_metabolite_ions_removed2outliers_0925.csv']);
 else
     writetable(diffMatrix_all_table, ...
         [outputFolder ,...
-        'table_diff_abundance_metabolite_ions.csv']);
+        'table_diff_abundance_metabolite_ions_0925.csv']);
 end
 
 
 % diffMatrix_all_table = readtable([resultsFolder, ...
 %     'table_diff_abundance_metabolite_ions.csv']);
+
+% write combined metabolite filters and metabolite data to file
+metaboliteData.Index = (1:height(metaboliteData))';
+
+metaboliteFiltersData = join(metaboliteData, metaboliteFilters,...
+                        'keys', 'Index');
+% move filter, filteredID and filteredName before the data
+metaboliteFiltersData = movevars(metaboliteFiltersData,"MetaboliteFilter",'After',"Mode_metaboliteData");
+metaboliteFiltersData = movevars(metaboliteFiltersData,"FilteredCompoundID",'After',"MetaboliteFilter");
+metaboliteFiltersData = movevars(metaboliteFiltersData,"FilteredCompoundName",'After',"FilteredCompoundID");
+
+writetable(metaboliteFiltersData, ...
+        [outputFolder ,...
+        'table_normalized_data_and_metabolite_filters_0925.csv']);
 
