@@ -29,12 +29,12 @@ add_global_and_file_dependencies
 % annotationTableSpatialClusters = readtable([inputFolder ...
 %     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
 annotationTableSpatialClusters = readtable([outputFolder ...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR.csv']);
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR_0925.csv']);
 % read metabolite normalized data from file
 % metaboliteData = readtable([inputFolder ...
 %     'metabolites_allions_combined_norm_intensity.csv']);
 metaboliteData = readtable([outputFolder ...
-    'metabolites_allions_combined_norm_intensity_with_CVR.csv']);
+    'metabolites_allions_combined_norm_intensity_with_CVR_300825.csv']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % separate data into a matrix of normalized intensities
 % and get information on diet, tissue and mouse group
@@ -225,32 +225,43 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % print best solutions to files
 % create met_info object needed for the printing function
-met_info = annotationTableSpatialClusters(selected_mets,:);
-% print solutions to files
-print_bestsol_to_files(met_info, met_bestsols, filenameModel);
-
-filename = [outputFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allDC'];
-% create met_info object needed for the printing function
-met_info = annotationTableSpatialClusters(selected_mets,:);
-% print solutions to files
-print_bestsol_to_files(met_info, met_bestsols_dc, filename);
+% met_info = annotationTableSpatialClusters(selected_mets,:);
+% % print solutions to files
+% print_bestsol_to_files(met_info, met_bestsols, filenameModel);
+% 
+% filename = [outputFolder ...
+%             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allDC'];
+% % create met_info object needed for the printing function
+% met_info = annotationTableSpatialClusters(selected_mets,:);
+% % print solutions to files
+% print_bestsol_to_files(met_info, met_bestsols_dc, filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % print all solutions to files
-filename = [outputFolder ...
-            'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_annDC'];
-% print solutions to files
-print_allsols_to_files(met_info, met_gitfits_dc, filename);
-% CVR
-filename = [outputFolder ...
-            'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_annCVR'];
-% print solutions to files
-print_allsols_to_files(met_info, met_gitfits, filename);
+% filename = [outputFolder ...
+%             'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_annDC'];
+% % print solutions to files
+% print_allsols_to_files(met_info, met_gitfits_dc, filename);
+% % CVR
+% filename = [outputFolder ...
+%             'model_results_ALL_SMOOTH_raw_2LIcoefHost1LIcoefbact_annCVR'];
+% % print solutions to files
+% print_allsols_to_files(met_info, met_gitfits, filename);
 
-% test reading from file
-[met_info_read, met_gitfits_read] = read_allsols_from_files(filename);
-
+% test reading solutions
+test_reading=0;
+if test_reading
+    filename = [outputFolder ...
+                    'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allDC'];
+    % test reading from file
+    [met_info_read, met_gitfits_read] = read_allsols_from_files(filename);
+    
+    filename = [outputFolder ...
+                    'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_bestDC'];
+    % test reading from file
+    [met_info_bestsol_read, met_bestsols_read] = read_bestsol_from_file(filename,...
+        'LI_PCC_within_high_total');
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fix_mz_rt_issue = 0;
