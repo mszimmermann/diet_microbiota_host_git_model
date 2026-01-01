@@ -20,14 +20,22 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 mouseInfo = readtable([rawdataFolder 'mouse_info.csv'], 'delim', ',');
-annotationTable = readtable([inputFolder ...
-        'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
-combinedIntensitiesData = readtable([inputFolder ...
-        'metabolites_allions_combined_norm_intensity.csv']);
+annotationTable = readtable([outputFolder ...
+        'metabolites_allions_combined_formulas_with_metabolite_filters_updated_filtering_0925.csv']);
+combinedIntensitiesData = readtable([outputFolder ...
+          'metabolites_allions_combined_norm_intensity_with_CVR_300825.csv']);
+          %'metabolites_allions_combined_norm_intensity.csv']);
 
 
 % get the filter vector
 binaryFilter = annotationTable.MetaboliteFilter;
+
+% remove CVR for analysis
+removeCVRflag=1;
+if removeCVRflag
+    combinedIntensitiesData(:,cellfun(@(x) contains(x,'CVR'),...
+        combinedIntensitiesData.Properties.VariableNames))=[];
+end
 
 % get intensities from the table as a separae matrix
 sample_columns = cellfun(@(x) contains(x,'_M'), combinedIntensitiesData.Properties.VariableNames);
@@ -38,13 +46,11 @@ sampleNames_parsed = cellfun(@(x) strsplit(x, '_'), sampleNames, 'unif', 0);
 combinedTissues = cellfun(@(x) x{3}, sampleNames_parsed, 'unif', 0);
 combinedType = cellfun(@(x) x{2}, sampleNames_parsed, 'unif', 0);
 combinedDiet = cellfun(@(x) x{1}, sampleNames_parsed, 'unif', 0);
+combinedMouse = cellfun(@(x) x{4}, sampleNames_parsed, 'unif', 0);
 
 % get info on mouse gender
-mouseGender = mouseInfo.Gender;
-combinedGender = repmat(mouseGender, round(length(combinedTissues)/length(mouseGender)),1);
-
-% calculate number of ions per sample
-combined_ions_per_sample = sum(combinedIntensitiesNorm>5000,1);
+combinedGender = arrayfun(@(x) mouseInfo{ismember(mouseInfo.Mouse_number, combinedMouse{x}),...
+    'Gender'}{1}, 1:length(combinedMouse), 'unif', 0);
 
 % calculate number of ions per condition 
 pca_type = combinedType;
@@ -56,6 +62,13 @@ pca_type_unique = unique(pca_type);
 pca_tissue_unique = unique(pca_tissue);
 % sort according to GI propagation
 pca_tissue_unique = pca_tissue_unique([5 6 7 1 2 3 4 8]);
+sampleTissue_order = {'SI1','SI2','SI3','Cecum','Colon','Feces','Liver','Serum'};
+% order tissues along the GIT
+if length(intersect(pca_tissue_unique, sampleTissue_order))==length(pca_tissue_unique)
+    pca_tissue_unique = sampleTissue_order;
+else
+    sprintf('Non-overlapping tissue: %s', strjoin(setdiff(pca_tissue_unique, sampleTissue_order),'; '));
+end
 % prepare data
 combined_cond_data = zeros(size(combinedIntensitiesNorm,1),...
     length(pca_diet_unique)*length(pca_type_unique)*length(pca_tissue_unique));
