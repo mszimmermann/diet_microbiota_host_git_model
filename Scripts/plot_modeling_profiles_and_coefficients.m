@@ -11,7 +11,7 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Output:
 % Figures:
-% 'fig3ade_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact.ps'; 	
+% 'fig3aef_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact.ps'; 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -20,14 +20,16 @@ add_global_and_file_dependencies
 % annotationTableSpatialClusters = readtable([inputFolder ...
 %     'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean.csv']);
 annotationTableSpatialClusters = readtable([outputFolder ...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR.csv']);
+    'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_with_mean_with_CVR_0925.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % modelingResults = readtable([resultsFolder ...
 %             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
+%modelingResults = readtable([outputFolder...
+%            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions_with_CVR.csv']);
 modelingResults = readtable([outputFolder...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions_with_CVR.csv']);
+    'table_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_DC_combined_IP_LI_PCC_within_high_total.csv']);
 x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
 coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
 
@@ -35,9 +37,11 @@ coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:e
 % save model results to file - reciprocal data restoration
 % modelData = readtable([resultsFolder...
 %     'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions.csv']);
+%modelData = readtable([outputFolder...
+%    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions_with_CVR.csv']);
 modelData = readtable([outputFolder...
-    'model_results_SMOOTH_normbyabsmax_reciprocal_problem_allions_with_CVR.csv']);
-modelData_data = modelData(:, 9:end);
+    'table_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_DC_combined_IP_LI_PCC_within_high_total_reciprocal.csv']);
+modelData_data = modelData(:, 12:end);
 modelData_orig = modelData_data{:, cellfun(@(x) ~(contains(x, 'Recip') |...
                                              contains(x, 'Random') ),...
                                              modelData_data.Properties.VariableNames)};
@@ -46,6 +50,8 @@ modelData_orig_cols = modelData_data.Properties.VariableNames(cellfun(@(x) ~(con
                                              modelData_data.Properties.VariableNames));
 modelData_recip = modelData_data{:, cellfun(@(x) contains(x, 'Recip'),...
                                              modelData_data.Properties.VariableNames)};
+modelData_recip_cols = modelData_data.Properties.VariableNames(cellfun(@(x) contains(x, 'Recip') ,...
+                                             modelData_data.Properties.VariableNames));
 % get correlations calculated with reverse problem
 if isnumeric(modelData.ReciprocalCorr(1))
     x_data_corr = modelData.ReciprocalCorr;
@@ -60,25 +66,32 @@ spatialClusters_names = annotationTableSpatialClusters.Properties.VariableNames(
 spatialClusters = annotationTableSpatialClusters{:, spatialClusters_names};                                   
 spatialClusters_names = cellfun(@(x) strrep(x, 'spatial_clust100_', ''), spatialClusters_names, 'unif', 0);
 
+% remove CVR clusters
+spatialClusters(:, cellfun(@(x) contains(x, 'CVR'), spatialClusters_names)) = [];
+spatialClusters_names(cellfun(@(x) contains(x, 'CVR'), spatialClusters_names)) = [];
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% define colora and GIT section names for plotting
+% define colors and GIT section names for plotting
 mycolors = [0 115 178;... %dark blue
-            204 227 240;...%light blue
+            0 115 178;... %dark blue 204 227 240;...%light blue
             211 96 39;... %dark orange
-            246 223 212]/256;%light orange
+            211 96 39]/256; %dark orange % 246 223 212light orange
+mylinestyles = {'-', '--', '-', '--'};
+
 git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plotting file name
 %fileNameprofiles = 'fig3ade_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact.ps';
-fileNameprofiles = 'fig3ade_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_selectedCVR.ps';
+%fileNameprofiles = 'fig3ade_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_selectedCVR.ps';
+fileNameprofiles = 'fig3aef_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIbact_DC_combined_IP_LI_PCC_within_high_total.ps';
 
 % select ions to plot by ion MZ
 targetMZ = [147.053; 74.037; 287.210;...]; %glutamate, propionate, l-octanoylcarnitine 
             499.297; 125.015; 131.058; 226.095;...]; %taurodeoxycholate, taurine, 5-aminolevulinate, porphobilonogen
             181.074; 468.272; 483.301; 245.163; 576.512; 430.345;... %tyrosine, 3,17-androstnediol glucuronide, taurolitocholate, isovalerylcarnitine, cohibin, 4a-carboxy-5a-cholesta-8-en-3b-ol
             386.355; 99.068;... % 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
-            119.058]; %threonine
+            119.058; 138.043]; %threonine, urocanate  
 % find annotated compound with this MZ
 % for which modelling results correlate >0.7 with original
 compoundsInterest = find((annotationTableSpatialClusters.MetaboliteFilter>0) &...
@@ -91,7 +104,7 @@ compoundsInterest = find((annotationTableSpatialClusters.MetaboliteFilter>0) &..
 %                          (x_data_corr>=0.7));
 
            
-curData_cols = reshape(modelData_orig_cols, 6, 4);
+curData_cols = reshape(modelData_orig_cols, 4, 6)';
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
 
 fprintf('Plotting profiles for %d metabolites\n',length(compoundsInterest));
@@ -113,7 +126,7 @@ for cpdix=1:length(compoundsInterest)
     idx=1;
     curmat = zeros(4,6);
     cur_data = reshape(modelData_orig(testidx,:), 4, 6)';
-    cur_rdata = reshape(modelData_recip(testidx,:), 6, 4);
+    cur_rdata = reshape(modelData_recip(testidx,:), 4, 6)';
     
     %normalize rdata to max
     cur_rdata = (cur_rdata-0.8);
@@ -126,21 +139,24 @@ for cpdix=1:length(compoundsInterest)
         hold on
         h(i) = plot(cur_data(:,i),...
              'LineWidth', 2,...
-             'Color', mycolors(i,:));
+             'Color', mycolors(i,:),...
+             'LineStyle', mylinestyles{i});
         ylabel('Original normbymax')
 
         subplot(spx,spy,idx+1);
         hold on
         plot((cur_rdata(:,i)),...
                  'LineWidth', 2,...
-                 'Color', mycolors(i,:));
+                 'Color', mycolors(i,:),...
+                 'LineStyle', mylinestyles{i});
         ylabel('Restored normbymax')
 
     end
     title(sprintf('%s %s %s %s: %d %d %d %d PCC=%.2f',...
                         spatialClusters_names{:},...
                         spatialClusters(testidx,:),...
-                        x_data_corr(testidx)))
+                        x_data_corr(testidx)),...
+                        'Interpreter', 'none')
 
     legend(h, curData_cols(1,:))%, 'Location', 'bestoutside');
     
@@ -165,7 +181,7 @@ for cpdix=1:length(compoundsInterest)
         
         axis square
     end
-    spt = suptitle({sprintf('MZ=%.3f',testmz(idx,1)),...
+    spt = sgtitle({sprintf('MZ=%.3f',testmz(idx,1)),...
                                         testannID{1},...
                                         testann{1}});
     set(spt,'FontSize',8,'FontWeight','normal')
