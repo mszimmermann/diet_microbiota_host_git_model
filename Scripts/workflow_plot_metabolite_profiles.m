@@ -24,20 +24,27 @@ add_global_and_file_dependencies
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read metabolite data
-metaboliteFolder = '.\metabolomics\ProcessedData\';
+%metaboliteFolder = '.\metabolomics\ProcessedData\';
 % metaboliteData = readtable([inputFolder,...
 %     'metabolites_allions_combined_norm_intensity.csv']);
 metaboliteData = readtable([outputFolder,...
-    'metabolites_allions_combined_norm_intensity_with_CVR.csv']);
+    'metabolites_allions_combined_norm_intensity_with_CVR_300825.csv']);
     
-metaboliteFilters = readtable([inputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
+metaboliteFilters = readtable([outputFolder,...
+     'metabolites_allions_combined_formulas_with_metabolite_filters_updated_filtering_0925.csv']);
+     %'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
 
 % define colors for different nouse groups and tissue names
 mycolors = [0 115 178;... %dark blue
             211 96 39;... %dark orange
-            204 227 240;...%light blue
-            246 223 212]/256;%light orange
+            0 115 178;... %dark blue 204 227 240;...%light blue
+            211 96 39]/256; %dark orange % 246 223 212light orange
+myfacecolors = [0 115 178;... %dark blue
+            211 96 39;... %dark orange
+            256 256 256;... %white % dark blue 204 227 240;...%light blue
+            256 256 256]/256; %white % 211 96 39 dark orange % 246 223 212light orange
+mymarkersize=7;
+mylinestyles = {'-', '-', '--', '--'};
 git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % separate data into a matrix of normalized intensities
@@ -71,8 +78,10 @@ end
 % convert table to matrix
 combinedIntensitiesNorm = table2array(metaboliteData(:,dataColumns));
 
-% remove DC and leave only CVR
-sampleType_unique(ismember(sampleType_unique, {'DC'}))=[];
+% % remove DC and leave only CVR
+% sampleType_unique(ismember(sampleType_unique, {'DC'}))=[];
+% remove CVR and leave only DC
+sampleType_unique(ismember(sampleType_unique, {'CVR'}))=[];
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,12 +101,13 @@ sampleType_unique(ismember(sampleType_unique, {'DC'}))=[];
 % plot compounds with specified masses
 % plotting file name
 %fileNameprofiles = 'fig2d_5fg_profiles_mets_across_tissues_with_datapoints_hier_clust_bact_and_system.ps'; 	
-fileNameprofiles = 'fig2d_5fg_profiles_mets_across_tissues_with_datapoints_hier_clust_bact_and_system_with_CVR10.ps'; 	
+fileNameprofiles = 'fig2d_5fg_profiles_mets_across_tissues_with_datapoints_hier_clust_bact_and_system_with_CVR10_onlyGFandDC.ps'; 	
 % select ions to plot by ion MZ
 targetMZ = [147.053; 74.037; 287.210;... %glutamate, propionate, l-octanoylcarnitine 
             499.297; 125.015; 131.058; 226.095;... %aurodeoxycholate, taurine, 5-aminolevulinate, porphobilinogen
             181.074; 468.272; 483.301; 245.163; 576.512; 430.345;... %tyrosine, 3,17-androstnediol glucuronide, taurolitocholate, isovalerylcarnitine, cohibin, 4a-carboxy-5a-cholesta-8-en-3b-ol
-            386.355; 99.068]; % 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
+            386.355; 99.068;...% 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
+            138.043]; %urocanate 
 % find annotated compound with this MZ
 % for which modelling results correlate >0.7 with original
 compoundsInterest = find((metaboliteFilters.MetaboliteFilter>0) &...
@@ -164,11 +174,15 @@ for cpdix=1:length(compoundsInterest)
                 hold on
                 plot(tissue_i*ones(size(curMatrix)) + randparam*(rand(size(curMatrix))-0.5),...
                      curMatrix,...
-                                 'o', 'MarkerSize', 5, 'MarkerEdgeColor', mycolors(coloridx,:),...
-                                 'MarkerFaceColor', mycolors(coloridx,:));
+                                 'o', 'MarkerSize', mymarkersize, ...
+                                 'MarkerEdgeColor', mycolors(coloridx,:),...
+                                 'MarkerFaceColor', myfacecolors(coloridx,:));
             end
-            plot(1:6, kmeanMatrix, 'LineWidth', 2, 'Color', mycolors(coloridx,:));
-            errorbar(1:6, kmeanMatrix, kstdMatrix, '.','LineWidth', 2, 'Color', mycolors(coloridx,:))
+            plot(1:6, kmeanMatrix, 'LineWidth', 2, 'Color', mycolors(coloridx,:),...
+                'LineStyle', mylinestyles{coloridx});
+            errorbar(1:6, kmeanMatrix, kstdMatrix, '.','LineWidth', 2, ...
+                'LineStyle', mylinestyles{coloridx},...
+                'Color', mycolors(coloridx,:))
             set(gca, 'XTick', 1:length(git_labels))
             set(gca, 'XTickLabel', git_labels)
             ylabel('Quantile normalized')
@@ -176,7 +190,12 @@ for cpdix=1:length(compoundsInterest)
             
             subplot(spx,spy,2)
             hold on
-            h(coloridx) = plot(1:6, kmeanMatrix, 'LineWidth', 2, 'Color', mycolors(coloridx,:));
+            h(coloridx) = plot(1:6, kmeanMatrix, 'LineWidth', 2,...
+                'Color', mycolors(coloridx,:),...
+                'LineStyle', mylinestyles{coloridx});
+            set(gca, 'XTick', 1:length(git_labels))
+            set(gca, 'XTickLabel', git_labels)
+         
             
             % liver
             selectCols = ismember(combinedTissues, sampleTissue_order{7}) &...
@@ -193,13 +212,14 @@ for cpdix=1:length(compoundsInterest)
             hold on
             plot((coloridx+1)*ones(size(curMatrix))+ randparam*(rand(size(curMatrix))-0.5),...
                 curMatrix,...
-                                 'o', 'MarkerSize', 5, 'MarkerEdgeColor', mycolors(coloridx,:),...
-                                 'MarkerFaceColor', mycolors(coloridx,:));
+                                 'o', 'MarkerSize',mymarkersize, 'MarkerEdgeColor', mycolors(coloridx,:),...
+                                 'MarkerFaceColor', myfacecolors(coloridx,:));
             plot(coloridx+1, mean(curMatrix),...
                  'LineWidth', 2,...
                  'Color', mycolors(coloridx,:));
             errorbar(coloridx+1, nanmean(curMatrix), nanstd(curMatrix), '.',...
                      'LineWidth', 2,...
+                     'LineStyle', mylinestyles{coloridx},...
                      'Color', mycolors(coloridx,:))
             ylabel('Quantile normalized')
             title('Liver')
@@ -219,13 +239,14 @@ for cpdix=1:length(compoundsInterest)
             hold on
             plot((coloridx+1)*ones(size(curMatrix))+ randparam*(rand(size(curMatrix))-0.5),...
                 curMatrix,...
-                                 'o', 'MarkerSize', 5, 'MarkerEdgeColor', mycolors(coloridx,:),...
-                                 'MarkerFaceColor', mycolors(coloridx,:));
+                                 'o', 'MarkerSize', mymarkersize, 'MarkerEdgeColor', mycolors(coloridx,:),...
+                                 'MarkerFaceColor', myfacecolors(coloridx,:));
             plot(coloridx+1, mean(curMatrix),...
                  'LineWidth', 2,...
                  'Color', mycolors(coloridx,:));
             errorbar(coloridx+1, nanmean(curMatrix), nanstd(curMatrix), '.',...
                      'LineWidth', 2,...
+                     'LineStyle', mylinestyles{coloridx},...
                      'Color', mycolors(coloridx,:))
             ylabel('Quantile normalized')
             title('Serum')
@@ -235,6 +256,7 @@ for cpdix=1:length(compoundsInterest)
         end
     end
 
+    % add legend
     subplot(spx, spy,2)
     legend(h, legend_entries)
     
@@ -249,7 +271,17 @@ for cpdix=1:length(compoundsInterest)
         ylim([0 cur_ylim(2)])
         axis square
     end
-    spt = suptitle(sprintf('MZ=%.3f, RT=%.2f %s %d\n%s\n%s',...
+
+    %add appropriate tick labels to liver and serum plots
+    subplot(spx, spy,3)
+    xticks((1:coloridx-1)+1)
+    xticklabels(legend_entries)
+
+    subplot(spx, spy,4)
+    xticks((1:coloridx-1)+1)
+    xticklabels(legend_entries)
+
+    spt = sgtitle(sprintf('MZ=%.3f, RT=%.2f %s %d\n%s\n%s',...
                                         testmz,testrt,testmethod{1}, testmode,...
                                         testann{1},...
                                         testname{1}));
