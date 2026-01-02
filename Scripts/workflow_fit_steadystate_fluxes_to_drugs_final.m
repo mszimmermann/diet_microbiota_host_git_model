@@ -28,7 +28,7 @@ add_global_and_file_dependencies
 % use volume flag
 use_volume_flag = 1;
 % get drug data for modelling
-print_drug_data_flag = 1;
+print_drug_data_flag = 0;
 [meanMatrix, meanMatrix_mets, meanData_columns] = prepare_drug_data_for_modeling(outputFolder, figureFolder,...
     print_drug_data_flag, use_volume_flag);
 %use_volume_flag = 0;
@@ -206,8 +206,10 @@ print_bestsol_to_files(met_info, met_bestsols, filename);
 % combine IP and LI within PCC criteria
 sel_crit1 = 'IP';
 sel_crit2 = 'LI PCC within high total';%
+corrthreshold = 0.7;
 [met_info_drug_combined, met_bestsol_drug_combined] = ...
-                combine_bestsols_from_file(filename, sel_crit1, sel_crit2);
+                combine_bestsols_from_file(filename, sel_crit1, sel_crit2,...
+                corrthreshold);
 met_bestsol_drug_combined.modelname = 'Drug_IP_LIPCCwT';%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
