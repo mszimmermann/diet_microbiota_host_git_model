@@ -67,11 +67,13 @@ testCorrRev_shuffled = zeros(1,nrepeat);
 testdataR = zeros(numel(kmeanMatrix_joint), nrepeat);
 testx_idx=1;
 
+
 % test nrepeat solutions from trust-region-reflective
 if size(A,2)<=size(A,1)
     for nrepeat_i = 1:nrepeat
         options = optimoptions(@lsqlin,'Display', 'off',...
             'Algorithm','trust-region-reflective','MaxIterations',1500);
+        rng(testx_idx, "twister") % default % For reproducibility set random seed fixed
         rand_x0=rand(size(A,2),1);
 % obsolete: if repeat the diet twice, set initial solution equal to each
 % other for two diets
@@ -137,6 +139,7 @@ end
 % calculate solution with interior-point algorithm
 options = optimoptions(@lsqlin,'Display', 'off',...
             'Algorithm','interior-point','MaxIterations',1500);
+rng(1, "twister") % default % For reproducibility set random seed fixed  
 rand_x0=rand(size(A,2),1);
 [x_ip] = lsqlin(A,b,[],[],[],[],xlowerlim, xupperlim, rand_x0, options);
 x_ip_orig = x_ip;
