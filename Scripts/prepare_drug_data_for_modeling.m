@@ -7,7 +7,7 @@ function [meanMatrix, meanMatrix_mets, meanData_columns,meanMatrix_STD] = ...
 
 % prepare data from BRV paper for modeling
 % table can be downloaded from https://www.science.org/doi/full/10.1126/science.aat9931
-dataFolder = '.\ProcessedData\public_data\';
+dataFolder = '.\InputData\public_data\';
 dataFilenames = 'aat9931_tables_s1-26.xlsx';
 dataSheetnames = {'Table S4';'Table S17'};
 
