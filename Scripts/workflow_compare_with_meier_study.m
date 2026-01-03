@@ -40,8 +40,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-modelingResults = readtable([resultsFolder ...
-            'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_allions.csv']);
+modelingResults = readtable([outputFolder ...
+            'table_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_DC_combined_IP_LI_PCC_within_high_total.csv']);
 x_met_smooth = modelingResults{:, width(modelingResults)-8:end};
 coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
 

@@ -1,3 +1,7 @@
+% Analyze and model public data from Meier et al 2023 to compare model
+% coefficients for overlapping metabolites
+
+% call script defining file dependenciesand global variables
 
 addpath(genpath('.\'));
 add_global_and_file_dependencies
@@ -45,7 +49,8 @@ mycolors = [0 115 178; %dark blue for both 204 227 240;...%light blue
 mylinestyle = {'--', '-'};
 git_labels = {'Du', 'Je', 'Il', 'Cec', 'Col', 'Fec'};
 
-meier_figure_file_name = 'Figures\figSX_Meier_data_plots_smooth_by_sum.ps';
+meier_figure_file_name = [figureFolder...
+    'figSX_Meier_data_plots_smooth_by_sum.ps'];
 
 % smooth first metabolite to create placeholder matrices
 [smoothloc, smoothcond, smoothrep, smoothdata] = ...
