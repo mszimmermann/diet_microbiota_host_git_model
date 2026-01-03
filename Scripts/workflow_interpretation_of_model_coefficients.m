@@ -16,17 +16,19 @@ add_global_and_file_dependencies
 %
 % Output: 
 % Files:
-% Figures:
+% Figures:  'figED_heatmap_model_vs_met_corr_and_residuals' (supplementary)
+% 'figED_scatter_modelHCD_vs_met_foldchanges'  (supplementary)
+% 'figED_scatter_modelHFD_vs_met_foldchanges'  (supplementary)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-metaboliteFilters = readtable([inputFolder,...
-    'metabolites_allions_combined_formulas_with_metabolite_filters.csv']);
+metaboliteFilters = readtable([outputFolder,...
+    'metabolites_allions_combined_formulas_with_metabolite_filters_updated_filtering_0925.csv']);
 
-metaboliteDiff = readtable([resultsFolder,...
-    'table_diff_abundance_metabolite_ions_removed2outliers.csv']);
+metaboliteDiff = readtable([outputFolder,...
+    'table_diff_abundance_metabolite_ions_removed2outliers_0925.csv']);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -87,6 +89,7 @@ set(figHFD, 'PaperUnits', 'centimeters');
 set(figHFD, 'PaperPosition', [0 0 10 25]); %x_width=10cm y_width=15cm
  
 spidx = 1;
+res_idx = 1;
 for diet_i=1:length(dietChangeNames)
         for tissue_i=1:length(liTissues)
   
