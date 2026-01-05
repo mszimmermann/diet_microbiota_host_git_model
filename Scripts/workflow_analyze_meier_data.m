@@ -195,7 +195,15 @@ meanMatrix_mets = meier_mets;
 [bb,aa] = ndgrid(sampleType_unique, sampleDiet_unique); 
 condLabels = strcat(aa(:),'-', bb(:));
 
+% make a table of input data to the modelling framework
+meier_smooth_mean_table = array2table(meier_smooth_mean, ...
+    'VariableNames', meier_smooth_mean_condition);
+meier_smooth_mean_table = addvars(meier_smooth_mean_table,...
+    meier_mets, 'Before',meier_smooth_mean_table.Properties.VariableNames{1});
 
+writetable(meier_smooth_mean_table,...
+    [outputFolder,...
+    'tableS13_Meier_input_data.csv']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
