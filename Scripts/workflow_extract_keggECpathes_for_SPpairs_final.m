@@ -23,19 +23,19 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-model_coefs_annotated = readtable([resultsFolder ...
-    'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_allions.csv'],...
-    'TreatAsEmpty', '#NUM!');
-
-endcol = length(model_coefs_annotated.Properties.VariableNames);
-startcol = endcol-8;
-for i=startcol:endcol
-    testval = model_coefs_annotated(:,model_coefs_annotated.Properties.VariableNames{i});
-    if ~isnumeric(testval{1,1})
-        model_coefs_annotated(:,model_coefs_annotated.Properties.VariableNames{i}) = ...
-            array2table(cellfun(@(x) str2double(x), testval{:,1}));
-    end
-end
+% model_coefs_annotated = readtable([resultsFolder ...
+%     'model_results_SMOOTH_normbyabsmax_ONLYMETCOEF_2LIcoefHost1LIcoefbact_allions.csv'],...
+%     'TreatAsEmpty', '#NUM!');
+% 
+% endcol = length(model_coefs_annotated.Properties.VariableNames);
+% startcol = endcol-8;
+% for i=startcol:endcol
+%     testval = model_coefs_annotated(:,model_coefs_annotated.Properties.VariableNames{i});
+%     if ~isnumeric(testval{1,1})
+%         model_coefs_annotated(:,model_coefs_annotated.Properties.VariableNames{i}) = ...
+%             array2table(cellfun(@(x) str2double(x), testval{:,1}));
+%     end
+% end
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read DC modelling results
@@ -54,8 +54,8 @@ sel_crit2 = 'LI_PCC_within_high_total';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read annotation table to get metabolite filter flag
-annotationTableMeier = readtable([inputFolder ...
-    'metabolites_allions_combined_formulas_with_metabolite_filters_meier.csv']);
+annotationTableMeier = readtable([outputFolder ...
+    'metabolites_allions_combined_formulas_with_metabolite_filters_updated_filtering_0925.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 strict_class = 0;%1; % flag to indicate whether micorbial substrates and products 
@@ -89,7 +89,7 @@ legend({'CTR', 'HFD'}, 'location', 'EastOutside')
 %axis square
 plot([-0.5, -0.5], [0, 1200], 'k--')
 plot([0.5, 0.5], [0, 1200], 'k--')
-ylim([800, 1100])
+ylim([800, 1200])
 % add text with numbers
 text(0.6, 1000, sprintf('N = %d', nnz( (model_coefs_annotated_filtered.B1LIctr>=0.5) |...
                                         (model_coefs_annotated_filtered.B1LIhfd>=0.5) )));

@@ -33,7 +33,7 @@ kegg_rxn_ec_subprod = table2cell(kegg_rxn_ec_subprod);
 % end
 % fclose(fid);
 
-strict_class = 0;
+strict_class = 0; %1
 % [fid, errmsg] = fopen([resultsFolder,...
 %     'table_shortestMatrix_paths_filtered.csv'], 'r');
 [fid, errmsg] = fopen([outputFolder, filesep, ...
