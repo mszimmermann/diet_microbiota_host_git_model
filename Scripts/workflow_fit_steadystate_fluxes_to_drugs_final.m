@@ -74,6 +74,18 @@ else
         'fig_2023_drugdiag_conc_4profiles_plus_mut_modelSMOOTH_2LIcoefHost_1LIbact.ps'];
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% make a table of input data to the modelling framework
+drug_input_mean_table = array2table(meanMatrix, ...
+    'VariableNames', meanConditions);
+drug_input_mean_table = addvars(drug_input_mean_table,...
+    meanMatrix_mets, 'Before',drug_input_mean_table.Properties.VariableNames{1});
+
+writetable(drug_input_mean_table,...
+    [outputFolder,...
+    'tableS9_drug_input_data.csv']);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 diag_plot_flag = 0; % diagnostic plotting flag
 if diag_plot_flag
     fig = figure('units','normalized','outerposition',[0 0 1 1]);
@@ -211,6 +223,14 @@ corrthreshold = 0.7;
                 combine_bestsols_from_file(filename, sel_crit1, sel_crit2,...
                 corrthreshold);
 met_bestsol_drug_combined.modelname = 'Drug_IP_LIPCCwT';%
+
+% save combined best solution to file
+outputfilename = [outputFolder ...
+            'table_S9_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_drugs_combined_',...
+            sel_crit1, '_', sel_crit2];
+print_combined_bestsol_to_files(met_info_drug_combined, met_bestsol_drug_combined,...
+                                outputfilename);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
