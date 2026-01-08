@@ -16,7 +16,8 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-hmdbClassFile = [rawdataFolder 'HMDBclass072021_items.csv'];
+%hmdbClassFile = [rawdataFolder 'HMDBclass072021_items.csv'];
+hmdbClassFile = [rawdataFolder 'hmdb_07_2021_mimedb_03_2024_classification_table.csv'];%'HMDBclass072021_items.csv'];
 hmdbSubClassFile = [rawdataFolder 'HMDBsubclass072021_items.csv'];
 hmdbSuperclassFile = [rawdataFolder 'HMDBsuperclass072021_items.csv'];
 
@@ -46,5 +47,7 @@ for i=1:length(hmdbSuperclass_unique)
                                                             hmdbSuperclass_unique{i}));
 end
 
-save([processeddataFolder filesep 'util' filesep 'hmdbV4_072021_ptw.mat'],...
+%save([processeddataFolder filesep 'util' filesep 'hmdbV4_072021_ptw.mat'],...
+%        'hmdbClass_ptw', 'hmdbSuperClass_ptw', 'hmdbSubClass_ptw')
+save([processeddataFolder filesep 'util' filesep 'hmdbV4_072021_mimedb_0324_ptw.mat'],...
         'hmdbClass_ptw', 'hmdbSuperClass_ptw', 'hmdbSubClass_ptw')

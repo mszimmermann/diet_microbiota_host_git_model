@@ -15,11 +15,11 @@ add_global_and_file_dependencies
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-annotationTable = readtable([inputFolder...
-'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters.csv']);
+annotationTable = readtable([outputFolder...inputFolder...
+'metabolites_allions_combined_formulas_with_metabolite_filters_spatial100clusters_0925.csv']);
 
 hmdbPTW = load([processeddataFolder filesep 'util' filesep ...
-        'hmdbV4_072021_ptw.mat']);
+        'hmdbV4_072021_mimedb_0324_ptw.mat']);%'hmdbV4_072021_ptw.mat']);
 
 %prepare hmdb ptw-met tables
 keggCompoundsID = annotationTable.CompoundID;
@@ -42,6 +42,6 @@ for hmdbtype = 1:3
     end
 end
 
-save([outputFolder 'hmdbPTWtables.mat'], 'hmdbPTWclassNames', 'hmdbPTWclassTable',...
+save([outputFolder 'hmdbPTWmimedbPTWtables.mat'], 'hmdbPTWclassNames', 'hmdbPTWclassTable',...
     'hmdbPTWSubClassNames', 'hmdbPTWSubClassTable',...
     'hmdbPTWSuperClassNames', 'hmdbPTWSuperClassTable')
