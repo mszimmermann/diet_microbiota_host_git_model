@@ -16,6 +16,8 @@ met_info.MZ = soldata.MZ;
 met_info.RT = soldata.RT;
 met_info.CompoundID = soldata.CompoundID;
 met_info.CompoundName = soldata.CompoundName;
+met_info.FilteredCompoundID = soldata.FilteredCompoundID;
+met_info.FilteredCompoundName = soldata.FilteredCompoundName;
 met_info.MetaboliteFilter = soldata.MetaboliteFilter;
 met_info.SumGITclusters = soldata.SumGITclusters;
 

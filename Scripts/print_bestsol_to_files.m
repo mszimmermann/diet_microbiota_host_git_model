@@ -14,6 +14,12 @@ if isstruct(met_info)
     end
     % check whether met_info contains MetaboliteFilter - flag indicating
     % annotation filtering
+    if isfield(met_info, 'FilteredCompoundID') ==0
+        met_info.FilteredCompoundID = met_info.CompoundID;
+    end
+    if ismember(met_info, 'FilteredCompoundName')
+        met_info.FilteredCompoundName = met_info.CompoundName;
+    end    
     if isfield(met_info, 'MetaboliteFilter') == 0
         met_info.MetaboliteFilter = ones(size(met_bestsols,1),1);
     end
@@ -32,6 +38,12 @@ elseif istable(met_info)
     end
      % check whether met_info contains MetaboliteFilter - flag indicating
     % annotation filtering
+    if ~ismember('FilteredCompoundID', met_info.Properties.VariableNames)
+        met_info.FilteredCompoundID = met_info.CompoundID;
+    end
+    if ~ismember('FilteredCompoundName', met_info.Properties.VariableNames)
+        met_info.FilteredCompoundName = met_info.CompoundName;
+    end    
     if ~ismember('MetaboliteFilter', met_info.Properties.VariableNames)
         met_info.MetaboliteFilter = ones(size(met_bestsols,1),1);
     end
@@ -53,7 +65,7 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
                    strrep(met_bestsols{1}.selection_criterion{sel_crit},' ','_'),...
                    '.csv'];
     fid = fopen(curfilename, 'w');
-    fprintf(fid, ['MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\t'...
+    fprintf(fid, ['MZ\tRT\tCompoundID\tCompoundName\tFilteredCompoundID\tFilteredCompoundName\tMetaboliteFilter\tSumGITclusters\t'...
                   'ReciprocalCorr\tReciprocalCorrSI\tReciprocalCorrLI\tReciprocalCorrMean']);
     for i=1:length(met_bestsols{1}.coefvalues)
         fprintf(fid, '\t%s', met_bestsols{1}.coefvalues{i});
@@ -62,8 +74,10 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
     for i=1:length(met_bestsols)
         fprintf(fid, '%.3f\t%3f',   met_info.MZ(i),...
                                     met_info.RT(i));
-        fprintf(fid, '\t%s\t%s\t%d',met_info.CompoundID{i},...
+        fprintf(fid, '\t%s\t%s\t%s\t%s\t%d',met_info.CompoundID{i},...
                                     met_info.CompoundName{i},...
+                                    met_info.FilteredCompoundID{i},...
+                                    met_info.FilteredCompoundName{i},...
                                     met_info.MetaboliteFilter(i));
         fprintf(fid, '\t%d', met_info.gut_filter(i));
         
@@ -112,7 +126,7 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
     % column names for the data
     columnNames = met_bestsols{1}.kmeanMatrix_joint_names(:);
     
-    fprintf(fid, ['MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters\t'...
+    fprintf(fid, ['MZ\tRT\tCompoundID\tCompoundName\tFilteredCompoundID\tFilteredCompoundName\tMetaboliteFilter\tSumGITclusters\t'...
                   'ReciprocalCorr\tReciprocalCorrSI\tReciprocalCorrLI\tReciprocalCorrMean']);
     for i=1:length(columnNames)
         fprintf(fid, '\t%s', columnNames{i});
@@ -125,8 +139,10 @@ for sel_crit = 1:length(met_bestsols{1}.selection_criterion)
     for i=1:length(met_bestsols)
         fprintf(fid, '%.3f\t%3f',   met_info.MZ(i),...
                                     met_info.RT(i));
-        fprintf(fid, '\t%s\t%s\t%d',met_info.CompoundID{i},...
+        fprintf(fid, '\t%s\t%s\t%s\t%s\t%d',met_info.CompoundID{i},...
                                     met_info.CompoundName{i},...
+                                    met_info.FilteredCompoundID{i},...
+                                    met_info.FilteredCompoundName{i},...
                                     met_info.MetaboliteFilter(i));
         fprintf(fid, '\t%d', met_info.gut_filter(i));
         

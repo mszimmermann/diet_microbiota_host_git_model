@@ -14,6 +14,12 @@ if isstruct(met_info)
     end
     % check whether met_info contains MetaboliteFilter - flag indicating
     % annotation filtering
+    if isfield(met_info, 'FilteredCompoundID') ==0
+        met_info.FilteredCompoundID = met_info.CompoundID;
+    end
+    if ismember(met_info, 'FilteredCompoundName')
+        met_info.FilteredCompoundName = met_info.CompoundName;
+    end    
     if isfield(met_info, 'MetaboliteFilter') == 0
         met_info.MetaboliteFilter = ones(size(gitfits,1),1);
     end
@@ -32,6 +38,12 @@ elseif istable(met_info)
     end
      % check whether met_info contains MetaboliteFilter - flag indicating
     % annotation filtering
+    if ~ismember('FilteredCompoundID', met_info.Properties.VariableNames)
+        met_info.FilteredCompoundID = met_info.CompoundID;
+    end
+    if ~ismember('FilteredCompoundName', met_info.Properties.VariableNames)
+        met_info.FilteredCompoundName = met_info.CompoundName;
+    end    
     if ~ismember('MetaboliteFilter', met_info.Properties.VariableNames)
         met_info.MetaboliteFilter = ones(size(gitfits,1),1);
     end
@@ -50,7 +62,7 @@ end
 curfilename = [filename...
                '.csv'];
 fid = fopen(curfilename, 'w');
-fprintf(fid,'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters');
+fprintf(fid,'MZ\tRT\tCompoundID\tCompoundName\tFilteredCompoundID\tFilteredCompoundName\tMetaboliteFilter\tSumGITclusters');
 % create column names
 columnnames = strcat(repmat(gitfits{1}.coefvalues, 1, size(gitfits{1}.testx,2)),...
     '_',...
@@ -66,8 +78,10 @@ fprintf(fid, '\n');
 for i=1:length(gitfits)
     fprintf(fid, '%.3f\t%3f',   met_info.MZ(i),...
                                 met_info.RT(i));
-    fprintf(fid, '\t%s\t%s\t%d',met_info.CompoundID{i},...
+    fprintf(fid, '\t%s\t%s\t%s\t%s\t%d',met_info.CompoundID{i},...
                                 met_info.CompoundName{i},...
+                                met_info.FilteredCompoundID{i},...
+                                met_info.FilteredCompoundName{i},...
                                 met_info.MetaboliteFilter(i));
     fprintf(fid, '\t%d', met_info.gut_filter(i));
 
@@ -99,7 +113,7 @@ fid = fopen(curfilename, 'w');
 % column names for the data
 columnNames = gitfits{1}.kmeanMatrix_joint_names(:);
 
-fprintf(fid, 'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters');
+fprintf(fid, 'MZ\tRT\tCompoundID\tCompoundName\tFilteredCompoundID\tFilteredCompoundName\tMetaboliteFilter\tSumGITclusters');
 for i=1:length(columnNames)
     fprintf(fid, '\t%s', columnNames{i});
 end
@@ -112,8 +126,10 @@ fprintf(fid, '\n');
 for i=1:length(gitfits)
     fprintf(fid, '%.3f\t%3f',   met_info.MZ(i),...
                                 met_info.RT(i));
-    fprintf(fid, '\t%s\t%s\t%d',met_info.CompoundID{i},...
+    fprintf(fid, '\t%s\t%s\t%s\t%s\t%d',met_info.CompoundID{i},...
                                 met_info.CompoundName{i},...
+                                met_info.FilteredCompoundID{i},...
+                                met_info.FilteredCompoundName{i},...
                                 met_info.MetaboliteFilter(i));
     fprintf(fid, '\t%d', met_info.gut_filter(i));
 
@@ -147,7 +163,7 @@ fclose(fid);
 curfilename = [filename...
                '_random_coef_correv.csv'];
 fid = fopen(curfilename, 'w');
-fprintf(fid,'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters');
+fprintf(fid,'MZ\tRT\tCompoundID\tCompoundName\tFilteredCompoundID\tFilteredCompoundName\tMetaboliteFilter\tSumGITclusters');
 % create column names
 columnnames = arrayfun(@(x) sprintf('randomCorr_%03d',x), (1:length(gitfits{1}.testCorrRev_shuffled)), 'unif', 0);
                                  
@@ -158,8 +174,10 @@ fprintf(fid, '\n');
 for i=1:length(gitfits)
     fprintf(fid, '%.3f\t%3f',   met_info.MZ(i),...
                                 met_info.RT(i));
-    fprintf(fid, '\t%s\t%s\t%d',met_info.CompoundID{i},...
+    fprintf(fid, '\t%s\t%s\t%s\t%s\t%d',met_info.CompoundID{i},...
                                 met_info.CompoundName{i},...
+                                met_info.FilteredCompoundID{i},...
+                                met_info.FilteredCompoundName{i},...
                                 met_info.MetaboliteFilter(i));
     fprintf(fid, '\t%d', met_info.gut_filter(i));
 
@@ -184,7 +202,7 @@ fclose(fid);
 curfilename = [filename...
                '_random_coefs.csv'];
 fid = fopen(curfilename, 'w');
-fprintf(fid,'MZ\tRT\tCompoundID\tCompoundName\tMetaboliteFilter\tSumGITclusters');
+fprintf(fid,'MZ\tRT\tCompoundID\tCompoundName\tFilteredCompoundID\tFilteredCompoundName\tMetaboliteFilter\tSumGITclusters');
 % create column names
 if length(gitfits{1}.testx_shuffled) > length(gitfits{1}.coefvalues)
     % coef names should be doubled because there was only one diet
@@ -215,8 +233,10 @@ fprintf(fid, '\n');
 for i=1:length(gitfits)
     fprintf(fid, '%.3f\t%3f',   met_info.MZ(i),...
                                 met_info.RT(i));
-    fprintf(fid, '\t%s\t%s\t%d',met_info.CompoundID{i},...
+    fprintf(fid, '\t%s\t%s\t%s\t%s\t%d',met_info.CompoundID{i},...
                                 met_info.CompoundName{i},...
+                                met_info.FilteredCompoundID{i},...
+                                met_info.FilteredCompoundName{i},...
                                 met_info.MetaboliteFilter(i));
     fprintf(fid, '\t%d', met_info.gut_filter(i));
 
