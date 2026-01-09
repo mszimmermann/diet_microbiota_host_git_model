@@ -90,7 +90,7 @@ fileNameprofiles = 'fig3aef_profiles_figureselected_modelSMOOTH_2LIcoefHost_1LIb
 targetMZ = [147.053; 74.037; 287.210;...]; %glutamate, propionate, l-octanoylcarnitine 
             499.297; 125.015; 131.058; 226.095;...]; %taurodeoxycholate, taurine, 5-aminolevulinate, porphobilonogen
             181.074; 468.272; 483.301; 245.163; 576.512; 430.345;... %tyrosine, 3,17-androstnediol glucuronide, taurolitocholate, isovalerylcarnitine, cohibin, 4a-carboxy-5a-cholesta-8-en-3b-ol
-            386.355; 99.068;... % 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
+            384.339; 386.355; 99.068;... % Cholestenone;, 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
             119.058; 138.043]; %threonine, urocanate  
 % find annotated compound with this MZ
 % for which modelling results correlate >0.7 with original

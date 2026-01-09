@@ -106,7 +106,7 @@ fileNameprofiles = 'fig2d_5fg_profiles_mets_across_tissues_with_datapoints_hier_
 targetMZ = [147.053; 74.037; 287.210;... %glutamate, propionate, l-octanoylcarnitine 
             499.297; 125.015; 131.058; 226.095;... %aurodeoxycholate, taurine, 5-aminolevulinate, porphobilinogen
             181.074; 468.272; 483.301; 245.163; 576.512; 430.345;... %tyrosine, 3,17-androstnediol glucuronide, taurolitocholate, isovalerylcarnitine, cohibin, 4a-carboxy-5a-cholesta-8-en-3b-ol
-            386.355; 99.068;...% 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
+            384.339; 386.355; 99.068;... % Cholestenone;, 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
             138.043]; %urocanate 
 % find annotated compound with this MZ
 % for which modelling results correlate >0.7 with original
