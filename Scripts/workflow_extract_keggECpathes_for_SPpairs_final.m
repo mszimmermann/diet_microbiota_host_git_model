@@ -58,7 +58,7 @@ annotationTableMeier = readtable([outputFolder ...
     'metabolites_allions_combined_formulas_with_metabolite_filters_updated_filtering_0925.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-strict_class = 0;%1; % flag to indicate whether micorbial substrates and products 
+strict_class = 1;%0; % flag to indicate whether micorbial substrates and products 
 % should be additionally filtered by correlation between original and
 % restored data in the large intestinal sections
 
@@ -206,8 +206,8 @@ end
 %                      ((model_coefs_annotated.B1LIctr<=-0.5) | (model_coefs_annotated.B1LIhfd<=-0.5));
 %potential_products_ids = model_coefs_annotated.CompoundID(potential_products);
 %potential_substrates_ids = model_coefs_annotated.CompoundID(potential_substrates);
-potential_products_ids = met_info_combined_DC.CompoundID(potential_products);
-potential_substrates_ids = met_info_combined_DC.CompoundID(potential_substrates);
+potential_products_ids = met_info_combined_DC.FilteredCompoundID(potential_products);
+potential_substrates_ids = met_info_combined_DC.FilteredCompoundID(potential_substrates);
 
 potential_products_ids_all = cell(length(potential_products_ids)*20,1);
 potential_substrates_ids_all = cell(length(potential_substrates_ids)*20,1);
