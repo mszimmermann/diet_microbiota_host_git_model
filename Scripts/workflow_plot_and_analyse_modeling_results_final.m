@@ -47,8 +47,8 @@ spatialClusters = table2array(annotationTableSpatialClusters(:, clusteridx));
 % coefvalues = modelingResults.Properties.VariableNames(width(modelingResults)-8:end);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % analyze either DC or CVR data
-analyzeGroup = 'CVR'; 
-%analyzeGroup = 'DC';
+%analyzeGroup = 'CVR'; 
+analyzeGroup = 'DC';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 filename = [outputFolder ...
             'model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_best'...
@@ -95,9 +95,26 @@ plot_bestfit_model_corr(filter_bestsols_by_index(met_bestsol_combined, selected_
 
 % save combined best solution to file
 outputfilename = [outputFolder ...
-            'table_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_'...
+            'tableS8_model_results_SMOOTH_raw_2LIcoefHost1LIcoefbact_'...
             analyzeGroup, '_combined_',...
             sel_crit1, '_', sel_crit2];
+% add information about the method and mode from the annotation table
+met_info_method = cell(length(met_info_combined.MZ),1);
+met_info_mode = zeros(length(met_info_combined.MZ),1);
+for i=1:length(met_info_combined.MZ)
+    % check that the ion is the same
+    if (abs(met_info_combined.MZ(i) - annotationTableSpatialClusters.MZ(i))<0.001) &&...
+       (abs(met_info_combined.RT(i) - annotationTableSpatialClusters.RT(i))<0.001)
+        met_info_method{i} = annotationTableSpatialClusters.Method{i};
+        met_info_mode(i) = annotationTableSpatialClusters.Mode(i);
+    else
+        sprintf('Warning: ion %d with MZ %.3f and RT %.3f not matching',...
+            i, met_info_combined.MZ(i), met_info_combined.RT(i));
+    end
+end
+met_info_combined.Method = met_info_method;
+met_info_combined.Mode = met_info_mode;
+
 print_combined_bestsol_to_files(met_info_combined, met_bestsol_combined,...
                                 outputfilename);
 

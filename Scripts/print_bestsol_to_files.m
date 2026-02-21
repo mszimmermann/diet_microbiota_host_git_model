@@ -17,7 +17,7 @@ if isstruct(met_info)
     if isfield(met_info, 'FilteredCompoundID') ==0
         met_info.FilteredCompoundID = met_info.CompoundID;
     end
-    if ismember(met_info, 'FilteredCompoundName')
+    if isfield(met_info, 'FilteredCompoundName') ==0
         met_info.FilteredCompoundName = met_info.CompoundName;
     end    
     if isfield(met_info, 'MetaboliteFilter') == 0
