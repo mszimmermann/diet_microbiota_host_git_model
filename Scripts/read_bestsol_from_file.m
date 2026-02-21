@@ -14,8 +14,17 @@ met_info.MZ = soldata.MZ;
 met_info.RT = soldata.RT;
 met_info.CompoundID = soldata.CompoundID;
 met_info.CompoundName = soldata.CompoundName;
-met_info.FilteredCompoundID = soldata.FilteredCompoundID;
-met_info.FilteredCompoundName = soldata.FilteredCompoundName;
+% check if filtered compound ID is in the table, oterwise use compound ID
+if isfield(soldata, 'FilteredCompoundID') ==0
+    met_info.FilteredCompoundID = soldata.CompoundID;
+else
+    met_info.FilteredCompoundID = soldata.FilteredCompoundID;
+end
+if isfield(soldata, 'FilteredCompoundName') ==0
+    met_info.FilteredCompoundName = soldata.CompoundName;
+else
+    met_info.FilteredCompoundName = soldata.FilteredCompoundName;
+end
 met_info.MetaboliteFilter = soldata.MetaboliteFilter;
 met_info.SumGITclusters = soldata.SumGITclusters;
 
