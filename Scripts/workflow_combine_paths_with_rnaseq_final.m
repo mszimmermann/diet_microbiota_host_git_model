@@ -47,7 +47,7 @@ add_global_and_file_dependencies
 
 % shortestPathTable = readtable([resultsFolder, ...
 %     'shortest_paths_upto_length_4.csv'], 'delim', ',');
-strict_class = 1; %0
+strict_class = 0; %0
 shortestPathTable = readtable([outputFolder, ...
     'shortest_paths_combined_IP_LI_PCC_within_high_total_strictclass'...
     num2str(strict_class) '_upto_length_4.csv'],...
@@ -1247,6 +1247,9 @@ plotdata = [speciesOTU_products_corr(filter_genes==1)...
             kegg_DNA_sub_prod_products_bestcorr_pos(filter_genes==1)...
             kegg_sub_prod_products_bestcorr_pos(filter_genes==1)];
 
+combined_product_bact = append(kegg_sub_prod_products_unique, "_", species_list');
+plot_combined_product_bact = combined_product_bact(filter_genes==1);
+
 plotdataP = [speciesOTU_products_corrP(filter_genes==1)...
             kegg_DNA_sub_prod_products_bestcorrP_pos(filter_genes==1)...
             kegg_sub_prod_products_bestcorrP_pos(filter_genes==1)];
@@ -1267,11 +1270,17 @@ plotdataPFDR = [speciesOTU_products_corrPFDR(filter_genes==1)...
 %             kegg_DNA_sub_prod_substrates_bestcorr_neg(filter_genes==1)...
 %             kegg_sub_prod_substrates_bestcorr_neg(filter_genes==1)];
 % remove nan rows
+plot_combined_product_bact(isnan(sum(plotdata,2)),:)=[];
 plotdata(isnan(sum(plotdata,2)),:)=[];
+
 % remove zeros in both DNA and RNA
 %plotdata(sum(abs(plotdata(:,2:3)),2)==0,:)=[];
 % remove zeros in all
+plot_combined_product_bact(sum(abs(plotdata(:,1:3)),2)==0,:)=[];
+plot_combined_product_products = cellfun(@(x) x(1:strfind(x, '_')-1), plot_combined_product_bact, 'unif', 0);
+sprintf('Unique products in Sankey n=%d\n',length(unique(plot_combined_product_products)))
 plotdata(sum(abs(plotdata(:,1:3)),2)==0,:)=[];
+
 
 figure
 hold on
