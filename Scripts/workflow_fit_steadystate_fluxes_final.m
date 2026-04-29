@@ -108,7 +108,15 @@ met_bestsolsCVR = cell(length(selected_mets),1);
 met_gitfitsDC = cell(length(selected_mets),1);
 met_bestsolsDC = cell(length(selected_mets),1);
 
+% save data matrices that are used for the models
+model_data_matrix_DC = zeros(length(selected_mets), length(sampleDiet_unique)*length(sampleType_unique)*length(git_labels));
+model_data_matrix_CVR = zeros(length(selected_mets), length(sampleDiet_unique)*length(sampleType_unique)*length(git_labels));
+model_data_matrix_DCnorm = zeros(length(selected_mets), length(sampleDiet_unique)*length(sampleType_unique)*length(git_labels));
+model_data_matrix_CVRnorm = zeros(length(selected_mets), length(sampleDiet_unique)*length(sampleType_unique)*length(git_labels));
+
 diag_plot_flag = 0; % diagnostic plotting flag
+
+fit_model_flag = 0; % used to extract data for modelling without model fitting
 
 for flagCVR = 0:1
     sampleType_unique = unique(combinedType);
@@ -168,33 +176,48 @@ for flagCVR = 0:1
                     idx = idx+1;
                 end
             end
+            if flagCVR
+                model_data_matrix_CVR(met_i,:) = reshape(kmeanMatrix_joint, 1, []);
+            else
+                model_data_matrix_DC(met_i,:) = reshape(kmeanMatrix_joint, 1, []);
+            end
+
             % normalize by max intensity
             kmeanMatrix_joint = kmeanMatrix_joint./max(max(kmeanMatrix_joint));
             kmeanMatrix_joint(isnan(kmeanMatrix_joint))=0;
+
+            if flagCVR
+                model_data_matrix_CVRnorm(met_i,:) = reshape(kmeanMatrix_joint, 1, []);
+            else
+                model_data_matrix_DCnorm(met_i,:) = reshape(kmeanMatrix_joint, 1, []);
+            end
+
+            if fit_model_flag==1
     
-            if nnz(kmeanMatrix_joint)
-                %[gitfit] = fitGITmodel(kmeanMatrix_joint, ncond, shuffle_flag)
-                [gitfit] = fitGITmodel(kmeanMatrix_joint, kmeanMatrix_joint_names, 4, 1);
-                % get best solution
-                [bestsol] = select_gitfit_sol(gitfit);
-                
-                % save gitfit and best solution for the current metabolite
-                met_gitfits{met_i} = gitfit;
-                met_bestsols{met_i} = bestsol;
-                
-                if diag_plot_flag
-                    gitfit_diag_plot(gitfit,...
-                        [num2str(annotationTableSpatialClusters.MZ(cmpd_interest_idx)),'_',...
-                         num2str(annotationTableSpatialClusters.RT(cmpd_interest_idx)),'_',...
-                         annotationTableSpatialClusters.CompoundName{cmpd_interest_idx}],...
-                         fig)
-    
-                    orient landscape
-                    %print to figure
-                    print(fig, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
-                            fileNameFigure);
-                    clf('reset')
-                end    
+                if nnz(kmeanMatrix_joint)
+                    %[gitfit] = fitGITmodel(kmeanMatrix_joint, ncond, shuffle_flag)
+                    [gitfit] = fitGITmodel(kmeanMatrix_joint, kmeanMatrix_joint_names, 4, 1);
+                    % get best solution
+                    [bestsol] = select_gitfit_sol(gitfit);
+                    
+                    % save gitfit and best solution for the current metabolite
+                    met_gitfits{met_i} = gitfit;
+                    met_bestsols{met_i} = bestsol;
+                    
+                    if diag_plot_flag
+                        gitfit_diag_plot(gitfit,...
+                            [num2str(annotationTableSpatialClusters.MZ(cmpd_interest_idx)),'_',...
+                             num2str(annotationTableSpatialClusters.RT(cmpd_interest_idx)),'_',...
+                             annotationTableSpatialClusters.CompoundName{cmpd_interest_idx}],...
+                             fig)
+        
+                        orient landscape
+                        %print to figure
+                        print(fig, '-vector', '-dpsc2', '-r600', '-append', '-bestfit',...
+                                fileNameFigure);
+                        clf('reset')
+                    end    
+                end
             end
         end
         % display status every 100 metabolites
@@ -205,22 +228,55 @@ for flagCVR = 0:1
     % print solutions to file
     % print best solutions to files
     % create met_info object needed for the printing function
-    met_info = annotationTableSpatialClusters(selected_mets,:);
-    met_info.gut_filter = gut_filter;
-    % print solutions to files
-    print_bestsol_to_files(met_info, met_bestsols, filenameBestModel);
-
-    % print solutions to files
-    print_allsols_to_files(met_info, met_gitfits, filenameAllModel);
-
+    if fit_model_flag==1
+        met_info = annotationTableSpatialClusters(selected_mets,:);
+        met_info.gut_filter = gut_filter;
+        % print solutions to files
+        print_bestsol_to_files(met_info, met_bestsols, filenameBestModel);
+    
+        % print solutions to files
+        print_allsols_to_files(met_info, met_gitfits, filenameAllModel);
+    
+        if flagCVR
+            met_gitfitsCVR = met_gitfits;
+            met_bestsolsCVR = met_bestsols;
+        else
+            met_gitfitsDC = met_gitfits;
+            met_bestsolsDC = met_bestsols;
+        end
+    end
     if flagCVR
-        met_gitfitsCVR = met_gitfits;
-        met_bestsolsCVR = met_bestsols;
+        model_data_matrix_CVR_names = reshape(kmeanMatrix_joint_names,1,[]);
     else
-        met_gitfitsDC = met_gitfits;
-        met_bestsolsDC = met_bestsols;
+        model_data_matrix_DC_names = reshape(kmeanMatrix_joint_names,1,[]);
     end
 end
+
+% save model data to file
+% CVR
+model_data_matrix_CVR_table = array2table(model_data_matrix_CVR, "VariableNames", model_data_matrix_CVR_names);
+model_data_matrix_CVR_table = [annotationTableSpatialClusters(:,1:24), model_data_matrix_CVR_table];
+filename = [outputFolder ...
+                    'modeled_data_allCVR.csv'];
+writetable(model_data_matrix_CVR_table, filename);
+% CVR normalized
+model_data_matrix_CVRnorm_table = array2table(model_data_matrix_CVRnorm, "VariableNames", model_data_matrix_CVR_names);
+model_data_matrix_CVRnorm_table = [annotationTableSpatialClusters(:,1:24), model_data_matrix_CVRnorm_table];
+filename = [outputFolder ...
+                    'modeled_data_allCVRnorm.csv'];
+writetable(model_data_matrix_CVRnorm_table, filename);
+% DC
+model_data_matrix_DC_table = array2table(model_data_matrix_DC, "VariableNames", model_data_matrix_DC_names);
+model_data_matrix_DC_table = [annotationTableSpatialClusters(:,1:24), model_data_matrix_DC_table];
+filename = [outputFolder ...
+                    'modeled_data_allDC.csv'];
+writetable(model_data_matrix_DC_table, filename);
+% DC normalized
+model_data_matrix_DCnorm_table = array2table(model_data_matrix_DCnorm, "VariableNames", model_data_matrix_DC_names);
+model_data_matrix_DCnorm_table = [annotationTableSpatialClusters(:,1:24), model_data_matrix_DCnorm_table];
+filename = [outputFolder ...
+                    'modeled_data_allDCnorm.csv'];
+writetable(model_data_matrix_DCnorm_table, filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % print best solutions to files
