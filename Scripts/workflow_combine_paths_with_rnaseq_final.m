@@ -200,6 +200,14 @@ end
 % remove "cpd" from kegg_ids_unique
 kegg_ids_unique = cellfun(@(x) strrep(x, 'cpd:', ''), kegg_ids_unique, 'unif', 0);
 
+
+%%%%%%%%%%%%%%%%% taurine
+% add taurine with bile salt hydrolase 3.5.1.24
+taurinepath = {{'C05465'} {'C00245'} {'C05465;C00245'} {'3.5.1.24'} 1};
+shortestPathTable(end+1,:) = taurinepath;
+%%%%%%%%%%%%%%%%%
+
+
 % get matrices of "substrate" and "product" intensities across mice
 % note that pairs are not always oriented as sub-prod
 kegg_sub_intensities = zeros(size(shortestPathTable,1), length(met_columns));
@@ -347,6 +355,7 @@ for i=1:size(shortestPathTable,1)
 end
 
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % make a table of max abs enzyme fold change between the two conditions
 %substrates
@@ -373,8 +382,17 @@ print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder, 'fig_sup_histogram_path_length_max3_combined_', ...
             sel_crit1, '_', sel_crit2,'_strictclass', num2str(strict_class), '.pdf']);
 
+
 % calculate for 1 enzyme path to begin with
 select_path_idx = find(shortestPathTable_length==1);
+% add serine and taurine as sub prod although the length is 2
+% serine_taurine_idx = find(ismember(shortestPathTable.Substrate, 'C00065') &...
+%                           ismember(shortestPathTable.Product, 'C00245') &...
+%                           shortestPathTable_length==2);
+% %take the first one (the lines seem to be identical anyway)
+% %and add to 1 enzyme paths
+% select_path_idx = sort([select_path_idx; serine_taurine_idx(1)]);
+%%%%%%%%%%%%%%%
 kegg_substrate_product_1enzyme = shortestPathTable(select_path_idx,:);
 [kegg_substrate_product_1enzyme, idx] = unique(kegg_substrate_product_1enzyme);
 select_path_idx = select_path_idx(idx);
@@ -1462,7 +1480,8 @@ fig = cgo.plot;
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_5d_clustergam_best_combined_strictclass'...
-    num2str(strict_class) '_product_corrPOS_RNA_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
+    num2str(strict_class) '_product_corrPOS_RNA_filteredbyRNADNA_allpos_withtaurine_0726.pdf'])
+%    num2str(strict_class) '_product_corrPOS_RNA_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 
 cgo = clustergram(plotdataDNA, ...
@@ -1474,7 +1493,8 @@ fig = cgo.plot;
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_sup_clustergam_best_combined_strictclass'...
-    num2str(strict_class) '_product_corrPOS_DNA_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
+    num2str(strict_class) '_product_corrPOS_DNA_filteredbyRNADNA_allpos_withtaurine_0726.pdf'])
+%    num2str(strict_class) '_product_corrPOS_DNA_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 cgo = clustergram(plotdataOTU, ...
     'columnLabels', species_list,...
@@ -1485,14 +1505,17 @@ fig = cgo.plot;
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_sup_clustergam_best_combined_strictclass'...
-    num2str(strict_class), '_product_corrPOS_OTU_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
+    num2str(strict_class), '_product_corrPOS_OTU_filteredbyRNADNA_allpos_withtaurine_0726.pdf'])
+%    num2str(strict_class), '_product_corrPOS_OTU_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % for each selected product, plot heatmaps of corr with OTU, DNA and RNA
 %figureFile = 'heatmap_products_filtered_byRNAandDNA_significant0_1.ps';
 figureFile = ['fig_5e_sup_heatmap_combined_strictclass' num2str(strict_class)...
-              '_products_filtered_byRNAandDNA_onlyPosCorr_significant0_1_sortedX_120925.ps'];
+              '_products_filtered_byRNAandDNA_onlyPosCorr_significant0_1_sortedX_WITH_TAURINE_0726.ps'];
+%               '_products_filtered_byRNAandDNA_onlyPosCorr_significant0_1_sortedX_120925.ps'];
+
 [~,~,plot_order] = intersect(species_order_cluster, species_list, 'stable');
 for i=1:size(plotdataRNA,1)
     fig = figure;
@@ -1513,7 +1536,9 @@ end
 % plot correlation between species enzymes and metabolites for each
 % metabolite with significant correlation
 figureFile = ['fig_sup_scatter_combined_strictclass' num2str(strict_class)...
-    '_metabolites_vs_best_enzymes_per_species_pos_pRNA_or_pRNA_0_1_120925.ps'];
+    '_metabolites_vs_best_enzymes_per_species_pos_pRNA_or_pRNA_0_1_WITH_TAURINE_0726.ps'];
+%     '_metabolites_vs_best_enzymes_per_species_pos_pRNA_or_pRNA_0_1_120925.ps'];
+
 for i=1:length(plotdata_rows)
    curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
    fig = figure('units','normalized','outerposition',[0 0 1 1]);
@@ -1563,7 +1588,9 @@ end
 % plot correlation between species enzymes and metabolites for each
 % metabolite with significant correlation
 figureFile = ['fig_sup_scatter_combined_strictclass' num2str(strict_class),...
-    '_metabolites_vs_best_enzymes_DNA_per_species_120925.ps'];
+    '_metabolites_vs_best_enzymes_DNA_per_species_with_taurine_0726.ps'];
+%     '_metabolites_vs_best_enzymes_DNA_per_species_120925.ps'];
+
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
 for i=1:length(plotdata_rows)
    curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
@@ -1611,7 +1638,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation between species enzymes and metabolites for each
 % metabolite with significant correlation
-figureFile = 'fig_sup_scatter_metabolites_vs_OTU_DNA_per_species_210825.ps';
+figureFile = 'fig_sup_scatter_metabolites_vs_OTU_DNA_per_species_with_taurine_0726.ps';
+% figureFile = 'fig_sup_scatter_metabolites_vs_OTU_DNA_per_species_210825.ps';
+
 for i=1:length(plotdata_rows)
    curmetidx = find(ismember(kegg_sub_prod_products, plotdata_rows{i}));
    fig = figure('units','normalized','outerposition',[0 0 1 1]);
@@ -1752,8 +1781,11 @@ corrtableOTU = table(table_mets, table_species, table_corrtype, table_corr, tabl
     
 corrtable = vertcat(corrtableRNA, corrtableDNA, corrtableOTU);
 
+% writetable(corrtable, ...
+%     [outputFolder, 'table_speciesRNADNAOTU_withFDR_long_210825.csv'],...
+%     'WriteRowNames',true);
 writetable(corrtable, ...
-    [outputFolder, 'table_speciesRNADNAOTU_withFDR_long_210825.csv'],...
+    [outputFolder, 'table_speciesRNADNAOTU_withFDR_long_with_taurine_0726.csv'],...
     'WriteRowNames',true);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

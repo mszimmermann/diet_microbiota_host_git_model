@@ -108,12 +108,13 @@ sampleType_unique(ismember(sampleType_unique, {'CVR'}))=[];
 %             181.074; 468.272; 483.301; 245.163; 576.512; 430.345;... %tyrosine, 3,17-androstnediol glucuronide, taurolitocholate, isovalerylcarnitine, cohibin, 4a-carboxy-5a-cholesta-8-en-3b-ol
 %             384.339; 386.355; 99.068;... % Cholestenone;, 5alpha-cholestan-3-one, hydroxy-methylbutanitrile
 %             138.043]; %urocanate 
-fileNameprofiles = 'fig3a_5f_supp_profiles_mets_across_tissues_with_datapoints_hier_clust_bact_and_system_with_CVR10_onlyGFandDC.ps'; 	
+fileNameprofiles = 'fig3a_5f_supp_profiles_mets_across_tissues_with_datapoints_hier_clust_bact_and_system_with_CVR10_onlyGFandDC_0726.ps'; 	
 targetMZ = [147.053; 74.037; 287.210;... %glutamate, propionate, l-octanoylcarnitine 
             131.058; 226.095;... %5-aminolevulinate, porphobilinogen
             384.339; 386.355;... % Cholestenone, 5alpha-cholestan-3-one
             155.0695; 138.043;...% histidine, urocanate
-            180.063; 342.116]; % glucose, sucrose  
+            180.063; 342.116;... % glucose, sucrose 
+            499.297; 125.0147];  % taurodeoxycholate taurine
 % find annotated compound with this MZ
 % for which modelling results correlate >0.7 with original
 compoundsInterest = find((metaboliteFilters.MetaboliteFilter>0) &...
