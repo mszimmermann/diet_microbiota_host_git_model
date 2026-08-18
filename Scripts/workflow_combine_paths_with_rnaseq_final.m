@@ -47,7 +47,7 @@ add_global_and_file_dependencies
 
 % shortestPathTable = readtable([resultsFolder, ...
 %     'shortest_paths_upto_length_4.csv'], 'delim', ',');
-strict_class = 0; %0
+strict_class = 0; %1
 shortestPathTable = readtable([outputFolder, ...
     'shortest_paths_combined_IP_LI_PCC_within_high_total_strictclass'...
     num2str(strict_class) '_upto_length_4.csv'],...
@@ -174,7 +174,7 @@ met_Feces_columns_mice = cellfun(@(x) x(strfind(x,'M0'):end), met_Feces_columns,
 kegg_ids_unique = cell(size(metaboliteFilters,1),1);
 idx = 1;
 for i=1:size(metaboliteFilters,1)
-    currkegg = metaboliteFilters.CompoundID{i};
+    currkegg = metaboliteFilters.FilteredCompoundID{i};
     currkegg = strsplit(currkegg,';');
     % leave only those which have 'cpd:'
     currkegg(cellfun(@(x) ~contains(x, 'cpd:'), currkegg))=[];
@@ -188,7 +188,7 @@ kegg_ids_unique = unique(kegg_ids_unique);
 kegg_ids_unique_index = zeros(size(kegg_ids_unique));
 for i=1:size(metaboliteFilters,1)
     if (metaboliteFilters.MetaboliteFilter(i)==1)
-        currkegg = metaboliteFilters.CompoundID{i};
+        currkegg = metaboliteFilters.FilteredCompoundID{i};
         currkegg = strsplit(currkegg,';');
         % leave only those which have 'cpd:'
         currkegg(cellfun(@(x) ~contains(x, 'cpd:'), currkegg))=[];
@@ -1193,13 +1193,13 @@ for i=1:length(kegg_sub_prod_products_unique)
         [curcorr, curcorrP] = corr(X,y);
         
         % get info about change in LI for substrate and product
-        cursubLI = sum(kegg_sub_prod_sub_LIchange(curmetidx(1),:),2)>0;
-        curprodLI = sum(kegg_sub_prod_prod_LIchange(curmetidx(1),:),2)>0;
+        %cursubLI = sum(kegg_sub_prod_sub_LIchange(curmetidx(1),:),2)>0;
+        %curprodLI = sum(kegg_sub_prod_prod_LIchange(curmetidx(1),:),2)>0;
 
         %multiply corr by changes of substrate and products
-        curcorr = curcorr.*cursubLI.*curprodLI;
-        curcorrP = curcorrP.*cursubLI.*curprodLI - (1-cursubLI.*curprodLI);
-        curcorrP(curcorrP<0) = nan;
+        %curcorr = curcorr.*cursubLI.*curprodLI;
+        %curcorrP = curcorrP.*cursubLI.*curprodLI - (1-cursubLI.*curprodLI);
+        %curcorrP(curcorrP<0) = nan;
     
         speciesOTU_products_corr(i, ismember(species_list, speciesOTUabbr{k})) = curcorr;
         speciesOTU_products_corrP(i, ismember(species_list, speciesOTUabbr{k})) = curcorrP;       
@@ -1224,13 +1224,13 @@ for i=1:length(kegg_sub_prod_substrates_unique)
         [curcorr, curcorrP] = corr(X,y);
         
          % get info about change in LI for substrate and product
-        cursubLI = sum(kegg_sub_prod_sub_LIchange(curmetidx(1),:),2)>0;
-        curprodLI = sum(kegg_sub_prod_prod_LIchange(curmetidx(1),:),2)>0;
+        %cursubLI = sum(kegg_sub_prod_sub_LIchange(curmetidx(1),:),2)>0;
+        %curprodLI = sum(kegg_sub_prod_prod_LIchange(curmetidx(1),:),2)>0;
 
         %multiply corr by changes of substrate and products
-        curcorr = curcorr.*cursubLI.*curprodLI;
-        curcorrP = curcorrP.*cursubLI.*curprodLI - (1-cursubLI.*curprodLI);
-        curcorrP(curcorrP<0) = nan;
+        %curcorr = curcorr.*cursubLI.*curprodLI;
+        %curcorrP = curcorrP.*cursubLI.*curprodLI - (1-cursubLI.*curprodLI);
+        %curcorrP(curcorrP<0) = nan;
         
         speciesOTU_substrates_corr(i, ismember(species_list, speciesOTUabbr{k})) = curcorr;
         speciesOTU_substrates_corrP(i, ismember(species_list, speciesOTUabbr{k})) = curcorrP;       
@@ -1260,7 +1260,13 @@ plotnames = {'OTUfiltered', 'DNA', 'RNA'};
 
 %%% Positive correlations with products
 % plot only correlations for existing genes
-filter_genes = cellfun(@(x) ~isempty(x), kegg_sub_prod_products_bestcorr_geneidx_pos(:));
+% also remove compounds for which no genes were passing the thresholds even
+% though they exist in the genome
+%filter_genes = cellfun(@(x) ~isempty(x), kegg_sub_prod_products_bestcorr_geneidx_pos(:));
+filter_genes = (cellfun(@(x) ~isempty(x), kegg_sub_prod_products_bestcorr_geneidx_pos(:)) &...
+                ( (kegg_sub_prod_products_bestcorr_pos(:)~=0) |...
+                  (kegg_DNA_sub_prod_products_bestcorr_pos(:)~=0)) );
+
 plotdata = [speciesOTU_products_corr(filter_genes==1)...
             kegg_DNA_sub_prod_products_bestcorr_pos(filter_genes==1)...
             kegg_sub_prod_products_bestcorr_pos(filter_genes==1)];
@@ -1330,7 +1336,7 @@ title('Best product positive corr')
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_5c_boxplotnotch_best_combinedsol_strictclass'...
-    num2str(strict_class), '_product_corrPOS_otuFiltered_DNA_RNA_LIchange_sub_prod_signrank_120925.pdf'])
+    num2str(strict_class), '_product_corrPOS_otuFiltered_DNA_RNA_LIchange_sub_prod_signrank_0826.pdf'])
 % print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
 %     [figureFolder ...
 %     'fig_5c_violin_best_product_corrPOS_otuFiltered_DNA_RNA_LIchange_sub_prod_signrank.pdf'])
@@ -1421,7 +1427,24 @@ end
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
    [figureFolder ...
    'fig5c_sankey_productcorr_withtext_strictclass'...
-    num2str(strict_class), '.pdf'])
+    num2str(strict_class), '0826.pdf'])
+
+% make table of values behind Sankey diagram
+plotdata_corrflag = plotdata >= corr_threshold;
+% assign combination type for easier counting of scenarios from [0 0 0] to [1 1 1]
+plotdata_combinationtype = -ones(size(plotdata_corrflag,1),1);
+for i=1:size(plotdata_corrflag,1)
+    plotdata_combinationtype(i) = bin2dec(num2str(plotdata_corrflag(i,:)));
+end
+sankey_table = table(plot_combined_product_bact,...
+    plotdata(:,1), plotdata(:,2), plotdata(:,3),...
+    plotdata_corrflag(:,1), plotdata_corrflag(:,2), plotdata_corrflag(:,3),...
+    plotdata_combinationtype, ...
+    'VariableNames', {'productKEGGid_species', 'corrOTU', 'corrDNA', 'corrRNA',...
+    'corrOTUflag', 'corrDNAflag', 'corrRNAflag', 'corrType'});
+writetable(sankey_table, ...
+    [outputFolder, 'table_S11_sankey_corr_products_RNADNAOTU_threshold0_3_strictclass', num2str(strict_class), '_with_taurine_0826.csv'],...
+    'WriteRowNames',true);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1445,7 +1468,7 @@ plotdataOTU = speciesOTU_products_corr.*...
 %keep_pairs = (sum(plotdataRNA>0,2)>0);
 % filter by RNA or DNA
 keep_pairs = ((sum(plotdataRNA>0,2)>0) | (sum(plotdataDNA>0,2)>0) &...
-    ~ismember(kegg_sub_prod_products_unique, exclude_products));
+        ~ismember(kegg_sub_prod_products_unique, exclude_products));
 
 plotdataRNA = kegg_sub_prod_products_bestcorr_pos;
 plotdataDNA = kegg_DNA_sub_prod_products_bestcorr_pos;
@@ -1480,7 +1503,7 @@ fig = cgo.plot;
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_5d_clustergam_best_combined_strictclass'...
-    num2str(strict_class) '_product_corrPOS_RNA_filteredbyRNADNA_allpos_withtaurine_0726.pdf'])
+    num2str(strict_class) '_product_corrPOS_RNA_filteredbyRNADNA_allpos_withtaurine_0826.pdf'])
 %    num2str(strict_class) '_product_corrPOS_RNA_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 
@@ -1493,7 +1516,7 @@ fig = cgo.plot;
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_sup_clustergam_best_combined_strictclass'...
-    num2str(strict_class) '_product_corrPOS_DNA_filteredbyRNADNA_allpos_withtaurine_0726.pdf'])
+    num2str(strict_class) '_product_corrPOS_DNA_filteredbyRNADNA_allpos_withtaurine_0826.pdf'])
 %    num2str(strict_class) '_product_corrPOS_DNA_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 cgo = clustergram(plotdataOTU, ...
@@ -1505,7 +1528,7 @@ fig = cgo.plot;
 print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
     [figureFolder ...
     'fig_sup_clustergam_best_combined_strictclass'...
-    num2str(strict_class), '_product_corrPOS_OTU_filteredbyRNADNA_allpos_withtaurine_0726.pdf'])
+    num2str(strict_class), '_product_corrPOS_OTU_filteredbyRNADNA_allpos_withtaurine_0826.pdf'])
 %    num2str(strict_class), '_product_corrPOS_OTU_filteredbyRNADNA_allpos_withtaurine_120925.pdf'])
 
 
@@ -1513,7 +1536,7 @@ print(gcf, '-painters', '-dpdf', '-r600', '-bestfit', ...
 % for each selected product, plot heatmaps of corr with OTU, DNA and RNA
 %figureFile = 'heatmap_products_filtered_byRNAandDNA_significant0_1.ps';
 figureFile = ['fig_5e_sup_heatmap_combined_strictclass' num2str(strict_class)...
-              '_products_filtered_byRNAandDNA_onlyPosCorr_significant0_1_sortedX_WITH_TAURINE_0726.ps'];
+              '_products_filtered_byRNAandDNA_onlyPosCorr_significant0_1_sortedX_WITH_TAURINE_0826.ps'];
 %               '_products_filtered_byRNAandDNA_onlyPosCorr_significant0_1_sortedX_120925.ps'];
 
 [~,~,plot_order] = intersect(species_order_cluster, species_list, 'stable');
@@ -1536,7 +1559,7 @@ end
 % plot correlation between species enzymes and metabolites for each
 % metabolite with significant correlation
 figureFile = ['fig_sup_scatter_combined_strictclass' num2str(strict_class)...
-    '_metabolites_vs_best_enzymes_per_species_pos_pRNA_or_pRNA_0_1_WITH_TAURINE_0726.ps'];
+    '_metabolites_vs_best_enzymes_per_species_pos_pRNA_or_pRNA_0_1_WITH_TAURINE_0826.ps'];
 %     '_metabolites_vs_best_enzymes_per_species_pos_pRNA_or_pRNA_0_1_120925.ps'];
 
 for i=1:length(plotdata_rows)
@@ -1588,7 +1611,7 @@ end
 % plot correlation between species enzymes and metabolites for each
 % metabolite with significant correlation
 figureFile = ['fig_sup_scatter_combined_strictclass' num2str(strict_class),...
-    '_metabolites_vs_best_enzymes_DNA_per_species_with_taurine_0726.ps'];
+    '_metabolites_vs_best_enzymes_DNA_per_species_with_taurine_0826.ps'];
 %     '_metabolites_vs_best_enzymes_DNA_per_species_120925.ps'];
 
 fig = figure('units','normalized','outerposition',[0 0 1 1]);
@@ -1638,7 +1661,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation between species enzymes and metabolites for each
 % metabolite with significant correlation
-figureFile = 'fig_sup_scatter_metabolites_vs_OTU_DNA_per_species_with_taurine_0726.ps';
+figureFile = 'fig_sup_scatter_metabolites_vs_OTU_DNA_per_species_with_taurine_0826.ps';
 % figureFile = 'fig_sup_scatter_metabolites_vs_OTU_DNA_per_species_210825.ps';
 
 for i=1:length(plotdata_rows)
@@ -1688,6 +1711,15 @@ table_mets = repmat(reshape(kegg_sub_prod_products_unique,[],1),...
 table_species = reshape(repmat(reshape(species_list,1,[]),...
                         length(kegg_sub_prod_products_unique),1),...
                         [], 1);
+% keep only compounds for which at least one gene exists
+filter_compound_with_genes = cellfun(@(x) ~isempty(x), ...
+    kegg_sub_prod_products_bestcorr_geneidx_pos);
+filter_compound_with_genes = sum(filter_compound_with_genes,2)>0;
+% remove compounds with all zeros (dont pass fc filters while calculating)
+filter_compound_allzero = (sum(kegg_sub_prod_products_bestcorr_pos~=0,2) +...
+    sum(kegg_DNA_sub_prod_products_bestcorr_pos~=0,2));
+filter_compound = ~((filter_compound_with_genes==0) |...
+    (filter_compound_allzero==0));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % corr RNA
 table_corrtype = repmat({'corr_RNA_EC'}, length(table_mets),1);
@@ -1695,6 +1727,10 @@ table_corrtype = repmat({'corr_RNA_EC'}, length(table_mets),1);
 table_corr = reshape(kegg_sub_prod_products_bestcorr_pos,[],1);
 table_corrP = reshape(kegg_sub_prod_products_bestcorrP_pos,[],1);
 table_corrP(table_corr==0) = NaN;
+
+% duplicate compound flag
+table_filter_compound_with_genes = repmat(filter_compound,...
+    size(kegg_sub_prod_products_bestcorr_pos,2), 1);
 
 %calculate fdr
 table_corrFDR = nan(size(table_corrP));
@@ -1721,7 +1757,21 @@ end
 table_Gene = reshape(corrtable, [], 1);
 table_EC = reshape(corrtableEC, [], 1);
 
-corrtableRNA = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR, table_corrFDRorig,...
+%delete compounds for which no species have genes
+table_mets(~table_filter_compound_with_genes)=[];
+table_species(~table_filter_compound_with_genes)=[];
+table_corrtype(~table_filter_compound_with_genes)=[];
+table_corr(~table_filter_compound_with_genes)=[];
+table_corrP(~table_filter_compound_with_genes)=[];
+table_corrFDR(~table_filter_compound_with_genes)=[];
+table_corrFDRorig(~table_filter_compound_with_genes)=[];
+table_Gene(~table_filter_compound_with_genes)=[];
+table_EC(~table_filter_compound_with_genes)=[];
+
+% note: table_corrFDRorig is calculated per species for all compounds, corrFDR for all
+% compound-species pairs
+corrtableRNA = table(table_mets, table_species, table_corrtype, table_corr,...
+    table_corrP, table_corrFDR, table_corrFDRorig,...
     table_Gene, table_EC);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1756,6 +1806,14 @@ end
 table_Gene = reshape(corrtable, [], 1);
 table_EC = reshape(corrtableEC, [], 1);
 
+%delete compounds for which no species have genes
+table_corr(~table_filter_compound_with_genes)=[];
+table_corrP(~table_filter_compound_with_genes)=[];
+table_corrFDR(~table_filter_compound_with_genes)=[];
+table_corrFDRorig(~table_filter_compound_with_genes)=[];
+table_Gene(~table_filter_compound_with_genes)=[];
+table_EC(~table_filter_compound_with_genes)=[];
+
 corrtableDNA = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR, table_corrFDRorig,...
     table_Gene, table_EC);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1775,17 +1833,23 @@ table_corrFDRorig = reshape(speciesOTU_products_corrPFDR,[],1);
 table_Gene = repmat({'NaN'}, length(table_mets),1);
 table_EC = repmat({'NaN'}, length(table_mets),1);
 
+%delete compounds for which no species have genes
+table_corr(~table_filter_compound_with_genes)=[];
+table_corrP(~table_filter_compound_with_genes)=[];
+table_corrFDR(~table_filter_compound_with_genes)=[];
+table_corrFDRorig(~table_filter_compound_with_genes)=[];
+
 corrtableOTU = table(table_mets, table_species, table_corrtype, table_corr, table_corrP, table_corrFDR, table_corrFDRorig,...
             table_Gene, table_EC);
 
-    
+% join RNA, DNA and OTU corr tables 
 corrtable = vertcat(corrtableRNA, corrtableDNA, corrtableOTU);
 
 % writetable(corrtable, ...
 %     [outputFolder, 'table_speciesRNADNAOTU_withFDR_long_210825.csv'],...
 %     'WriteRowNames',true);
 writetable(corrtable, ...
-    [outputFolder, 'table_speciesRNADNAOTU_withFDR_long_with_taurine_0726.csv'],...
+    [outputFolder, 'table_s11_speciesRNADNAOTU_withFDR_strictclass',num2str(strict_class),'_long_with_taurine_0826.csv'],...
     'WriteRowNames',true);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1819,13 +1883,13 @@ for i=1:length(kegg_sub_prod_substrates_unique)
     kegg_sub_prod_substrates_unique_mz(i) = metaboliteFilters.MZ(curidx);
 end
 length(unique(kegg_sub_prod_substrates_unique_mz))
-% ans = 70 / new: 82 / strictclass=1 57
+% ans = 70 / new: 84 / strictclass=1 57
 length(unique(kegg_sub_prod_products_unique_mz))
-% ans = 66 / new: 78 / strictclass=1 54
+% ans = 66 / new: 81 / strictclass=1 54
 nnz(kegg_sub_prod_products_unique_mz_unique_sigcorr)
-% ans = 9 / new: 6 (FDR) / strictclass=1 5
+% ans = 9 / new: 7 (FDR) / strictclass=1 5
 nnz(kegg_sub_prod_products_unique_mz_unique_sigcorr)/length((kegg_sub_prod_products_unique_mz_unique_sigcorr))
-% ans = 0.1364 / new: 0.0769 / strictclass=1 0.0926
+% ans = 0.1364 / new: 0.0864 / strictclass=1 0.0926
 
 % get unique pathes and change substrates and products 
 % and get MZs
@@ -1866,7 +1930,9 @@ shortestPathTable_unique.Product_MZ = shortestPathTable_unique_prod_mz;
 shortestPathTable_unique.Substrate_IDX = shortestPathTable_unique_sub_idx;
 shortestPathTable_unique.Product_IDX = shortestPathTable_unique_prod_idx;
 % write to table
-writetable(shortestPathTable_unique, [outputFolder, 'table_shortest_path_subprod_sorted_unique_210825.csv']);
+%writetable(shortestPathTable_unique, [outputFolder, 'table_shortest_path_subprod_sorted_unique_210825.csv']);
+writetable(shortestPathTable_unique, [outputFolder, 'table_shortest_path_subprod_sorted_unique_strictclass_', ...
+    num2str(strict_class), '_0826.csv']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1996,8 +2062,11 @@ end
 curenzymes_locustags_combined = table(curenzymes_locustags_combined(:,1),...
                                       curenzymes_locustags_combined(:,2),...
                                       'VariableNames', {'KEGGID_product', 'locus_tag'});
+%writetable(curenzymes_locustags_combined, ...
+%    '.\ProcessedData\shortBRED\locustags_for_plotting_products_040126_noneg.txt');
 writetable(curenzymes_locustags_combined, ...
-    '.\ProcessedData\shortBRED\locustags_for_plotting_products_040126_noneg.txt');
+    ['.\ProcessedData\shortBRED\locustags_for_plotting_products_strictclass_'...
+    num2str(strict_class), '_0826_noneg.txt']);
 
 %curenzymes_locustags_total_num =
 %   363
@@ -2310,11 +2379,13 @@ end
 if shortbred_dna_flag   
     title({['DNA minmicenum=' num2str(min_mice_num)],...
            sprintf('PCC %.2f %.2f SCC %.2f %.2f', corrC, corrP, corrSC, corrSP)})
-    figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_DNA_210825.pdf';
+    %figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_DNA_210825.pdf';
+    figureFile = ['FigX_scatter_correnzprodDC_vs_CVR_DNA_strictclass_' num2str(strict_class) '_0826.pdf'];
 else
     title({['RNA minmicenum=' num2str(min_mice_num)],...
            sprintf('PCC %.2f %2f SCC %.2f %.2f', corrC, corrP, corrSC, corrSP)})
-    figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_RNA_210825.pdf';
+    %figureFile = 'FigX_scatter_correnzprodDC_vs_CVR_RNA_210825.pdf';
+     figureFile = ['FigX_scatter_correnzprodDC_vs_CVR_RNA_strictclass_' num2str(strict_class) '_0826.pdf'];
 end
 print(gcf, '-vector', '-dpdf', '-r600', '-bestfit',...
        [figureFolder, figureFile]);
@@ -2341,7 +2412,8 @@ end
 
 writetable(met_enz_corr_table,...
     [outputFolder,...
-    'tableS15_met_enz_correlations_shortbred_data.csv']);
+    'tableS15_met_enz_correlations_strictclass_' num2str(strict_class) '_shortbred_data0826.csv']);
+    %'tableS15_met_enz_correlations_shortbred_data.csv']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % permute which CV enzyme is correlated to the corresponding metabolite
