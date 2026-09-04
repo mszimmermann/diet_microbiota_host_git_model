@@ -3,7 +3,7 @@ function [met_info, gitfits] = read_allsols_from_files(filename)
 % gitfits contains all solutions
 % filename is the input file name without extension
 % WARNING! column from which coefs starts is hardcoded
-datastartidx = 7;
+datastartidx = 9;
 % WARNING! number of solutions is hardcoded
 nsols = 100;
 
