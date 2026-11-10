@@ -5,6 +5,8 @@ Pipelines of the Project
 
 By Zimmermann-Kogadeeva, Maria; Henseler, Zachariah M.; Bencivenga-Barry, Natasha A; Gross, Matthias W.; Zimmermann, Michael; Bartmanski, Bartosz J.; Bork, Peer; Goodman, Andrew L.
 
+------------------------------------------------------------------------------------
+
 🖥️**Software requirements:** 
 The code is developed with MatLab2023a Optimization toolbox and requires MatLab version 2023a, although most scripts should be compatible with MatLab version 2019.
 
@@ -14,10 +16,16 @@ The code is distributed under the terms of the GNU General Public License (pleas
 ☑️**Installation:**
 There is no specific installation required to run the code.
 
+------------------------------------------------------------------------------------
+
 📖 **Contents:**
 
 1. 🔀 **Coarse-grained modelling workflow:**
 A coarse-grained intestinal flux model that describes metabolite propagation along the gastrointestinal tract (GIT). In each GIT compartment, the changes in metabolite levels are described with an equation including compartment-specific consuming and producing metabolic fluxes. The model connects GIT compartments via intestinal flux which represents metabolite transit. In each compartment, the change in metabolite abundance due to intestinal transit follows the law of mass action with a condition- and compartment-independent parameter f. In the small intestine, parameter f\_SI\_host describes host metabolism flux, and in the large intestine host metabolism fluxes are described by parameters f\_Cecum\_host and f\_Colon\_host for cecum and colon, respectively. In the cecum of colonized mice, metabolite levels are also influenced by microbial metabolism flux parameter f\_LI\_microbe. The model assumption is that host metabolism parameters are independent of mouse colonization state, while all host and microbial metabolism parameters are diet-specific. The resulting model contains 20 equations (for jejunum, ileum, cecum, colon and feces for each of the four conditions) with nine parameters (the nonnegative intestinal flux parameter f and eight diet-specific host and microbial metabolism parameters which can have either negative or positive values corresponding to metabolite consumption or production).
+
+🥬 **Standalone modelling pipeline with demo workflow is available at: https://github.com/mszimmermann/gut_pseudosteady_flux_model/**
+
+------------------------------------------------------------------------------------
 
 2. ⏯️ **Scripts to reproduce the analysis and figures of the project.** 
 
